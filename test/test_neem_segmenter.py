@@ -1,5 +1,5 @@
-from neem_pycram_interface.neem_pycram_interface import PyCRAMNEEMInterface
-from neem_pycram_interface.neem_segmenter import NEEMSegmenter
+from neem_pycram_interface import PyCRAMNEEMInterface
+from episode_segmenter.neem_segmenter import NEEMSegmenter
 from unittest import TestCase
 
 from pycram.datastructures.enums import WorldMode

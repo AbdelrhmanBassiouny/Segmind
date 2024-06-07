@@ -1,9 +1,9 @@
 import threading
 import time
-
 from typing_extensions import Optional, List
 
-from .neem_pycram_interface import PyCRAMNEEMInterface
+from neem_pycram_interface import PyCRAMNEEMInterface
+
 from .episode_segmenter import EpisodeSegmenter
 
 
