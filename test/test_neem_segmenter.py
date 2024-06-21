@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from pycram.datastructures.enums import WorldMode
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
-from pycram.world import World
+from pycram.datastructures.world import World
 from pycram.worlds.bullet_world import BulletWorld
 
 

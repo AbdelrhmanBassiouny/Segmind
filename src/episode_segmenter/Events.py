@@ -5,7 +5,7 @@ import time
 from typing_extensions import Optional, List, Dict
 
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation
-from pycram.world import World
+from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object, Link
 
 

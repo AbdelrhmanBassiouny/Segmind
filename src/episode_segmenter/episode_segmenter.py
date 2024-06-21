@@ -3,7 +3,7 @@ import time
 
 from typing_extensions import List
 
-from pycram.world import World
+from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object, Link
 
 from .Events import ContactEvent, EventLogger
