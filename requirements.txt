@@ -1,1 +1,5 @@
 neem_pycram_interface
+trimesh
+dm_control
+pydub
+gtts

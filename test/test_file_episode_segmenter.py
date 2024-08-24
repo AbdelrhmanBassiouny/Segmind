@@ -1,5 +1,5 @@
 from unittest import TestCase
-from episode_segmenter.fame_episode_segmenter import FAMEEpisodeSegmenter, FAMEEpisodePlayer
+from episode_segmenter.file_episode_segmenter import FAMEEpisodeSegmenter, FAMEEpisodePlayer
 
 
 class TestFameEpisodeSegmenter(TestCase):
