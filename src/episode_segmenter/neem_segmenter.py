@@ -1,25 +1,29 @@
 import threading
 import time
-from typing_extensions import Optional, List
+from typing_extensions import Optional, List, Type
 
 from neem_pycram_interface import PyCRAMNEEMInterface
 
-from .episode_segmenter import EpisodeSegmenter, EpisodePlayer
+from .Events import Event
+from .episode_segmenter import EpisodePlayer, AgentBasedEpisodeSegmenter
 
 
-class NEEMSegmenter(EpisodeSegmenter):
+class NEEMSegmenter(AgentBasedEpisodeSegmenter):
     """
     The NEEMSegmenter class is used to segment the NEEMs motion replay data by using event detectors, such as contact,
     loss of contact, and pick up events.
     """
 
-    def __init__(self, pycram_neem_interface: PyCRAMNEEMInterface,  annotate_events: bool = False):
+    def __init__(self, pycram_neem_interface: PyCRAMNEEMInterface,
+                 detectors_to_start: List[Type[Event]],
+                 annotate_events: bool = False):
         """
         Initializes the NEEMSegmenter class.
         :param pycram_neem_interface: The neem pycram interface object used to query the NEEMs motion replay data.
         """
         self.neem_player_thread = NEEMPlayer(pycram_neem_interface)
-        super().__init__(self.neem_player_thread, annotate_events)
+        super().__init__(self.neem_player_thread, detectors_to_start=detectors_to_start,
+                         annotate_events=annotate_events)
 
     def run_event_detectors_on_neem(self, sql_neem_ids: Optional[List[int]] = None) -> None:
         """

@@ -18,6 +18,10 @@ class Event(ABC):
     def __eq__(self, other):
         pass
 
+    @abstractmethod
+    def __hash__(self):
+        pass
+
 
 class AbstractContactEvent(Event, ABC):
 
@@ -37,6 +41,9 @@ class AbstractContactEvent(Event, ABC):
             return False
         return self.of_object == other.of_object and self.with_object == other.with_object
 
+    def __hash__(self):
+        return hash((self.of_object, self.with_object, self.__class__))
+
     def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
         if position is None:
             position = [2, 1, 2]
@@ -49,8 +56,8 @@ class AbstractContactEvent(Event, ABC):
             size=size)
         return TextAnnotation(self.annotation_text, position, self.text_id, color=self.color, size=size)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def color(self) -> Color:
         pass
 
@@ -58,8 +65,8 @@ class AbstractContactEvent(Event, ABC):
     def annotation_text(self) -> str:
         return f"{self.main_link.name} lost contact with {self.link_names}"
 
-    @abstractmethod
     @property
+    @abstractmethod
     def object_names(self):
         pass
 
@@ -67,18 +74,18 @@ class AbstractContactEvent(Event, ABC):
     def link_names(self):
         return [link.name for link in self.links]
 
-    @abstractmethod
     @property
+    @abstractmethod
     def main_link(self) -> Link:
         pass
 
-    @abstractmethod
     @property
+    @abstractmethod
     def links(self) -> List[Link]:
         pass
 
-    @abstractmethod
     @property
+    @abstractmethod
     def objects(self):
         pass
 
@@ -171,13 +178,84 @@ class LossOfContactEvent(AbstractContactEvent):
         return self.__str__()
 
 
+class AbstractAgentContactEvent(ContactEvent, ABC):
+
+    def __init__(self, contact_points: ContactPointsList,
+                 agent: Object,
+                 with_object: Optional[Object] = None,
+                 timestamp: Optional[float] = None):
+        super().__init__(contact_points, agent, with_object, timestamp)
+        self.agent: Object = agent
+
+    @property
+    def agent_name(self):
+        return self.agent.name
+
+    @property
+    @abstractmethod
+    def agent_link(self):
+        pass
+
+    @property
+    def agent_link_name(self):
+        return self.agent_link.name
+
+    @property
+    def object_name(self):
+        return self.contacted_object.name
+
+    @property
+    def contacted_object(self):
+        return self.object_link.object
+
+    @property
+    def object_link_name(self):
+        return self.object_link.name
+
+    @property
+    @abstractmethod
+    def object_link(self):
+        pass
+
+
+class AgentContactEvent(AbstractAgentContactEvent):
+
+    @property
+    def agent_link(self):
+        return self.contact_points[0].link_a
+
+    @property
+    def object_link(self):
+        return self.contact_points[0].link_b
+
+
+class AgentLossOfContactEvent(AbstractAgentContactEvent):
+
+    def __init__(self, contact_points: ContactPointsList,
+                 latest_contact_points: ContactPointsList,
+                 agent: Object,
+                 with_object: Optional[Object] = None,
+                 timestamp: Optional[float] = None):
+        super().__init__(contact_points, agent, with_object, timestamp)
+        self.agent: Object = agent
+        self.latest_contact_points = latest_contact_points
+
+    @property
+    def agent_link(self):
+        return self.latest_contact_points[0].link_a
+
+    @property
+    def object_link(self):
+        return self.latest_contact_points[0].link_b
+
+
 class PickUpEvent(Event):
 
     def __init__(self, picked_object: Object,
-                 hand: Optional[Object] = None,
+                 agent: Optional[Object] = None,
                  timestamp: Optional[float] = None):
         super().__init__(timestamp)
-        self.hand: Optional[Object] = hand
+        self.agent: Optional[Object] = agent
         self.picked_object: Object = picked_object
         self.end_timestamp: Optional[float] = None
         self.text_id: Optional[int] = None
@@ -185,7 +263,10 @@ class PickUpEvent(Event):
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return self.hand == other.hand and self.picked_object == other.picked_object
+        return self.agent == other.agent and self.picked_object == other.picked_object
+
+    def __hash__(self):
+        return hash((self.agent, self.picked_object, self.__class__))
 
     def record_end_timestamp(self):
         self.end_timestamp = time.time()
@@ -199,7 +280,7 @@ class PickUpEvent(Event):
         if position is None:
             position = [2, 1, 2]
         color = Color(0, 1, 0, 1)
-        self.hand.set_color(color)
+        self.agent.set_color(color)
         self.picked_object.set_color(color)
         text = f"Picked {self.picked_object.name}"
         self.text_id = World.current_world.add_text(text,
@@ -209,7 +290,7 @@ class PickUpEvent(Event):
         return TextAnnotation(text, position, self.text_id, color=color, size=size)
 
     def __str__(self):
-        return f"Pick up event: Hand:{self.hand.name}, Object: {self.picked_object.name}, Timestamp: {self.timestamp}"
+        return f"Pick up event: Agent:{self.agent.name}, Object: {self.picked_object.name}, Timestamp: {self.timestamp}"
 
     def __repr__(self):
         return self.__str__()

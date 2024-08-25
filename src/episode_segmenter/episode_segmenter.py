@@ -2,13 +2,13 @@ import threading
 import time
 from abc import ABC, abstractmethod
 
-from typing_extensions import List, Callable, Any, Type
+from typing_extensions import List, Type, Optional
 
+from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.world import World
-from pycram.world_concepts.world_object import Object, Link
-
+from pycram.world_concepts.world_object import Object
+from .EventDetectors import ContactDetector, LossOfContactDetector, EventDetector
 from .Events import ContactEvent, EventLogger, Event
-from .EventDetectors import ContactDetector, LossOfContactDetector, PickUpDetector, EventDetector
 
 
 class EpisodePlayer(threading.Thread, ABC):
@@ -41,7 +41,7 @@ class EpisodeSegmenter(ABC):
         self.logger = EventLogger(annotate_events)
         self.avoid_objects = ['particle', 'floor', 'kitchen']
         self.tracked_objects = []
-        self.detector_threads = []
+        self.detector_threads = {}
         self.pick_up_detectors = {}
 
     def start_motion_generator_thread_and_wait_till_ready(self) -> None:
@@ -94,36 +94,32 @@ class EpisodeSegmenter(ABC):
         :param event: The ContactEvent instance that represents the contact event.
         """
         objects_in_contact = event.contact_points.get_objects_that_have_points()
-        obj_a = event.contact_points[0].link_a.object
-        link_a = event.contact_points[0].link_a
         for obj_in_contact in objects_in_contact:
             if any([k in obj_in_contact.name.lower() for k in self.avoid_objects]):
                 continue
 
-            link_b = event.contact_points.get_links_in_contact_of_object(obj_in_contact)[0]
-
             if obj_in_contact not in self.tracked_objects:
                 print(f"Creating new thread for object {obj_in_contact.name}")
-                self.start_contact_threads_for_obj_and_update_tracked_objs(obj_in_contact)
+                self.start_contact_threads_for_obj_and_update_tracked_objs(obj_in_contact, event)
 
-            hand_link, obj_link = None, None
-            if obj_a in hands and obj_in_contact not in hands:
-                hand_link, obj_link = link_a, link_b
-            elif obj_in_contact in hands and obj_a not in hands:
-                hand_link, obj_link = link_b, link_a
-            if hand_link is not None and obj_link is not None:
-                self.start_detector_thread_for_starter_evnet(hand_link, obj_link)
+            for event_detector in self.detectors_to_start:
+                if event_detector.start_condition_checker(event):
+                    self.start_detector_thread_for_starter_evnet(event, event_detector)
 
-    def start_contact_threads_for_obj_and_update_tracked_objs(self, obj: Object):
+    def start_contact_threads_for_obj_and_update_tracked_objs(self, obj: Object,
+                                                              event: Optional[ContactEvent] = None) -> None:
         """
         Start the contact threads for the object and updates the tracked objects.
 
         :param obj: The Object instance for which the contact threads are started.
+        :param event: The ContactEvent instance that represents the contact event with the object.
         """
+        if event is None:
+            event = ContactEvent(ContactPointsList([]), obj)
         for detector in (ContactDetector, LossOfContactDetector):
             detector_thread = detector(self.logger, obj)
             detector_thread.start()
-            self.detector_threads.append(detector_thread)
+            self.detector_threads[event] = detector_thread
         self.tracked_objects.append(obj)
 
     def start_detector_thread_for_starter_evnet(self, starter_event: Event,
@@ -138,7 +134,7 @@ class EpisodeSegmenter(ABC):
             detector = self.detector_threads[starter_event]
             if detector.is_alive() or (detector.detected_before and detector.run_once):
                 return
-        detector = detector_type(starter_event, self.logger)
+        detector = detector_type(self.logger, starter_event)
         detector.start()
         self.detector_threads[starter_event] = detector
         print(f"Created {detector_type.__name__} for starter event {starter_event}")
@@ -156,7 +152,7 @@ class EpisodeSegmenter(ABC):
         self.logger.join()
 
 
-class HandBasedEpisodeSegmenter(EpisodeSegmenter):
+class AgentBasedEpisodeSegmenter(EpisodeSegmenter):
     """
     The EpisodeSegmenter class is used to segment motions into activities (e.g. PickUp) and events by using
      event detectors such as contact, and loss of contact events.
