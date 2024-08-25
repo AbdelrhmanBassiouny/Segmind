@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing_extensions import Optional, List, Union
+from typing_extensions import Optional, List, Union, Callable, Any
 import threading
 import time
 import numpy as np
@@ -20,16 +20,22 @@ class EventDetector(threading.Thread, ABC):
     """
 
     def __init__(self, logger: EventLogger,
-                 wait_time: Optional[float] = None):
+                 wait_time: Optional[float] = None,
+                 start_condition_checker: Optional[Callable[[Any], bool]] = None):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param start_condition_checker: An optional function that represents the start condition to start the event
+         detector.
         """
 
         super().__init__()
 
         self.logger = logger
         self.wait_time = wait_time
+        if start_condition_checker is None:
+            start_condition_checker = lambda: True
+        self.start_condition_checker: Optional[Callable[[Any], bool]] = start_condition_checker
 
         self.exit_thread: Optional[bool] = False
         self.run_once = False
@@ -73,20 +79,30 @@ class EventDetector(threading.Thread, ABC):
         """
         self.logger.log_event(self.thread_id, event)
 
+    @property
+    def detected_before(self) -> bool:
+        """
+        Checks if the event was detected before.
+
+        :return: A boolean value that represents if the event was detected before.
+        """
+        return self.thread_id in self.logger.get_events().keys()
+
 
 class AbstractContactDetector(EventDetector, ABC):
     def __init__(self, logger: EventLogger,
                  object_to_track: Object,
                  with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05,
-                 wait_time: Optional[float] = 0.1):
+                 wait_time: Optional[float] = 0.1,
+                 start_condition_checker: Optional[Callable[[ContactPointsList], bool]] = None):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param object_to_track: An instance of the Object class that represents the object to track.
         :param max_closeness_distance: An optional float value that represents the maximum distance between the object
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
-        super().__init__(logger, wait_time)
+        super().__init__(logger, wait_time, start_condition_checker)
         self.object_to_track = object_to_track
         self.with_object = with_object
         self.max_closeness_distance = max_closeness_distance
@@ -147,7 +163,7 @@ class ContactDetector(AbstractContactDetector):
         new_objects_in_contact = contact_points.get_new_objects(self.latest_contact_points)
         if len(new_objects_in_contact) == 0:
             return None
-        return ContactEvent(contact_points)
+        return ContactEvent(contact_points, of_object=self.object_to_track, with_object=self.with_object)
 
 
 class LossOfContactDetector(AbstractContactDetector):
@@ -173,7 +189,8 @@ class LossOfContactDetector(AbstractContactDetector):
         objects_that_lost_contact = contact_points.get_objects_that_got_removed(self.latest_contact_points)
         if len(objects_that_lost_contact) == 0:
             return None
-        return LossOfContactEvent(contact_points, self.latest_contact_points)
+        return LossOfContactEvent(contact_points, self.latest_contact_points, of_object=self.object_to_track,
+                                  with_object=self.with_object)
 
 
 class PickUpDetector(EventDetector):
@@ -190,7 +207,8 @@ class PickUpDetector(EventDetector):
                  hand_link: Link,
                  object_link: Link,
                  trans_threshold: Optional[float] = 0.08,
-                 rot_threshold: Optional[float] = 0.4
+                 rot_threshold: Optional[float] = 0.4,
+                 start_condition_checker: Optional[Callable[[Event], bool]] = None
                  ):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -198,8 +216,11 @@ class PickUpDetector(EventDetector):
         :param object_link: An instance of the Link class that represents the object link.
         :param trans_threshold: An optional float value that represents the translation threshold.
         :param rot_threshold: An optional float value that represents the rotation threshold.
+        :param start_condition_checker: An optional function that represents the start condition to start the event detector.
         """
-        super().__init__(logger)
+        if start_condition_checker is None:
+            start_condition_checker = self.check_if_a_hand_is_in_contact_with_object
+        super().__init__(logger, start_condition_checker=start_condition_checker)
         self.hand_link = hand_link
         self.hand = hand_link.object
         self.hand_name = hand_link.object.name
@@ -208,6 +229,14 @@ class PickUpDetector(EventDetector):
         self.trans_threshold = trans_threshold
         self.rot_threshold = rot_threshold
         self.run_once = True
+
+    def check_if_a_hand_is_in_contact_with_object(self, event: ContactEvent) -> bool:
+        """
+        Check if a hand is in contact with the object.
+
+        :param event: The ContactEvent instance that represents the contact event.
+        """
+        return event.check_if_two_objects_are_in_contact(self.hand, self.object)
 
     @property
     def thread_id(self) -> str:
@@ -230,7 +259,7 @@ class PickUpDetector(EventDetector):
             print(f"Hand not in contact with object: {self.object_link.object.name}")
             return
 
-        pick_up_event = PickUpEvent(self.hand_link.object, self.object_link.object, initial_contact_event.timestamp)
+        pick_up_event = PickUpEvent(self.object_link.object, self.hand_link.object, initial_contact_event.timestamp)
         latest_stamp = pick_up_event.timestamp
 
         supporting_surface_found = False

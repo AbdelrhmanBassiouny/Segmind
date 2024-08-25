@@ -1,6 +1,7 @@
 import queue
 import threading
 import time
+from abc import abstractmethod, ABC
 
 from typing_extensions import Optional, List, Dict
 
@@ -9,108 +10,182 @@ from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object, Link
 
 
-class Event:
+class Event(ABC):
     def __init__(self, timestamp: Optional[float] = None):
         self.timestamp = time.time() if timestamp is None else timestamp
 
+    @abstractmethod
+    def __eq__(self, other):
+        pass
 
-class ContactEvent(Event):
-    def __init__(self, contact_points: ContactPointsList, timestamp: Optional[float] = None):
+
+class AbstractContactEvent(Event, ABC):
+
+    def __init__(self,
+                 contact_points: ContactPointsList,
+                 of_object: Object,
+                 with_object: Optional[Object] = None,
+                 timestamp: Optional[float] = None):
         super().__init__(timestamp)
         self.contact_points = contact_points
+        self.of_object: Object = of_object
+        self.with_object: Optional[Object] = with_object
         self.text_id: Optional[int] = None
 
-    def object_names_in_contact(self):
-        return self.contact_points.get_names_of_objects_that_have_points()
-
-    def objects_in_contact(self):
-        return self.contact_points.get_objects_that_have_points()
-
-    def link_names_in_contact(self):
-        return [link.name for link in self.links_in_contact()]
-
-    def links_in_contact(self) -> List[Link]:
-        links = []
-        for obj in self.objects_in_contact():
-            links.extend(self.contact_points.get_links_in_contact_of_object(obj))
-        return links
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.of_object == other.of_object and self.with_object == other.with_object
 
     def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
         if position is None:
             position = [2, 1, 2]
-        color = Color(0, 0, 1, 1)
-        main_link = self.contact_points[0].link_a
-        main_link.color = color
-        for link in self.links_in_contact():
-            link.color = color
-        text = f"{main_link.name} in contact with {self.link_names_in_contact()}"
-        self.text_id = World.current_world.add_text(text,
-                                                    position,
-                                                    color=color,
-                                                    size=size)
-        return TextAnnotation(text, position, self.text_id, color=color, size=size)
+        self.main_link.color = self.color
+        [link.set_color(self.color) for link in self.links]
+        self.text_id = World.current_world.add_text(
+            self.annotation_text,
+            position,
+            color=self.color,
+            size=size)
+        return TextAnnotation(self.annotation_text, position, self.text_id, color=self.color, size=size)
+
+    @abstractmethod
+    @property
+    def color(self) -> Color:
+        pass
+
+    @property
+    def annotation_text(self) -> str:
+        return f"{self.main_link.name} lost contact with {self.link_names}"
+
+    @abstractmethod
+    @property
+    def object_names(self):
+        pass
+
+    @property
+    def link_names(self):
+        return [link.name for link in self.links]
+
+    @abstractmethod
+    @property
+    def main_link(self) -> Link:
+        pass
+
+    @abstractmethod
+    @property
+    def links(self) -> List[Link]:
+        pass
+
+    @abstractmethod
+    @property
+    def objects(self):
+        pass
+
+
+class ContactEvent(AbstractContactEvent):
+
+    @property
+    def color(self) -> Color:
+        return Color(0, 0, 1, 1)
+
+    @property
+    def object_names(self):
+        return self.contact_points.get_names_of_objects_that_have_points()
+
+    @property
+    def objects(self):
+        return self.contact_points.get_objects_that_have_points()
+
+    @property
+    def main_link(self) -> Link:
+        return self.contact_points[0].link_a
+
+    @property
+    def links(self) -> List[Link]:
+        links = []
+        for obj in self.objects:
+            links.extend(self.contact_points.get_links_in_contact_of_object(obj))
+        return links
+
+    def check_if_two_objects_are_in_contact(self, object_a: Object, object_b: Object) -> bool:
+        """
+        Check if two objects are in contact by checking if one of the contact points is between the two objects,
+        or if the two objects are the :attr:`of_object` and :attr:`with_object` of the contact event.
+        """
+        if self.with_object is None:
+            if object_a == self.of_object:
+                return object_b in self.contact_points.get_objects_that_have_points()
+            elif object_b == self.of_object:
+                return object_a in self.contact_points.get_objects_that_have_points()
+        else:
+            if object_a == self.with_object:
+                return object_b == self.of_object
+            elif object_b == self.with_object:
+                return object_a == self.of_object
+        return False
 
     def __str__(self):
-        return f"Contact {self.contact_points[0].link_a.object.name}: {self.object_names_in_contact()}"
+        return f"Contact {self.contact_points[0].link_a.object.name}: {self.object_names}"
 
     def __repr__(self):
         return self.__str__()
 
 
-class LossOfContactEvent(Event):
-    def __init__(self, contact_points: ContactPointsList, latest_contact_points: ContactPointsList,
+class LossOfContactEvent(AbstractContactEvent):
+    def __init__(self, contact_points: ContactPointsList,
+                 latest_contact_points: ContactPointsList,
+                 of_object: Object,
+                 with_object: Optional[Object] = None,
                  timestamp: Optional[float] = None):
-        super().__init__(timestamp)
-        self.contact_points = contact_points
+        super().__init__(contact_points, of_object, with_object, timestamp)
         self.latest_contact_points = latest_contact_points
-        self.text_id: Optional[int] = None
 
-    def object_names_lost_contact(self):
+    @property
+    def color(self) -> Color:
+        return Color(1, 0, 0, 1)
+
+    @property
+    def object_names(self):
         return [obj.name for obj in self.contact_points.get_objects_that_got_removed(self.latest_contact_points)]
 
-    def link_names_lost_contact(self):
-        return [link.name for link in self.links_lost_contact()]
+    @property
+    def main_link(self) -> Link:
+        return self.latest_contact_points[0].link_a
 
-    def links_lost_contact(self) -> List[Link]:
-        objs_lost_contact = self.objects_lost_contact()
+    @property
+    def links(self) -> List[Link]:
         links = []
-        for obj in objs_lost_contact:
+        for obj in self.objects:
             links.extend(self.latest_contact_points.get_links_in_contact_of_object(obj))
         return links
 
-    def objects_lost_contact(self):
+    @property
+    def objects(self):
         return self.contact_points.get_objects_that_got_removed(self.latest_contact_points)
 
-    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
-        if position is None:
-            position = [2, 1, 2]
-        color = Color(1, 0, 0, 1)
-        main_link = self.latest_contact_points[0].link_a
-        main_link.color = color
-        for link in self.links_lost_contact():
-            link.color = color
-        text = f"{main_link.name} lost contact with {self.link_names_lost_contact()}"
-        self.text_id = World.current_world.add_text(
-            text,
-            position,
-            color=color,
-            size=size)
-        return TextAnnotation(text, position, self.text_id, color=color, size=size)
-
     def __str__(self):
-        return f"Loss of contact {self.latest_contact_points[0].link_a.object.name}: {self.object_names_lost_contact()}"
+        return f"Loss of contact {self.latest_contact_points[0].link_a.object.name}: {self.object_names}"
 
     def __repr__(self):
         return self.__str__()
 
 
 class PickUpEvent(Event):
-    def __init__(self, hand: Object, picked_object: Object, timestamp: Optional[float] = None):
+
+    def __init__(self, picked_object: Object,
+                 hand: Optional[Object] = None,
+                 timestamp: Optional[float] = None):
         super().__init__(timestamp)
-        self.hand = hand
-        self.object = picked_object
+        self.hand: Optional[Object] = hand
+        self.picked_object: Object = picked_object
         self.end_timestamp: Optional[float] = None
         self.text_id: Optional[int] = None
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.hand == other.hand and self.picked_object == other.picked_object
 
     def record_end_timestamp(self):
         self.end_timestamp = time.time()
@@ -125,8 +200,8 @@ class PickUpEvent(Event):
             position = [2, 1, 2]
         color = Color(0, 1, 0, 1)
         self.hand.set_color(color)
-        self.object.set_color(color)
-        text = f"Picked {self.object.name}"
+        self.picked_object.set_color(color)
+        text = f"Picked {self.picked_object.name}"
         self.text_id = World.current_world.add_text(text,
                                                     position,
                                                     color=color,
@@ -134,7 +209,7 @@ class PickUpEvent(Event):
         return TextAnnotation(text, position, self.text_id, color=color, size=size)
 
     def __str__(self):
-        return f"Pick up event: Hand:{self.hand.name}, Object: {self.object.name}, Timestamp: {self.timestamp}"
+        return f"Pick up event: Hand:{self.hand.name}, Object: {self.picked_object.name}, Timestamp: {self.timestamp}"
 
     def __repr__(self):
         return self.__str__()

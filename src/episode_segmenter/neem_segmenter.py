@@ -4,7 +4,7 @@ from typing_extensions import Optional, List
 
 from neem_pycram_interface import PyCRAMNEEMInterface
 
-from .episode_segmenter import EpisodeSegmenter
+from .episode_segmenter import EpisodeSegmenter, EpisodePlayer
 
 
 class NEEMSegmenter(EpisodeSegmenter):
@@ -29,23 +29,14 @@ class NEEMSegmenter(EpisodeSegmenter):
         if sql_neem_ids is None:
             sql_neem_ids = [17]
 
-        self.query_neems_motion_replay_data_and_start_neem_player(sql_neem_ids)
-
-        self.run_event_detectors(self.neem_player_thread)
-
-    def query_neems_motion_replay_data_and_start_neem_player(self, sql_neem_ids: List[int]) -> None:
-        """
-        Queries the NEEMs motion replay data, starts the NEEM player thread, and waits until the NEEM player thread is
-        ready (i.e., the replay environment is initialized with all objects in starting poses).
-        :param sql_neem_ids: A list of integer values that represent the SQL NEEM IDs.
-        """
         self.neem_player_thread.query_neems_motion_replay_data(sql_neem_ids)
-        self.neem_player_thread.start()
-        while not self.neem_player_thread.ready:
-            time.sleep(0.1)
+
+        self.start_motion_generator_thread_and_wait_till_ready()
+
+        self.run_event_detectors()
 
 
-class NEEMPlayer(threading.Thread):
+class NEEMPlayer(EpisodePlayer):
     def __init__(self, pycram_neem_interface: PyCRAMNEEMInterface):
         super().__init__()
         self.pni = pycram_neem_interface

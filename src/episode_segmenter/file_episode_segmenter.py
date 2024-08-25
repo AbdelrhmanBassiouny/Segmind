@@ -4,6 +4,7 @@ import os
 import shutil
 import threading
 import time
+from abc import ABC, abstractmethod
 
 import numpy as np
 from tf.transformations import quaternion_from_matrix, euler_matrix
@@ -12,56 +13,36 @@ from typing_extensions import Optional, List, Type, TYPE_CHECKING, Tuple
 from pycram.datastructures.enums import ObjectType, WorldMode
 from pycram.datastructures.pose import Pose, Transform
 from pycram.world_concepts.world_object import Object
-from pycram.worlds.multiverse import Multiverse
+try:
+    from pycram.worlds.multiverse import Multiverse
+except ImportError:
+    Multiverse = None
 from pycram.worlds.bullet_world import BulletWorld
-from .episode_segmenter import EpisodeSegmenter
+from .episode_segmenter import EpisodeSegmenter, EpisodePlayer
 
 if TYPE_CHECKING:
     from pycram.datastructures.world import World
 
 
-class FAMEEpisodeSegmenter(EpisodeSegmenter):
+class FileEpisodeSegmenter(EpisodeSegmenter):
     """
-    The NEEMSegmenter class is used to segment the NEEMs motion replay data by using event detectors, such as contact,
-    loss of contact, and pick up events.
+    This class is used to segment the motions replayed from a file containing a sequence of frames, each frame contains
+     a list of objects and their poses, the segmentation is done by using event detectors, such as contact,
+     loss of contact, and pick up events.
     """
 
     def __init__(self, json_file: str,  annotate_events: bool = False):
         """
-        Initializes the NEEMSegmenter class.
+        Initializes the class.
 
         :param json_file: The json file that contains the data frames.
         :param annotate_events: The boolean value that indicates whether the events should be annotated.
         """
-        self.neem_player_thread = FAMEEpisodePlayer(json_file)
-        super().__init__(self.neem_player_thread, annotate_events)
-
-    def run_event_detectors_on_neem(self, sql_neem_ids: Optional[List[int]] = None) -> None:
-        """
-        Runs the event detectors on the NEEMs motion replay data.
-        :param sql_neem_ids: An optional list of integer values that represent the SQL NEEM IDs.
-        """
-        if sql_neem_ids is None:
-            sql_neem_ids = [17]
-
-        self.query_neems_motion_replay_data_and_start_neem_player(sql_neem_ids)
-
-        self.run_event_detectors(self.neem_player_thread)
-
-    def query_neems_motion_replay_data_and_start_neem_player(self, sql_neem_ids: List[int]) -> None:
-        """
-        Queries the NEEMs motion replay data, starts the NEEM player thread, and waits until the NEEM player thread is
-        ready (i.e., the replay environment is initialized with all objects in starting poses).
-        :param sql_neem_ids: A list of integer values that represent the SQL NEEM IDs.
-        """
-        self.neem_player_thread.query_neems_motion_replay_data(sql_neem_ids)
-        self.neem_player_thread.start()
-        while not self.neem_player_thread.ready:
-            time.sleep(0.1)
+        super().__init__(FileEpisodePlayer(json_file), annotate_events)
 
 
-class FAMEEpisodePlayer(threading.Thread):
-    def __init__(self, json_file: str, scene_id: int = 1, world: Type['World'] = Multiverse,
+class FileEpisodePlayer(EpisodePlayer):
+    def __init__(self, json_file: str, scene_id: int = 1, world: Type['World'] = BulletWorld,
                  mesh_scale: float = 0.001,
                  time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=100)):
         """
@@ -96,9 +77,6 @@ class FAMEEpisodePlayer(threading.Thread):
         return self._ready
 
     def run(self):
-        self.replay_episode()
-
-    def replay_episode(self):
         for frame_id, objects_data in self.data_frames.items():
             self.process_objects_data(objects_data)
             time.sleep(self.time_between_frames.total_seconds())
