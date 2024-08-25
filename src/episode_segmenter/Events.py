@@ -35,7 +35,7 @@ class ContactEvent(Event):
             links.extend(self.contact_points.get_links_in_contact_of_object(obj))
         return links
 
-    def annotate(self, position: Optional[List[float]] = None) -> TextAnnotation:
+    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
         if position is None:
             position = [2, 1, 2]
         color = Color(0, 0, 1, 1)
@@ -46,8 +46,9 @@ class ContactEvent(Event):
         text = f"{main_link.name} in contact with {self.link_names_in_contact()}"
         self.text_id = World.current_world.add_text(text,
                                                     position,
-                                                    color=color)
-        return TextAnnotation(text, position, color, self.text_id)
+                                                    color=color,
+                                                    size=size)
+        return TextAnnotation(text, position, self.text_id, color=color, size=size)
 
     def __str__(self):
         return f"Contact {self.contact_points[0].link_a.object.name}: {self.object_names_in_contact()}"
@@ -80,7 +81,7 @@ class LossOfContactEvent(Event):
     def objects_lost_contact(self):
         return self.contact_points.get_objects_that_got_removed(self.latest_contact_points)
 
-    def annotate(self, position: Optional[List[float]] = None) -> TextAnnotation:
+    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
         if position is None:
             position = [2, 1, 2]
         color = Color(1, 0, 0, 1)
@@ -92,8 +93,9 @@ class LossOfContactEvent(Event):
         self.text_id = World.current_world.add_text(
             text,
             position,
-            color=color)
-        return TextAnnotation(text, position, color, self.text_id)
+            color=color,
+            size=size)
+        return TextAnnotation(text, position, self.text_id, color=color, size=size)
 
     def __str__(self):
         return f"Loss of contact {self.latest_contact_points[0].link_a.object.name}: {self.object_names_lost_contact()}"
@@ -118,7 +120,7 @@ class PickUpEvent(Event):
             return None
         return self.end_timestamp - self.timestamp
 
-    def annotate(self, position: Optional[List[float]] = None) -> TextAnnotation:
+    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
         if position is None:
             position = [2, 1, 2]
         color = Color(0, 1, 0, 1)
@@ -127,8 +129,9 @@ class PickUpEvent(Event):
         text = f"Picked {self.object.name}"
         self.text_id = World.current_world.add_text(text,
                                                     position,
-                                                    color=color)
-        return TextAnnotation(text, position, color, self.text_id)
+                                                    color=color,
+                                                    size=size)
+        return TextAnnotation(text, position, self.text_id, color=color, size=size)
 
     def __str__(self):
         return f"Pick up event: Hand:{self.hand.name}, Object: {self.object.name}, Timestamp: {self.timestamp}"

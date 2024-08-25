@@ -51,7 +51,8 @@ class EpisodeSegmenter:
 
     def handle_contact_event(self, event: ContactEvent, hands: List[Object]) -> None:
         """
-        Handles the contact event by starting the contact threads for the object and the pickup thread for the object.
+        Handle the contact event by starting the contact threads for the object and the pickup thread for the object.
+
         :param event: The ContactEvent instance that represents the contact event.
         :param hands: A list of Object instances that represent the hands.
         """
@@ -68,12 +69,18 @@ class EpisodeSegmenter:
                 print(f"Creating new thread for object {obj_in_contact.name}")
                 self.start_contact_threads_for_obj_and_update_tracked_objs(obj_in_contact)
 
+            hand_link, obj_link = None, None
             if obj_a in hands and obj_in_contact not in hands:
-                self.start_pick_up_thread_for_obj(link_a, link_b)
+                hand_link, obj_link = link_a, link_b
+            elif obj_in_contact in hands and obj_a not in hands:
+                hand_link, obj_link = link_b, link_a
+            if hand_link is not None and obj_link is not None:
+                self.start_pick_up_thread_for_obj(hand_link, obj_link)
 
     def start_contact_threads_for_obj_and_update_tracked_objs(self, obj: Object):
         """
-        Starts the contact threads for the object and updates the tracked objects.
+        Start the contact threads for the object and updates the tracked objects.
+
         :param obj: The Object instance for which the contact threads are started.
         """
         for detector in (ContactDetector, LossOfContactDetector):
@@ -84,7 +91,8 @@ class EpisodeSegmenter:
 
     def start_pick_up_thread_for_obj(self, hand_link: Link, obj_link: Link):
         """
-        Starts the pickup thread for the object.
+        Start the pickup thread for the object.
+
         :param hand_link: The Link instance that represents the hand.
         :param obj_link: The Link instance that represents the object.
         """
@@ -101,7 +109,8 @@ class EpisodeSegmenter:
 
     def get_hands_and_track_hand_contacts(self) -> List[Object]:
         """
-        Gets the hands from the world and starts the contact threads for the hands.
+        Get the hands from the world and starts the contact threads for the hands.
+
         :return: A list of Object instances that represent the hands.
         """
         hands = self.get_hands()
@@ -112,14 +121,15 @@ class EpisodeSegmenter:
     @staticmethod
     def get_hands() -> List[Object]:
         """
-        Gets the hands from the world.
+        Get the hands from the world.
+
         :return: A list of Object instances that represent the hands.
         """
         return [obj for obj in World.current_world.objects if 'hand' in obj.name.lower()]
 
     def join(self):
         """
-        Joins all the threads.
+        Join all the threads.
         """
         self.motion_generator_thread.join()
 
