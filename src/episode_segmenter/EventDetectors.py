@@ -1,15 +1,15 @@
-from abc import ABC, abstractmethod
-from typing_extensions import Optional, List, Union, Callable
 import threading
 import time
+from abc import ABC, abstractmethod
+
 import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
+from typing_extensions import Optional, List, Union
 
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Transform
 from pycram.world_concepts.world_object import Object
-
 from .Events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, EventLogger, AgentContactEvent, \
     AgentLossOfContactEvent
 
@@ -21,8 +21,12 @@ class PrimitiveEventDetector(threading.Thread, ABC):
     by setting the exit_thread attribute to True.
     """
 
-    def __init__(self, logger: EventLogger,
-                 wait_time: Optional[float] = None):
+    agent_types: List[ObjectType] = [ObjectType.HUMAN, ObjectType.ROBOT]
+    """
+    A list of ObjectType values that represent the agent types.
+    """
+
+    def __init__(self, logger: EventLogger, wait_time: Optional[float] = None):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
@@ -45,10 +49,10 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         pass
 
     @abstractmethod
-    def detect_event(self) -> Event:
+    def detect_events(self) -> List[Event]:
         """
         The event detector function that is called in a loop until the thread is stopped.
-        :return: An object that represents the event.
+        :return: A list of Event instances.
         """
         pass
 
@@ -59,11 +63,10 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         value to introduce a delay between calls to the event detector.
         """
         while not self.exit_thread:
-            event = self.detect_event()
+            events = self.detect_events()
             if self.wait_time is not None:
                 time.sleep(self.wait_time)
-            if event is not None:
-                self.log_event(event)
+            [self.log_event(event) for event in events]
             if self.run_once:
                 break
 
@@ -86,11 +89,8 @@ class PrimitiveEventDetector(threading.Thread, ABC):
 
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
-    def __init__(self, logger: EventLogger,
-                 object_to_track: Object,
-                 with_object: Optional[Object] = None,
-                 max_closeness_distance: Optional[float] = 0.05,
-                 wait_time: Optional[float] = 0.1):
+    def __init__(self, logger: EventLogger, object_to_track: Object, with_object: Optional[Object] = None,
+                 max_closeness_distance: Optional[float] = 0.05, wait_time: Optional[float] = 0.1):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param object_to_track: An instance of the Object class that represents the object to track.
@@ -103,29 +103,35 @@ class AbstractContactDetector(PrimitiveEventDetector, ABC):
         self.max_closeness_distance = max_closeness_distance
         self.latest_contact_points: Optional[ContactPointsList] = ContactPointsList([])
 
-    def detect_event(self) -> Union[Event, None]:
+    @property
+    def obj_type(self) -> ObjectType:
+        """
+        The object type of the object to track.
+        """
+        return self.object_to_track.obj_type
+
+    def detect_events(self) -> List[Event]:
         """
         Detects the closest points between the object to track and another object in the scene if the with_object
         attribute is set, else, between the object to track and all other objects in the scene.
         """
         contact_points = self.get_contact_points()
 
-        event = self.trigger_event(contact_points)
+        events = self.trigger_events(contact_points)
 
         self.latest_contact_points = contact_points
 
-        return event
+        return events
 
     def get_contact_points(self) -> ContactPointsList:
         if self.with_object is not None:
-            contact_points = self.object_to_track.closest_points_with_obj(self.with_object,
-                                                                          self.max_closeness_distance)
+            contact_points = self.object_to_track.closest_points_with_obj(self.with_object, self.max_closeness_distance)
         else:
             contact_points = self.object_to_track.closest_points(self.max_closeness_distance)
         return contact_points
 
     @abstractmethod
-    def trigger_event(self, contact_points: ContactPointsList) -> Union[Event, None]:
+    def trigger_events(self, contact_points: ContactPointsList) -> List[Event]:
         """
         Checks if the detection condition is met, (e.g., the object is in contact with another object),
         and returns an object that represents the event.
@@ -149,19 +155,22 @@ class ContactDetector(AbstractContactDetector):
     def thread_id(self) -> str:
         return self.thread_prefix + str(self.object_to_track.id)
 
-    def trigger_event(self, contact_points: ContactPointsList) -> Union[ContactEvent, None]:
+    def trigger_events(self, contact_points: ContactPointsList) -> Union[List[ContactEvent], List[AgentContactEvent]]:
         """
         Check if the object got into contact with another object.
-        :param contact_points:
-        :return:
+
+        :param contact_points: The current contact points.
+        :return: An instance of the ContactEvent/AgentContactEvent class that represents the event if the object got
+         into contact, else None.
         """
         new_objects_in_contact = contact_points.get_new_objects(self.latest_contact_points)
+        if self.with_object is not None:
+            new_objects_in_contact = [obj for obj in new_objects_in_contact if obj == self.with_object]
         if len(new_objects_in_contact) == 0:
-            return None
-        if self.object_to_track.obj_type in [ObjectType.HUMAN, ObjectType.ROBOT]:
-            return AgentContactEvent(contact_points, agent=self.object_to_track,
-                                     with_object=new_objects_in_contact[0])
-        return ContactEvent(contact_points, of_object=self.object_to_track, with_object=new_objects_in_contact[0])
+            return []
+        event_type = AgentContactEvent if self.obj_type in self.agent_types else ContactEvent
+        return [event_type(contact_points, of_object=self.object_to_track, with_object=new_obj)
+                for new_obj in new_objects_in_contact]
 
 
 class LossOfContactDetector(AbstractContactDetector):
@@ -178,28 +187,28 @@ class LossOfContactDetector(AbstractContactDetector):
     def thread_id(self) -> str:
         return self.thread_prefix + str(self.object_to_track.id)
 
-    def trigger_event(self, contact_points: ContactPointsList) -> Union[LossOfContactEvent, None]:
+    def trigger_events(self, contact_points: ContactPointsList) -> Union[List[LossOfContactEvent],
+                                                                         List[AgentLossOfContactEvent]]:
         """
         Check if the object lost contact with another object.
-        :param contact_points:
-        :return:
+
+        :param contact_points: The current contact points.
+        :return: An instance of the LossOfContactEvent/AgentLossOfContactEvent class that represents the event if the
+         object lost contact, else None.
         """
         objects_that_lost_contact = contact_points.get_objects_that_got_removed(self.latest_contact_points)
+        if self.with_object is not None:
+            objects_that_lost_contact = [obj for obj in objects_that_lost_contact if obj == self.with_object]
         if len(objects_that_lost_contact) == 0:
-            return None
-        if self.object_to_track.obj_type in [ObjectType.HUMAN, ObjectType.ROBOT]:
-            return AgentLossOfContactEvent(contact_points, self.latest_contact_points,
-                                           agent=self.object_to_track,
-                                           with_object=objects_that_lost_contact[0])
-        return LossOfContactEvent(contact_points, self.latest_contact_points, of_object=self.object_to_track,
-                                  with_object=objects_that_lost_contact[0])
+            return []
+        event_type = AgentLossOfContactEvent if self.obj_type in self.agent_types else LossOfContactEvent
+        return [event_type(contact_points, self.latest_contact_points, of_object=self.object_to_track, with_object=obj)
+                for obj in objects_that_lost_contact]
 
 
 class EventDetector(PrimitiveEventDetector, ABC):
 
-    def __init__(self, logger: EventLogger,
-                 starter_event: Event,
-                 wait_time: Optional[float] = None):
+    def __init__(self, logger: EventLogger, starter_event: Event, wait_time: Optional[float] = None):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
@@ -228,9 +237,7 @@ class AgentPickUpDetector(EventDetector):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger,
-                 starter_event: AgentContactEvent,
-                 trans_threshold: Optional[float] = 0.08,
+    def __init__(self, logger: EventLogger, starter_event: AgentContactEvent, trans_threshold: Optional[float] = 0.08,
                  rot_threshold: Optional[float] = 0.4):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -242,8 +249,8 @@ class AgentPickUpDetector(EventDetector):
         super().__init__(logger, starter_event)
         self.agent = starter_event.agent
         self.agent_link = starter_event.agent_link
-        self.object = starter_event.contacted_object
         self.object_link = starter_event.object_link
+        self.object = self.object_link.object
         self.trans_threshold = trans_threshold
         self.rot_threshold = rot_threshold
         self.run_once = True
@@ -255,13 +262,26 @@ class AgentPickUpDetector(EventDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        return isinstance(event, AgentContactEvent)
+        if isinstance(event, AgentContactEvent):
+            contacted_objects = event.contact_points.get_objects_that_have_points()
+            return any(cls.select_pickable_objects(contacted_objects))
+        return False
+
+    @staticmethod
+    def select_pickable_objects(objects: List[Object]) -> List[Object]:
+        """
+        Selects the objects that can be picked up.
+
+        :param objects: A list of Object instances.
+        """
+        return [obj for obj in objects
+                if obj.obj_type not in [ObjectType.HUMAN, ObjectType.ROBOT, ObjectType.ENVIRONMENT]]
 
     @property
     def thread_id(self) -> str:
         return self.thread_prefix + str(self.object.id)
 
-    def detect_event(self) -> Optional[PickUpEvent]:
+    def detect_events(self) -> Optional[PickUpEvent]:
         """
         Detects if the object was picked up by the hand.
         Used Features are:
@@ -275,8 +295,8 @@ class AgentPickUpDetector(EventDetector):
         initial_contact_event = self.get_latest_contact_event(self.object)
         initial_contact_points = initial_contact_event.contact_points
         if not initial_contact_points.is_object_in_the_list(self.agent):
-            print(f"Hand not in contact with object: {self.object.name}")
-            return
+            print(f"Agent not in contact with object: {self.object.name}")
+            return []
 
         pick_up_event = PickUpEvent(self.object, self.agent, initial_contact_event.timestamp)
         latest_stamp = pick_up_event.timestamp
@@ -293,8 +313,8 @@ class AgentPickUpDetector(EventDetector):
                 print(f"continue, object: {self.object.name}")
                 continue
             if self.agent in objects_that_lost_contact:
-                print(f"Hand lost contact with object: {self.object.name}")
-                return
+                print(f"Agent lost contact with object: {self.object.name}")
+                return []
 
             supporting_surface_found = self.check_for_supporting_surface(objects_that_lost_contact,
                                                                          initial_contact_points)
@@ -307,7 +327,7 @@ class AgentPickUpDetector(EventDetector):
 
         print(f"Object picked up: {self.object.name}")
 
-        return pick_up_event
+        return [pick_up_event]
 
     def check_for_supporting_surface(self, objects: List[Object], contact_points: ContactPointsList) -> bool:
         """
@@ -379,8 +399,7 @@ class AgentPickUpDetector(EventDetector):
             time.sleep(0.01)
         return latest_contact_event
 
-    def get_latest_loss_of_contact_points(self, obj: Object,
-                                          after_timestamp: Optional[float] = 0) -> ContactPointsList:
+    def get_latest_loss_of_contact_points(self, obj: Object, after_timestamp: Optional[float] = 0) -> ContactPointsList:
         """
         Gets the latest loss of contact points from the logger.
         :param obj: An instance of the Object class that represents the object to get the loss of contact points from.
@@ -401,14 +420,12 @@ class AgentPickUpDetector(EventDetector):
         while latest_loss_contact_event is None:
             latest_loss_contact_event = self.logger.get_latest_event_of_thread(thread_id)
             if latest_loss_contact_event is not None:
-                latest_loss_contact_event = None if latest_loss_contact_event.timestamp < after_timestamp else \
-                    latest_loss_contact_event
+                latest_loss_contact_event = None if latest_loss_contact_event.timestamp < after_timestamp else latest_loss_contact_event
             if latest_loss_contact_event is None:
                 time.sleep(0.01)
         return latest_loss_contact_event
 
-    def calculate_transform_difference_and_check_if_small(self, transform_1: Transform, transform_2: Transform) \
-            -> bool:
+    def calculate_transform_difference_and_check_if_small(self, transform_1: Transform, transform_2: Transform) -> bool:
         """
         Calculates the translation and rotation of the object with respect to the hand to check if it was picked up,
          uses the translation and rotation thresholds to determine if the object was picked up.

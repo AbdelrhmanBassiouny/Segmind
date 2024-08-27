@@ -1,4 +1,4 @@
-neem_pycram_interface==1.0.167
+neem_pycram_interface==1.0.169
 trimesh
 dm_control
 pydub

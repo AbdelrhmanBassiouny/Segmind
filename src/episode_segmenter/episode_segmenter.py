@@ -5,10 +5,11 @@ from abc import ABC, abstractmethod
 from typing_extensions import List, Type, Optional
 
 from pycram.datastructures.dataclasses import ContactPointsList
+from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
 from .EventDetectors import ContactDetector, LossOfContactDetector, EventDetector
-from .Events import ContactEvent, EventLogger, Event
+from .Events import ContactEvent, EventLogger, Event, AgentContactEvent
 
 
 class EpisodePlayer(threading.Thread, ABC):
@@ -115,7 +116,10 @@ class EpisodeSegmenter(ABC):
         :param event: The ContactEvent instance that represents the contact event with the object.
         """
         if event is None:
-            event = ContactEvent(ContactPointsList([]), obj)
+            if obj.obj_type in [ObjectType.HUMAN, ObjectType.ROBOT]:
+                event = AgentContactEvent(ContactPointsList([]), obj)
+            else:
+                event = ContactEvent(ContactPointsList([]), obj)
         for detector in (ContactDetector, LossOfContactDetector):
             detector_thread = detector(self.logger, obj)
             detector_thread.start()
@@ -154,8 +158,8 @@ class EpisodeSegmenter(ABC):
 
 class AgentBasedEpisodeSegmenter(EpisodeSegmenter):
     """
-    The EpisodeSegmenter class is used to segment motions into activities (e.g. PickUp) and events by using
-     event detectors such as contact, and loss of contact events.
+    The AgentBasedEpisodeSegmenter class is used to segment motions into activities (e.g. PickUp) by tracking the
+     events that are relevant to the agent for example contact events of the hands or robot.
     """
 
     def process_event(self, event: Event) -> None:
@@ -163,21 +167,21 @@ class AgentBasedEpisodeSegmenter(EpisodeSegmenter):
             self.update_tracked_contacts(event)
 
     def run_initial_event_detectors(self) -> None:
-        self.track_hand_contacts()
+        self.track_agent_contacts()
 
-    def track_hand_contacts(self) -> None:
+    def track_agent_contacts(self) -> None:
         """
-        Start the contact threads for the hands.
+        Start the contact threads for the agents.
         """
-        hands = self.get_hands()
-        for hand in hands:
-            self.start_contact_threads_for_obj_and_update_tracked_objs(hand)
+        agents = self.get_agents()
+        for agent in agents:
+            self.start_contact_threads_for_obj_and_update_tracked_objs(agent)
 
     @staticmethod
-    def get_hands() -> List[Object]:
+    def get_agents() -> List[Object]:
         """
         Get the hands from the world.
 
         :return: A list of Object instances that represent the hands.
         """
-        return [obj for obj in World.current_world.objects if 'hand' in obj.name.lower()]
+        return [obj for obj in World.current_world.objects if obj.obj_type in [ObjectType.HUMAN, ObjectType.ROBOT]]

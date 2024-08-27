@@ -1,3 +1,4 @@
+import datetime
 import threading
 import time
 from typing_extensions import Optional, List, Type
@@ -53,4 +54,5 @@ class NEEMPlayer(EpisodePlayer):
         return self.pni.replay_environment_initialized
 
     def run(self):
-        self.pni.replay_motions_in_query(real_time=True)
+        self.pni.replay_motions_in_query(real_time=False,
+                                         step_time=datetime.timedelta(milliseconds=20))

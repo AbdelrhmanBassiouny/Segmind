@@ -42,7 +42,7 @@ class AbstractContactEvent(Event, ABC):
         return self.of_object == other.of_object and self.with_object == other.with_object
 
     def __hash__(self):
-        return hash((self.of_object, self.with_object, self.__class__))
+        return hash((self.of_object, self.with_object, self.__class__.__name__))
 
     def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
         if position is None:
@@ -66,9 +66,8 @@ class AbstractContactEvent(Event, ABC):
         return f"{self.main_link.name} lost contact with {self.link_names}"
 
     @property
-    @abstractmethod
     def object_names(self):
-        pass
+        return [obj.name for obj in self.objects]
 
     @property
     def link_names(self):
@@ -97,40 +96,19 @@ class ContactEvent(AbstractContactEvent):
         return Color(0, 0, 1, 1)
 
     @property
-    def object_names(self):
-        return self.contact_points.get_names_of_objects_that_have_points()
-
-    @property
     def objects(self):
         return self.contact_points.get_objects_that_have_points()
 
     @property
     def main_link(self) -> Link:
-        return self.contact_points[0].link_a
+        if len(self.contact_points) > 0:
+            return self.contact_points[0].link_a
+        else:
+            raise IndexError(f"No contact points found for {self.of_object.name} in {self.__class__.__name__}")
 
     @property
     def links(self) -> List[Link]:
-        links = []
-        for obj in self.objects:
-            links.extend(self.contact_points.get_links_in_contact_of_object(obj))
-        return links
-
-    def check_if_two_objects_are_in_contact(self, object_a: Object, object_b: Object) -> bool:
-        """
-        Check if two objects are in contact by checking if one of the contact points is between the two objects,
-        or if the two objects are the :attr:`of_object` and :attr:`with_object` of the contact event.
-        """
-        if self.with_object is None:
-            if object_a == self.of_object:
-                return object_b in self.contact_points.get_objects_that_have_points()
-            elif object_b == self.of_object:
-                return object_a in self.contact_points.get_objects_that_have_points()
-        else:
-            if object_a == self.with_object:
-                return object_b == self.of_object
-            elif object_b == self.with_object:
-                return object_a == self.of_object
-        return False
+        return self.contact_points.get_links_in_contact()
 
     def __str__(self):
         return f"Contact {self.contact_points[0].link_a.object.name}: {self.object_names}"
@@ -153,19 +131,12 @@ class LossOfContactEvent(AbstractContactEvent):
         return Color(1, 0, 0, 1)
 
     @property
-    def object_names(self):
-        return [obj.name for obj in self.contact_points.get_objects_that_got_removed(self.latest_contact_points)]
-
-    @property
     def main_link(self) -> Link:
         return self.latest_contact_points[0].link_a
 
     @property
     def links(self) -> List[Link]:
-        links = []
-        for obj in self.objects:
-            links.extend(self.latest_contact_points.get_links_in_contact_of_object(obj))
-        return links
+        return self.contact_points.get_links_that_got_removed(self.latest_contact_points)
 
     @property
     def objects(self):
@@ -178,71 +149,29 @@ class LossOfContactEvent(AbstractContactEvent):
         return self.__str__()
 
 
-class AbstractAgentContactEvent(ContactEvent, ABC):
-
-    def __init__(self, contact_points: ContactPointsList,
-                 agent: Object,
-                 with_object: Optional[Object] = None,
-                 timestamp: Optional[float] = None):
-        super().__init__(contact_points, agent, with_object, timestamp)
-        self.agent: Object = agent
-
+class AbstractAgentContact(AbstractContactEvent, ABC):
     @property
-    def agent_name(self):
-        return self.agent.name
-
-    @property
-    @abstractmethod
-    def agent_link(self):
-        pass
-
-    @property
-    def agent_link_name(self):
-        return self.agent_link.name
-
-    @property
-    def object_name(self):
-        return self.contacted_object.name
-
-    @property
-    def contacted_object(self):
-        return self.object_link.object
-
-    @property
-    def object_link_name(self):
-        return self.object_link.name
-
-    @property
-    @abstractmethod
-    def object_link(self):
-        pass
-
-
-class AgentContactEvent(AbstractAgentContactEvent):
+    def agent(self):
+        return self.of_object
 
     @property
     def agent_link(self):
-        return self.contact_points[0].link_a
+        return self.main_link
+
+    @property
+    @abstractmethod
+    def object_link(self) -> Link:
+        pass
+
+
+class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
     @property
     def object_link(self):
         return self.contact_points[0].link_b
 
 
-class AgentLossOfContactEvent(AbstractAgentContactEvent):
-
-    def __init__(self, contact_points: ContactPointsList,
-                 latest_contact_points: ContactPointsList,
-                 agent: Object,
-                 with_object: Optional[Object] = None,
-                 timestamp: Optional[float] = None):
-        super().__init__(contact_points, agent, with_object, timestamp)
-        self.agent: Object = agent
-        self.latest_contact_points = latest_contact_points
-
-    @property
-    def agent_link(self):
-        return self.latest_contact_points[0].link_a
+class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
     def object_link(self):
