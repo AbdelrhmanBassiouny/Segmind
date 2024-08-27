@@ -281,7 +281,7 @@ class AgentPickUpDetector(EventDetector):
     def thread_id(self) -> str:
         return self.thread_prefix + str(self.object.id)
 
-    def detect_events(self) -> Optional[PickUpEvent]:
+    def detect_events(self) -> List[PickUpEvent]:
         """
         Detects if the object was picked up by the hand.
         Used Features are:

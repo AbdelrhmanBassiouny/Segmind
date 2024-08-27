@@ -11,6 +11,12 @@ from pycram.world_concepts.world_object import Object, Link
 
 
 class Event(ABC):
+
+    annotation_size: float = 1
+    """
+    The size of the annotation text.
+    """
+
     def __init__(self, timestamp: Optional[float] = None):
         self.timestamp = time.time() if timestamp is None else timestamp
 
@@ -44,7 +50,7 @@ class AbstractContactEvent(Event, ABC):
     def __hash__(self):
         return hash((self.of_object, self.with_object, self.__class__.__name__))
 
-    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
+    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = None) -> TextAnnotation:
         if position is None:
             position = [2, 1, 2]
         self.main_link.color = self.color
@@ -63,7 +69,13 @@ class AbstractContactEvent(Event, ABC):
 
     @property
     def annotation_text(self) -> str:
-        return f"{self.main_link.name} lost contact with {self.link_names}"
+        return self.__str__()
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.main_link.object.name} - {self.object_names}"
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def object_names(self):
@@ -110,12 +122,6 @@ class ContactEvent(AbstractContactEvent):
     def links(self) -> List[Link]:
         return self.contact_points.get_links_in_contact()
 
-    def __str__(self):
-        return f"Contact {self.contact_points[0].link_a.object.name}: {self.object_names}"
-
-    def __repr__(self):
-        return self.__str__()
-
 
 class LossOfContactEvent(AbstractContactEvent):
     def __init__(self, contact_points: ContactPointsList,
@@ -141,12 +147,6 @@ class LossOfContactEvent(AbstractContactEvent):
     @property
     def objects(self):
         return self.contact_points.get_objects_that_got_removed(self.latest_contact_points)
-
-    def __str__(self):
-        return f"Loss of contact {self.latest_contact_points[0].link_a.object.name}: {self.object_names}"
-
-    def __repr__(self):
-        return self.__str__()
 
 
 class AbstractAgentContact(AbstractContactEvent, ABC):
@@ -205,9 +205,11 @@ class PickUpEvent(Event):
             return None
         return self.end_timestamp - self.timestamp
 
-    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = 2) -> TextAnnotation:
+    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = None) -> TextAnnotation:
         if position is None:
             position = [2, 1, 2]
+        if size is None:
+            size = self.annotation_size
         color = Color(0, 1, 0, 1)
         self.agent.set_color(color)
         self.picked_object.set_color(color)
@@ -310,7 +312,8 @@ class EventAnnotationThread(threading.Thread):
                     text_ann.position[2] += self.step_z_offset
                     text_ann.id = World.current_world.add_text(text_ann.text,
                                                                text_ann.position,
-                                                               color=text_ann.color)
+                                                               color=text_ann.color,
+                                                               size=text_ann.size)
             z_offset = self.get_next_z_offset()
             text_ann = event.annotate([1.5, 1, z_offset])
             self.current_annotations.append(text_ann)
