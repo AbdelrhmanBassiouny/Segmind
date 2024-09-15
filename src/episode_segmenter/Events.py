@@ -3,7 +3,8 @@ import threading
 import time
 from abc import abstractmethod, ABC
 
-from typing_extensions import Optional, List, Dict
+import rospy
+from typing_extensions import Optional, List, Dict, Type
 
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation
 from pycram.datastructures.world import World
@@ -48,7 +49,8 @@ class AbstractContactEvent(Event, ABC):
         return self.of_object == other.of_object and self.with_object == other.with_object
 
     def __hash__(self):
-        return hash((self.of_object, self.with_object, self.__class__.__name__))
+        return hash((self.of_object.name, self.with_object.name if self.with_object is not None else '',
+                     self.__class__.__name__))
 
     def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = None) -> TextAnnotation:
         if position is None:
@@ -72,7 +74,7 @@ class AbstractContactEvent(Event, ABC):
         return self.__str__()
 
     def __str__(self):
-        return f"{self.__class__.__name__}: {self.main_link.object.name} - {self.object_names}"
+        return f"{self.__class__.__name__}: {self.of_object.name} - {self.with_object.name if self.with_object else ''}"
 
     def __repr__(self):
         return self.__str__()
@@ -116,7 +118,7 @@ class ContactEvent(AbstractContactEvent):
         if len(self.contact_points) > 0:
             return self.contact_points[0].link_a
         else:
-            raise IndexError(f"No contact points found for {self.of_object.name} in {self.__class__.__name__}")
+            rospy.logwarn(f"No contact points found for {self.of_object.name} in {self.__class__.__name__}")
 
     @property
     def links(self) -> List[Link]:
@@ -158,6 +160,10 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
     def agent_link(self) -> Link:
         return self.main_link
 
+    def with_object_contact_link(self) -> Link:
+        if self.with_object is not None:
+            return [link for link in self.links if link.object == self.with_object][0]
+
     @property
     @abstractmethod
     def object_link(self) -> Link:
@@ -168,14 +174,20 @@ class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
     @property
     def object_link(self) -> Link:
-        return self.contact_points[0].link_b
+        if self.with_object is not None:
+            return self.with_object_contact_link()
+        else:
+            return self.contact_points[0].link_b
 
 
 class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
     def object_link(self) -> Link:
-        return self.latest_contact_points[0].link_b
+        if self.with_object is not None:
+            return self.with_object_contact_link()
+        else:
+            return self.latest_contact_points[0].link_b
 
 
 class PickUpEvent(Event):
@@ -228,11 +240,12 @@ class PickUpEvent(Event):
 
 
 class EventLogger:
-    def __init__(self, annotate_events: bool = False):
+    def __init__(self, annotate_events: bool = False, events_to_annotate: List[Type[Event]] = None):
         self.timeline = {}
         self.event_queue = queue.Queue()
         self.lock = threading.Lock()
         self.annotate_events = annotate_events
+        self.events_to_annotate = events_to_annotate
         if annotate_events:
             self.annotation_queue = queue.Queue()
             self.annotation_thread = EventAnnotationThread(self)
@@ -240,7 +253,7 @@ class EventLogger:
 
     def log_event(self, thread_id, event: Event):
         self.event_queue.put((thread_id, event))
-        if self.annotate_events:
+        if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)):
             self.annotation_queue.put(event)
         with self.lock:
             if thread_id not in self.timeline:

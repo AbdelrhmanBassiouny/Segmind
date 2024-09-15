@@ -11,7 +11,7 @@ from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Transform
 from pycram.world_concepts.world_object import Object, Link
 from .Events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, EventLogger, AgentContactEvent, \
-    AgentLossOfContactEvent
+    AgentLossOfContactEvent, AbstractContactEvent
 
 
 class PrimitiveEventDetector(threading.Thread, ABC):
@@ -87,6 +87,15 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         """
         return self.thread_id in self.logger.get_events().keys()
 
+    @abstractmethod
+    def filter_event(self, event: Event) -> Event:
+        """
+        Filters the event before logging/using it.
+        :param event: An object that represents the event.
+        :return: An object that represents the filtered event.
+        """
+        pass
+
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
     def __init__(self, logger: EventLogger, object_to_track: Object, with_object: Optional[Object] = None,
@@ -139,6 +148,15 @@ class AbstractContactDetector(PrimitiveEventDetector, ABC):
         :return: An object that represents the event.
         """
         pass
+
+    def filter_event(self, event: AbstractContactEvent) -> Event:
+        """
+        Filters the contact event by removing the contact points that are not in the list of objects to track.
+        :param event: An object that represents the event.
+        :return: An object that represents the filtered event.
+        """
+        event.with_object = self.with_object
+        return event
 
 
 class ContactDetector(AbstractContactDetector):
@@ -255,11 +273,22 @@ class AgentPickUpDetector(EventDetector):
         self.rot_threshold = rot_threshold
         self.run_once = True
 
-    def get_object_link_from_event(self, event: AgentContactEvent) -> Link:
+    @classmethod
+    def filter_event(cls, event: AgentContactEvent) -> AgentContactEvent:
+        """
+        Filters the contact event by removing the contact points that are not in the list of objects to track.
+        :param event: An object that represents the event.
+        :return: An object that represents the filtered event.
+        """
+        event.with_object = cls.get_object_link_from_event(event).object
+        return event
+
+    @classmethod
+    def get_object_link_from_event(cls, event: AgentContactEvent) -> Link:
         """
         Get the object link from the event.
         """
-        pickable_objects = self.find_pickable_objects_from_contact_event(event)
+        pickable_objects = cls.find_pickable_objects_from_contact_event(event)
         links_in_contact = event.links
         return [link for link in links_in_contact if link.object in pickable_objects][0]
 

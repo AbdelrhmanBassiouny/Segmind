@@ -9,7 +9,7 @@ from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
 from .EventDetectors import ContactDetector, LossOfContactDetector, EventDetector
-from .Events import ContactEvent, EventLogger, Event, AgentContactEvent
+from .Events import ContactEvent, EventLogger, Event, AgentContactEvent, PickUpEvent
 
 
 class EpisodePlayer(threading.Thread, ABC):
@@ -39,8 +39,8 @@ class EpisodeSegmenter(ABC):
         """
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[EventDetector] = detectors_to_start
-        self.logger = EventLogger(annotate_events)
-        self.avoid_objects = ['particle', 'floor', 'kitchen']
+        self.logger = EventLogger(annotate_events, [PickUpEvent])
+        self.avoid_objects = ['particle', 'floor', 'kitchen']  # TODO: Make it a function, to be more general
         self.tracked_objects = []
         self.detector_threads = {}
         self.pick_up_detectors = {}
@@ -105,7 +105,8 @@ class EpisodeSegmenter(ABC):
 
             for event_detector in self.detectors_to_start:
                 if event_detector.start_condition_checker(event):
-                    self.start_detector_thread_for_starter_event(event, event_detector)
+                    filtered_event = event_detector.filter_event(event)
+                    self.start_detector_thread_for_starter_event(filtered_event, event_detector)
 
     def start_contact_threads_for_obj_and_update_tracked_objs(self, obj: Object,
                                                               event: Optional[ContactEvent] = None) -> None:
@@ -123,7 +124,7 @@ class EpisodeSegmenter(ABC):
         for detector in (ContactDetector, LossOfContactDetector):
             detector_thread = detector(self.logger, obj)
             detector_thread.start()
-            self.detector_threads[event] = detector_thread
+            self.detector_threads[(event, detector)] = detector_thread
         self.tracked_objects.append(obj)
 
     def start_detector_thread_for_starter_event(self, starter_event: Event,
@@ -134,13 +135,13 @@ class EpisodeSegmenter(ABC):
         :param starter_event: The event that starts the detector thread.
         :param detector_type: The type of the detector.
         """
-        if starter_event in self.detector_threads.keys():
-            detector = self.detector_threads[starter_event]
+        if (starter_event, detector_type) in self.detector_threads.keys():
+            detector = self.detector_threads[(starter_event, detector_type)]
             if detector.is_alive() or (detector.detected_before and detector.run_once):
                 return
         detector = detector_type(self.logger, starter_event)
         detector.start()
-        self.detector_threads[starter_event] = detector
+        self.detector_threads[(starter_event, detector_type)] = detector
         print(f"Created {detector_type.__name__} for starter event {starter_event}")
 
     def join(self):

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "episode_segmenter"
-version = "1.0.18"
+version = "1.0.19"
 description = "Annotates activitiy episodes represented by meshes moving in a 3D environment with the corresponding events, actions and activities."
 readme = "README.md"
 authors = [{ name = "Abdelrhman Bassiouny", email = "abassiou@uni-bremen.de" }]
