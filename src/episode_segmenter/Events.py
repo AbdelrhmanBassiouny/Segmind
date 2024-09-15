@@ -151,11 +151,11 @@ class LossOfContactEvent(AbstractContactEvent):
 
 class AbstractAgentContact(AbstractContactEvent, ABC):
     @property
-    def agent(self):
+    def agent(self) -> Object:
         return self.of_object
 
     @property
-    def agent_link(self):
+    def agent_link(self) -> Link:
         return self.main_link
 
     @property
@@ -167,14 +167,14 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
 class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
     @property
-    def object_link(self):
+    def object_link(self) -> Link:
         return self.contact_points[0].link_b
 
 
 class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
-    def object_link(self):
+    def object_link(self) -> Link:
         return self.latest_contact_points[0].link_b
 
 

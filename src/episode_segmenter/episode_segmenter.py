@@ -105,7 +105,7 @@ class EpisodeSegmenter(ABC):
 
             for event_detector in self.detectors_to_start:
                 if event_detector.start_condition_checker(event):
-                    self.start_detector_thread_for_starter_evnet(event, event_detector)
+                    self.start_detector_thread_for_starter_event(event, event_detector)
 
     def start_contact_threads_for_obj_and_update_tracked_objs(self, obj: Object,
                                                               event: Optional[ContactEvent] = None) -> None:
@@ -126,7 +126,7 @@ class EpisodeSegmenter(ABC):
             self.detector_threads[event] = detector_thread
         self.tracked_objects.append(obj)
 
-    def start_detector_thread_for_starter_evnet(self, starter_event: Event,
+    def start_detector_thread_for_starter_event(self, starter_event: Event,
                                                 detector_type: Type[EventDetector]):
         """
         Start the detector thread for the given starter event.
@@ -149,7 +149,7 @@ class EpisodeSegmenter(ABC):
         """
         self.episode_player.join()
 
-        for detector_thread in self.detector_threads:
+        for detector_thread in self.detector_threads.values():
             detector_thread.exit_thread = True
             detector_thread.join()
 

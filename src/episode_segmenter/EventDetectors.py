@@ -9,7 +9,7 @@ from typing_extensions import Optional, List, Union
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Transform
-from pycram.world_concepts.world_object import Object
+from pycram.world_concepts.world_object import Object, Link
 from .Events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, EventLogger, AgentContactEvent, \
     AgentLossOfContactEvent
 
@@ -249,11 +249,19 @@ class AgentPickUpDetector(EventDetector):
         super().__init__(logger, starter_event)
         self.agent = starter_event.agent
         self.agent_link = starter_event.agent_link
-        self.object_link = starter_event.object_link
+        self.object_link = self.get_object_link_from_event(starter_event)
         self.object = self.object_link.object
         self.trans_threshold = trans_threshold
         self.rot_threshold = rot_threshold
         self.run_once = True
+
+    def get_object_link_from_event(self, event: AgentContactEvent) -> Link:
+        """
+        Get the object link from the event.
+        """
+        pickable_objects = self.find_pickable_objects_from_contact_event(event)
+        links_in_contact = event.links
+        return [link for link in links_in_contact if link.object in pickable_objects][0]
 
     @classmethod
     def start_condition_checker(cls, event: Event) -> bool:
@@ -262,10 +270,17 @@ class AgentPickUpDetector(EventDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        if isinstance(event, AgentContactEvent):
-            contacted_objects = event.contact_points.get_objects_that_have_points()
-            return any(cls.select_pickable_objects(contacted_objects))
-        return False
+        return isinstance(event, AgentContactEvent) and any(cls.find_pickable_objects_from_contact_event(event))
+
+    @classmethod
+    def find_pickable_objects_from_contact_event(cls, event: AgentContactEvent) -> List[Object]:
+        """
+        Find the pickable objects from the contact event.
+
+        :param event: The AgentContactEvent instance that represents the contact event.
+        """
+        contacted_objects = event.contact_points.get_objects_that_have_points()
+        return cls.select_pickable_objects(contacted_objects)
 
     @staticmethod
     def select_pickable_objects(objects: List[Object]) -> List[Object]:

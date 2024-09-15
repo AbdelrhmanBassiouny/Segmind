@@ -55,4 +55,4 @@ class NEEMPlayer(EpisodePlayer):
 
     def run(self):
         self.pni.replay_motions_in_query(real_time=False,
-                                         step_time=datetime.timedelta(milliseconds=20))
+                                         step_time=datetime.timedelta(milliseconds=1))
