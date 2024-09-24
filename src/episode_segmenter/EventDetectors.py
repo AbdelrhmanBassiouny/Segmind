@@ -3,15 +3,14 @@ import time
 from abc import ABC, abstractmethod
 
 import numpy as np
-from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import Optional, List, Union
 
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
-from pycram.datastructures.pose import Transform
 from pycram.world_concepts.world_object import Object, Link
 from .Events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, EventLogger, AgentContactEvent, \
     AgentLossOfContactEvent, AbstractContactEvent
+from .utils import get_angle_between_vectors
 
 
 class PrimitiveEventDetector(threading.Thread, ABC):
@@ -39,6 +38,14 @@ class PrimitiveEventDetector(threading.Thread, ABC):
 
         self.exit_thread: Optional[bool] = False
         self.run_once = False
+
+    @property
+    @abstractmethod
+    def thread_prefix(self) -> str:
+        """
+        A string that is used as a prefix for the thread ID.
+        """
+        pass
 
     @property
     @abstractmethod
@@ -95,6 +102,34 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         :return: An object that represents the filtered event.
         """
         pass
+
+    def get_latest_event(self) -> Event:
+        """
+        Get the latest event from the logger.
+
+        :return: An instance of the ContactEvent class that represents the contact event.
+        """
+        latest_event = None
+        while latest_event is None:
+            latest_event = self.logger.get_latest_event_of_thread(self.thread_id)
+            time.sleep(0.01)
+        return latest_event
+
+    def get_latest_event_after_timestamp(self, timestamp: float) -> Event:
+        """
+        Get the latest loss of contact event from the logger.
+
+        :param timestamp: A float value that represents the timestamp to get the loss of contact event after.
+        :return: An instance of the LossOfContactEvent class that represents the loss of contact event.
+        """
+        latest_event = None
+        while latest_event is None:
+            latest_event = self.logger.get_latest_event_of_thread(self.thread_id)
+            if latest_event is not None:
+                latest_event = None if latest_event.timestamp < timestamp else latest_event
+            if latest_event is None:
+                time.sleep(0.01)
+        return latest_event
 
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
@@ -164,14 +199,16 @@ class ContactDetector(AbstractContactDetector):
     A thread that detects if the object got into contact with another object.
     """
 
-    thread_prefix = "contact_"
-    """
-    A string that is used as a prefix for the thread ID.
-    """
-
     @property
     def thread_id(self) -> str:
         return self.thread_prefix + str(self.object_to_track.id)
+
+    @property
+    def thread_prefix(self) -> str:
+        """
+        A string that is used as a prefix for the thread ID.
+        """
+        return "contact_"
 
     def trigger_events(self, contact_points: ContactPointsList) -> Union[List[ContactEvent], List[AgentContactEvent]]:
         """
@@ -196,14 +233,16 @@ class LossOfContactDetector(AbstractContactDetector):
     A thread that detects if the object lost contact with another object.
     """
 
-    thread_prefix = "loss_contact_"
-    """
-    A string that is used as a prefix for the thread ID.
-    """
-
     @property
     def thread_id(self) -> str:
         return self.thread_prefix + str(self.object_to_track.id)
+
+    @property
+    def thread_prefix(self) -> str:
+        """
+        A string that is used as a prefix for the thread ID.
+        """
+        return "loss_contact_"
 
     def trigger_events(self, contact_points: ContactPointsList) -> Union[List[LossOfContactEvent],
                                                                          List[AgentLossOfContactEvent]]:
@@ -250,11 +289,6 @@ class AgentPickUpDetector(EventDetector):
     A thread that detects if the object was picked up by the hand.
     """
 
-    thread_prefix = "pick_up_"
-    """
-    A string that is used as a prefix for the thread ID.
-    """
-
     def __init__(self, logger: EventLogger, starter_event: AgentContactEvent, trans_threshold: Optional[float] = 0.08,
                  rot_threshold: Optional[float] = 0.4):
         """
@@ -272,6 +306,13 @@ class AgentPickUpDetector(EventDetector):
         self.trans_threshold = trans_threshold
         self.rot_threshold = rot_threshold
         self.run_once = True
+
+    @property
+    def thread_prefix(self) -> str:
+        """
+        A string that is used as a prefix for the thread ID.
+        """
+        return "pick_up_"
 
     @classmethod
     def filter_event(cls, event: AgentContactEvent) -> AgentContactEvent:
@@ -348,7 +389,7 @@ class AgentPickUpDetector(EventDetector):
         supporting_surface_found = False
         while not supporting_surface_found:
             time.sleep(0.01)
-            loss_of_contact_event = self.get_latest_loss_of_contact_event(self.object, latest_stamp)
+            loss_of_contact_event = self.get_latest_event_after_timestamp(latest_stamp)
             loss_of_contact_points = loss_of_contact_event.contact_points
 
             objects_that_lost_contact = loss_of_contact_points.get_objects_that_got_removed(initial_contact_points)
@@ -373,189 +414,25 @@ class AgentPickUpDetector(EventDetector):
 
         return [pick_up_event]
 
-    def check_for_supporting_surface(self, objects: List[Object], contact_points: ContactPointsList) -> bool:
+    @staticmethod
+    def check_for_supporting_surface(objects: List[Object], contact_points: ContactPointsList) -> bool:
         """
-        Checks if any of the objects in the list are supporting surfaces.
+        Check if any of the objects in the list are supporting surfaces.
+
         :param objects: An instance of the Object class that represents the object to check.
         :param contact_points: A list of ContactPoint instances that represent the contact points of the object.
         :return: A boolean value that represents the condition for the object to be considered as a supporting surface.
         """
         supporting_surface = None
-        opposite_gravity = [0, 0, 9.81]
+        opposite_gravity = [0, 0, 1]
         smallest_angle = np.pi / 4
         for obj in objects:
             normals = contact_points.get_normals_of_object(obj)
             for normal in normals:
                 # check if normal is pointing upwards opposite to gravity by finding the angle between the normal
                 # and gravity vector.
-                angle = self.get_angle_between_vectors(normal, opposite_gravity)
+                angle = get_angle_between_vectors(normal, opposite_gravity)
                 if angle < smallest_angle:
                     smallest_angle = angle
                     supporting_surface = obj
-        supporting_surface_cond = supporting_surface is not None
-        return supporting_surface_cond
-
-    @staticmethod
-    def get_angle_between_vectors(vector_1: List[float], vector_2: List[float]) -> float:
-        """
-        Gets the angle between two vectors.
-        :param vector_1: A list of float values that represent the first vector.
-        :param vector_2: A list of float values that represent the second vector.
-        :return: A float value that represents the angle between the two vectors.
-        """
-        return np.arccos(np.dot(vector_1, vector_2) / (np.linalg.norm(vector_1) * np.linalg.norm(vector_2)))
-
-    def get_latest_contact_points(self, obj: Object) -> ContactPointsList:
-        """
-        Gets the latest contact points from the logger.
-        :param obj: An instance of the Object class that represents the object to get the contact points from.
-        :return: A list of ContactPoint instances that represent the contact points.
-        """
-        return self.get_latest_contact_event(obj).contact_points
-
-    def get_latest_contact_event_between_hand_and_obj(self) -> ContactEvent:
-        """
-        Gets the latest contact event from the logger.
-        :return: An instance of the ContactEvent class that represents the contact event.
-        """
-        hand_thread_id = ContactDetector.thread_prefix + str(self.agent.id)
-        all_events = self.logger.get_events()
-        hand_contact_events = all_events[hand_thread_id]
-        latest_contact_event = None
-        for event in reversed(hand_contact_events):
-            assert isinstance(event, ContactEvent), f"Event is not a contact event: {event}"
-            if event.contact_points.is_object_in_the_list(self.object):
-                latest_contact_event = event
-                break
-        assert latest_contact_event is not None, f"No contact event for {self.agent.name} and {self.object.name}"
-        return latest_contact_event
-
-    def get_latest_contact_event(self, obj: Object) -> ContactEvent:
-        """
-        Gets the latest contact event from the logger.
-        :param obj: An instance of the Object class that represents the object to get the contact event from.
-        :return: An instance of the ContactEvent class that represents the contact event.
-        """
-        latest_contact_event = None
-        thread_id = ContactDetector.thread_prefix + str(obj.id)
-        while latest_contact_event is None:
-            latest_contact_event = self.logger.get_latest_event_of_thread(thread_id)
-            time.sleep(0.01)
-        return latest_contact_event
-
-    def get_latest_loss_of_contact_points(self, obj: Object, after_timestamp: Optional[float] = 0) -> ContactPointsList:
-        """
-        Gets the latest loss of contact points from the logger.
-        :param obj: An instance of the Object class that represents the object to get the loss of contact points from.
-        :param after_timestamp: A float value that represents the timestamp to get the loss of contact points after.
-        :return: A list of ContactPoint instances that represent the loss of contact points.
-        """
-        return self.get_latest_loss_of_contact_event(obj, after_timestamp).contact_points
-
-    def get_latest_loss_of_contact_event(self, obj: Object, after_timestamp: Optional[float] = 0) -> LossOfContactEvent:
-        """
-        Gets the latest loss of contact event from the logger.
-        :param obj: An instance of the Object class that represents the object to get the loss of contact event from.
-        :param after_timestamp: A float value that represents the timestamp to get the loss of contact event after.
-        :return: An instance of the LossOfContactEvent class that represents the loss of contact event.
-        """
-        latest_loss_contact_event = None
-        thread_id = LossOfContactDetector.thread_prefix + str(obj.id)
-        while latest_loss_contact_event is None:
-            latest_loss_contact_event = self.logger.get_latest_event_of_thread(thread_id)
-            if latest_loss_contact_event is not None:
-                latest_loss_contact_event = None if latest_loss_contact_event.timestamp < after_timestamp else latest_loss_contact_event
-            if latest_loss_contact_event is None:
-                time.sleep(0.01)
-        return latest_loss_contact_event
-
-    def calculate_transform_difference_and_check_if_small(self, transform_1: Transform, transform_2: Transform) -> bool:
-        """
-        Calculates the translation and rotation of the object with respect to the hand to check if it was picked up,
-         uses the translation and rotation thresholds to determine if the object was picked up.
-        :param transform_1: The transform of the object at the first time step.
-        :param transform_2: The transform of the object at the second time step.
-        :return: A tuple of two boolean values that represent the conditions for the translation and rotation of the
-        object to be considered as picked up.
-        """
-        trans_1, quat_1 = transform_1.translation_as_list(), transform_1.rotation_as_list()
-        trans_2, quat_2 = transform_2.translation_as_list(), transform_2.rotation_as_list()
-        trans_diff_cond = self.calculate_translation_difference_and_check(trans_1, trans_2)
-        rot_diff_cond = self.calculate_angle_between_quaternions_and_check(quat_1, quat_2)
-        print(f"trans_diff_cond {trans_diff_cond}, rot_diff_cond {rot_diff_cond}")
-        return trans_diff_cond and rot_diff_cond
-
-    def calculate_translation_difference_and_check(self, trans_1: List[float], trans_2: List[float]) -> bool:
-        """
-        Calculates the translation difference and checks if it is small.
-        :param trans_1: The translation of the object at the first time step.
-        :param trans_2: The translation of the object at the second time step.
-        :return: A boolean value that represents the condition for the translation of the object to be considered as
-        picked up.
-        """
-        translation_diff = self.calculate_translation_difference(trans_1, trans_2)
-        return self.is_translation_difference_small(translation_diff)
-
-    def is_translation_difference_small(self, trans_diff: List[float]) -> bool:
-        """
-        Checks if the translation difference is small by comparing it to the translation threshold.
-        """
-        return all([diff <= self.trans_threshold for diff in trans_diff])
-
-    @staticmethod
-    def calculate_translation_difference(trans_1: List[float], trans_2: List[float]) -> List[float]:
-        """
-        Calculates the translation difference.
-        :param trans_1: The translation of the object at the first time step.
-        :param trans_2: The translation of the object at the second time step.
-        :return: A list of float values that represent the translation difference.
-        """
-        return [abs(t1 - t2) for t1, t2 in zip(trans_1, trans_2)]
-
-    def calculate_angle_between_quaternions_and_check(self, quat_1: List[float], quat_2: List[float]) -> bool:
-        """
-        Calculates the angle between two quaternions and checks if it is small.
-        :param quat_1: The first quaternion.
-        :param quat_2: The second quaternion.
-        :return: A boolean value that represents the condition for the angle between the two quaternions
-         to be considered as small.
-        """
-        quat_diff_angle = self.calculate_angle_between_quaternions(quat_1, quat_2)
-        return quat_diff_angle <= self.rot_threshold
-
-    def is_quaternion_angle_difference_small(self, quat_diff_angle: float) -> bool:
-        """
-        Checks if the quaternion angle difference is small by comparing it to the rotation threshold.
-        :param quat_diff_angle: A float value that represents the angle between the two quaternions.
-        """
-        return quat_diff_angle <= self.rot_threshold
-
-    def calculate_angle_between_quaternions(self, quat_1: List[float], quat_2: List[float]) -> float:
-        """
-        Calculates the angle between two quaternions.
-        :param quat_1: The first quaternion.
-        :param quat_2: The second quaternion.
-        :return: A float value that represents the angle between the two quaternions.
-        """
-        quat_diff = self.calculate_quaternion_difference(quat_1, quat_2)
-        quat_diff_angle = 2 * np.arctan2(np.linalg.norm(quat_diff[0:3]), quat_diff[3])
-        return quat_diff_angle
-
-    @staticmethod
-    def calculate_quaternion_difference(quat_1: List[float], quat_2: List[float]) -> List[float]:
-        """
-        Calculates the quaternion difference.
-        :param quat_1: The quaternion of the object at the first time step.
-        :param quat_2: The quaternion of the object at the second time step.
-        :return: A list of float values that represent the quaternion difference.
-        """
-        quat_diff = quaternion_multiply(quaternion_inverse(quat_1), quat_2)
-        return quat_diff
-
-    def calc_hand_to_obj_transform(self) -> Transform:
-        """
-        Calculates the transform of the object with respect to the hand link.
-        :return: An instance of the Transform class that represents the transform of the object with respect to the hand
-        link.
-        """
-        return self.agent_link.get_transform_to_link(self.object_link)
+        return supporting_surface is not None
