@@ -11,7 +11,7 @@ from typing_extensions import List, Type, TYPE_CHECKING, Tuple, Dict
 from pycram.datastructures.enums import ObjectType, WorldMode
 from pycram.datastructures.pose import Pose, Transform
 from pycram.world_concepts.world_object import Object
-from .Events import Event
+from .events import Event
 
 try:
     from pycram.worlds.multiverse import Multiverse

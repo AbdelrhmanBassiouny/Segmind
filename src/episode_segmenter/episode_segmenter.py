@@ -8,8 +8,10 @@ from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
-from .EventDetectors import ContactDetector, LossOfContactDetector, EventDetector
-from .Events import ContactEvent, EventLogger, Event, AgentContactEvent, PickUpEvent
+
+from .event_detectors import ContactDetector, LossOfContactDetector, EventDetector
+from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent
+from .event_logger import EventLogger
 
 
 class EpisodePlayer(threading.Thread, ABC):
@@ -31,7 +33,7 @@ class EpisodePlayer(threading.Thread, ABC):
 
 class EpisodeSegmenter(ABC):
 
-    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: List[EventDetector],
+    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: List[Type[EventDetector]],
                  annotate_events: bool = False):
         """
         Initializes the EpisodeSegmenter class.
@@ -39,7 +41,7 @@ class EpisodeSegmenter(ABC):
         :param episode_player: The thread that plays the episode and generates the motion.
         """
         self.episode_player: EpisodePlayer = episode_player
-        self.detectors_to_start: List[EventDetector] = detectors_to_start
+        self.detectors_to_start: List[Type[EventDetector]] = detectors_to_start
         self.logger = EventLogger(annotate_events, [PickUpEvent])
         self.avoid_objects = ['particle', 'floor', 'kitchen']  # TODO: Make it a function, to be more general
         self.tracked_objects = []
@@ -101,7 +103,7 @@ class EpisodeSegmenter(ABC):
                 continue
 
             if obj_in_contact not in self.tracked_objects:
-                print(f"Creating new thread for object {obj_in_contact.name}")
+                print(f"Creating contact threads for object {obj_in_contact.name}")
                 self.start_contact_threads_for_obj_and_update_tracked_objs(obj_in_contact, event)
 
             for event_detector in self.detectors_to_start:

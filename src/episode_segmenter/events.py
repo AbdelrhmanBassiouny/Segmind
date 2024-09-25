@@ -4,7 +4,7 @@ import time
 from abc import abstractmethod, ABC
 
 import rospy
-from typing_extensions import Optional, List, Dict, Type
+from typing_extensions import Optional, List, Dict, Type, Union
 
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation
 from pycram.datastructures.world import World
@@ -239,99 +239,9 @@ class PickUpEvent(Event):
         return self.__str__()
 
 
-class EventLogger:
-    def __init__(self, annotate_events: bool = False, events_to_annotate: List[Type[Event]] = None):
-        self.timeline = {}
-        self.event_queue = queue.Queue()
-        self.lock = threading.Lock()
-        self.annotate_events = annotate_events
-        self.events_to_annotate = events_to_annotate
-        if annotate_events:
-            self.annotation_queue = queue.Queue()
-            self.annotation_thread = EventAnnotationThread(self)
-            self.annotation_thread.start()
-
-    def log_event(self, thread_id, event: Event):
-        self.event_queue.put((thread_id, event))
-        if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)):
-            self.annotation_queue.put(event)
-        with self.lock:
-            if thread_id not in self.timeline:
-                self.timeline[thread_id] = []
-            self.timeline[thread_id].append(event)
-
-    def print_events(self):
-        print("Events:")
-        print(self)
-
-    def get_events(self) -> Dict[str, List[Event]]:
-        with self.lock:
-            events = self.timeline.copy()
-        return events
-
-    def get_latest_event_of_thread(self, thread_id: str):
-        with self.lock:
-            if thread_id not in self.timeline:
-                return None
-            return self.timeline[thread_id][-1]
-
-    def get_next_event(self):
-        try:
-            thread_id, event = self.event_queue.get(block=False)
-            self.event_queue.task_done()
-            return thread_id, event
-        except queue.Empty:
-            return None, None
-
-    def join(self):
-        if self.annotate_events:
-            self.annotation_thread.stop()
-            self.annotation_queue.join()
-        self.event_queue.join()
-
-    def __str__(self):
-        return '\n'.join([' '.join([str(v) for v in values]) for values in self.get_events().values()])
-
-
-class EventAnnotationThread(threading.Thread):
-    def __init__(self, logger: EventLogger,
-                 initial_z_offset: float = 2,
-                 step_z_offset: float = 0.2,
-                 max_annotations: int = 5):
-        super().__init__()
-        self.logger = logger
-        self.initial_z_offset = initial_z_offset
-        self.step_z_offset = step_z_offset
-        self.current_annotations: List[TextAnnotation] = []
-        self.max_annotations = max_annotations
-        self.exit = False
-
-    def get_next_z_offset(self):
-        return self.initial_z_offset - self.step_z_offset * len(self.current_annotations)
-
-    def run(self):
-        while not self.exit:
-            try:
-                event = self.logger.annotation_queue.get(timeout=1)
-            except queue.Empty:
-                continue
-            self.logger.annotation_queue.task_done()
-            if len(self.current_annotations) >= self.max_annotations:
-                # Move all annotations up and remove the oldest one
-                for text_ann in self.current_annotations:
-                    World.current_world.remove_text(text_ann.id)
-                self.current_annotations.pop(0)
-                for text_ann in self.current_annotations:
-                    text_ann.position[2] += self.step_z_offset
-                    text_ann.id = World.current_world.add_text(text_ann.text,
-                                                               text_ann.position,
-                                                               color=text_ann.color,
-                                                               size=text_ann.size)
-            z_offset = self.get_next_z_offset()
-            text_ann = event.annotate([1.5, 1, z_offset])
-            self.current_annotations.append(text_ann)
-            time.sleep(0.1)
-
-    def stop(self):
-        self.exit = True
-        self.join()
+# Create a type that is the union of all event types
+EventUnion = Union[ContactEvent,
+                   LossOfContactEvent,
+                   AgentContactEvent,
+                   AgentLossOfContactEvent,
+                   PickUpEvent]

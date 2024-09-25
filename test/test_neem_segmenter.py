@@ -1,6 +1,6 @@
 from neem_pycram_interface import PyCRAMNEEMInterface
 
-from episode_segmenter.EventDetectors import AgentPickUpDetector
+from episode_segmenter.event_detectors import AgentPickUpDetector
 from episode_segmenter.neem_segmenter import NEEMSegmenter
 from unittest import TestCase
 
@@ -26,6 +26,7 @@ class TestNEEMSegmentor(TestCase):
         cls.viz_mark_publisher._stop_publishing()
         if World.current_world is not None:
             World.current_world.exit()
+        cls.ns.join()
 
     def test_event_detector(self):
         self.ns.run_event_detectors_on_neem([17])
