@@ -35,6 +35,7 @@ class EpisodeSegmenter(ABC):
                  annotate_events: bool = False):
         """
         Initializes the EpisodeSegmenter class.
+
         :param episode_player: The thread that plays the episode and generates the motion.
         """
         self.episode_player: EpisodePlayer = episode_player

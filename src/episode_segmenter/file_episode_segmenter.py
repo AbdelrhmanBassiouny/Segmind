@@ -44,7 +44,7 @@ class FileEpisodeSegmenter(EpisodeSegmenter):
         :param json_file: The json file that contains the data frames.
         :param annotate_events: The boolean value that indicates whether the events should be annotated.
         """
-        super().__init__(FileEpisodePlayer(json_file), annotate_events)
+        super().__init__(FileEpisodePlayer(json_file), [], annotate_events=annotate_events)
 
 
 class FileEpisodePlayer(EpisodePlayer):
