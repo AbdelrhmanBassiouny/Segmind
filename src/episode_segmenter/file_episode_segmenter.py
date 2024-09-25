@@ -2,17 +2,17 @@ import datetime
 import json
 import os
 import shutil
-import threading
 import time
-from abc import ABC, abstractmethod
 
 import numpy as np
 from tf.transformations import quaternion_from_matrix, euler_matrix
-from typing_extensions import Optional, List, Type, TYPE_CHECKING, Tuple, Dict
+from typing_extensions import List, Type, TYPE_CHECKING, Tuple, Dict
 
 from pycram.datastructures.enums import ObjectType, WorldMode
 from pycram.datastructures.pose import Pose, Transform
 from pycram.world_concepts.world_object import Object
+from .Events import Event
+
 try:
     from pycram.worlds.multiverse import Multiverse
 except ImportError:
@@ -30,6 +30,12 @@ class FileEpisodeSegmenter(EpisodeSegmenter):
      a list of objects and their poses, the segmentation is done by using event detectors, such as contact,
      loss of contact, and pick up events.
     """
+
+    def process_event(self, event: Event) -> None:
+        pass
+
+    def run_initial_event_detectors(self) -> None:
+        pass
 
     def __init__(self, json_file: str,  annotate_events: bool = False):
         """
