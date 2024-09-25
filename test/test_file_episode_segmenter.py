@@ -1,5 +1,6 @@
 from unittest import TestCase
 from episode_segmenter.file_episode_segmenter import FileEpisodeSegmenter, FileEpisodePlayer
+from pycram.worlds.multiverse import Multiverse
 
 
 class TestFileEpisodeSegmenter(TestCase):
@@ -8,7 +9,7 @@ class TestFileEpisodeSegmenter(TestCase):
     @classmethod
     def setUpClass(cls):
         json_file = "../resources/fame_episodes/alessandro_with_ycp_objects_in_max_room/refined_poses.json"
-        cls.file_player = FileEpisodePlayer(json_file)
+        cls.file_player = FileEpisodePlayer(json_file, world=Multiverse)
 
     @classmethod
     def tearDownClass(cls):

@@ -3,3 +3,5 @@ trimesh
 dm_control
 pydub
 gtts
+deprecated
+pycram_bullet
