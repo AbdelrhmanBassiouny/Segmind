@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from tf.transformations import quaternion_from_matrix, euler_matrix
-from typing_extensions import Optional, List, Type, TYPE_CHECKING, Tuple
+from typing_extensions import Optional, List, Type, TYPE_CHECKING, Tuple, Dict
 
 from pycram.datastructures.enums import ObjectType, WorldMode
 from pycram.datastructures.pose import Pose, Transform
@@ -44,7 +44,7 @@ class FileEpisodeSegmenter(EpisodeSegmenter):
 class FileEpisodePlayer(EpisodePlayer):
     def __init__(self, json_file: str, scene_id: int = 1, world: Type['World'] = BulletWorld,
                  mesh_scale: float = 0.001,
-                 time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=100)):
+                 time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=50)):
         """
         Initializes the FAMEEpisodePlayer with the specified json file and scene id.
 
@@ -78,12 +78,15 @@ class FileEpisodePlayer(EpisodePlayer):
 
     def run(self):
         for frame_id, objects_data in self.data_frames.items():
+            curr_time = time.time()
             self.process_objects_data(objects_data)
-            time.sleep(self.time_between_frames.total_seconds())
-
+            time_diff = time.time() - curr_time
+            if time_diff < self.time_between_frames.total_seconds():
+                time.sleep(self.time_between_frames.total_seconds() - time_diff)
             self._ready = True
 
     def process_objects_data(self, objects_data: dict):
+        objects_poses: Dict[Object, Pose] = {}
         for object_id, object_poses_data in objects_data.items():
 
             # Get the object pose in the map frame
@@ -99,7 +102,9 @@ class FileEpisodePlayer(EpisodePlayer):
                              pose=pose, scale_mesh=self.mesh_scale)
             else:
                 obj = self.world.get_object_by_name(obj_name)
-                obj.set_pose(pose)
+                objects_poses[obj] = pose
+        if len(objects_poses):
+            self.world.reset_multiple_objects_base_poses(objects_poses)
 
     def get_pose_and_transform_to_map_frame(self, object_pose: dict) -> Pose:
         """
