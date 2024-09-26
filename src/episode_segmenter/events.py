@@ -190,6 +190,16 @@ class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
             return self.latest_contact_points[0].link_b
 
 
+class LossOfSurfaceEvent(LossOfContactEvent):
+    def __init__(self, contact_points: ContactPointsList,
+                 latest_contact_points: ContactPointsList,
+                 of_object: Object,
+                 surface: Optional[Object] = None,
+                 timestamp: Optional[float] = None):
+        super().__init__(contact_points, latest_contact_points, of_object, surface, timestamp)
+        self.surface: Optional[Object] = surface
+
+
 class PickUpEvent(Event):
 
     def __init__(self, picked_object: Object,

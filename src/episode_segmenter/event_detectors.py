@@ -10,7 +10,7 @@ from pycram.datastructures.enums import ObjectType
 from pycram.world_concepts.world_object import Object, Link
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, AbstractContactEvent, EventUnion
+    AgentLossOfContactEvent, AbstractContactEvent, EventUnion, LossOfSurfaceEvent
 from .utils import get_angle_between_vectors
 
 
@@ -211,14 +211,42 @@ class LossOfContactDetector(AbstractContactDetector):
         :return: An instance of the LossOfContactEvent/AgentLossOfContactEvent class that represents the event if the
          object lost contact, else None.
         """
-        objects_that_lost_contact = contact_points.get_objects_that_got_removed(self.latest_contact_points)
-        if self.with_object is not None:
-            objects_that_lost_contact = [obj for obj in objects_that_lost_contact if obj == self.with_object]
+        objects_that_lost_contact = self.get_objects_that_lost_contact(contact_points)
         if len(objects_that_lost_contact) == 0:
             return []
         event_type = AgentLossOfContactEvent if self.obj_type in self.agent_types else LossOfContactEvent
         return [event_type(contact_points, self.latest_contact_points, of_object=self.tracked_object, with_object=obj)
                 for obj in objects_that_lost_contact]
+
+    def get_objects_that_lost_contact(self, contact_points: ContactPointsList) -> List[Object]:
+        """
+        Get the objects that lost contact with the object to track.
+
+        :param contact_points: The current contact points.
+        :return: A list of Object instances that represent the objects that lost contact with the object to track.
+        """
+        objects_that_lost_contact = contact_points.get_objects_that_got_removed(self.latest_contact_points)
+        if self.with_object is not None:
+            objects_that_lost_contact = [obj for obj in objects_that_lost_contact if obj == self.with_object]
+        return objects_that_lost_contact
+
+
+class LossOfSurfaceDetector(LossOfContactDetector):
+
+    def trigger_events(self, contact_points: ContactPointsList) -> List[LossOfSurfaceEvent]:
+        """
+        Check if the object lost contact with the surface.
+
+        :param contact_points: The current contact points.
+        :return: An instance of the LossOfSurfaceEvent class that represents the event if the object lost contact with
+        the surface, else None.
+        """
+        objects_that_lost_contact = self.get_objects_that_lost_contact(contact_points)
+        if len(objects_that_lost_contact) == 0:
+            return []
+        supporting_surface = check_for_supporting_surface(objects_that_lost_contact, self.latest_contact_points)
+        return [LossOfSurfaceEvent(contact_points, self.latest_contact_points, of_object=self.tracked_object,
+                                   surface=supporting_surface)]
 
 
 class EventDetector(PrimitiveEventDetector, ABC):
@@ -380,9 +408,8 @@ class AgentPickUpDetector(AbstractPickUpDetector):
                 print(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
                 return []
 
-            supporting_surface_found = self.check_for_supporting_surface(objects_that_lost_contact,
-                                                                         initial_contact_points)
-            if supporting_surface_found:
+            supporting_surface = check_for_supporting_surface(objects_that_lost_contact, initial_contact_points)
+            if supporting_surface is not None:
                 pick_up_event.record_end_timestamp()
                 break
             else:
@@ -393,28 +420,41 @@ class AgentPickUpDetector(AbstractPickUpDetector):
 
         return [pick_up_event]
 
-    @staticmethod
-    def check_for_supporting_surface(objects: List[Object], contact_points: ContactPointsList) -> bool:
-        """
-        Check if any of the objects in the list are supporting surfaces.
 
-        :param objects: An instance of the Object class that represents the tracked_object to check.
-        :param contact_points: A list of ContactPoint instances that represent the contact points of the tracked_object.
-        :return: A boolean value that represents the condition for the object to be considered as a supporting surface.
+class MotionPickUpDetector(AbstractPickUpDetector):
+
+    def __init__(self, logger: EventLogger, starter_event: LossOfContactEvent):
         """
-        supporting_surface = None
-        opposite_gravity = [0, 0, 1]
-        smallest_angle = np.pi / 4
-        for obj in objects:
-            normals = contact_points.get_normals_of_object(obj)
-            for normal in normals:
-                # check if normal is pointing upwards opposite to gravity by finding the angle between the normal
-                # and gravity vector.
-                angle = get_angle_between_vectors(normal, opposite_gravity)
-                if angle < smallest_angle:
-                    smallest_angle = angle
-                    supporting_surface = obj
-        return supporting_surface is not None
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param starter_event: An instance of the ContactEvent class that represents the event to start the event detector.
+        """
+        super().__init__(logger, starter_event)
+        self.surface = self.get_surface_from_event(starter_event)
+
+
+def check_for_supporting_surface(objects_that_lost_contact: List[Object],
+                                 initial_contact_points: ContactPointsList) -> Optional[Object]:
+    """
+    Check if any of the objects that lost contact are supporting surfaces.
+
+    :param objects_that_lost_contact: An instance of the Object class that represents the tracked_object to check.
+    :param initial_contact_points: A list of ContactPoint instances that represent the contact points of the
+     tracked_object before it lost contact.
+    :return: An instance of the Object class that represents the supporting surface if found, else None.
+    """
+    supporting_surface = None
+    opposite_gravity = [0, 0, 1]
+    smallest_angle = np.pi / 4
+    for obj in objects_that_lost_contact:
+        normals = initial_contact_points.get_normals_of_object(obj)
+        for normal in normals:
+            # check if normal is pointing upwards opposite to gravity by finding the angle between the normal
+            # and gravity vector.
+            angle = get_angle_between_vectors(normal, opposite_gravity)
+            if angle < smallest_angle:
+                smallest_angle = angle
+                supporting_surface = obj
+    return supporting_surface
 
 
 def get_latest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDetector], obj: Object,

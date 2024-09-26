@@ -1,3 +1,5 @@
+import os
+
 from neem_pycram_interface import PyCRAMNEEMInterface
 
 from episode_segmenter.event_detectors import AgentPickUpDetector
@@ -17,8 +19,8 @@ class TestNEEMSegmentor(TestCase):
     @classmethod
     def setUpClass(cls):
         BulletWorld(WorldMode.GUI)
-        pni = PyCRAMNEEMInterface('mysql+pymysql://newuser:password@localhost/test')
-        cls.ns = NEEMSegmenter(pni, annotate_events=True, detectors_to_start=[AgentPickUpDetector])
+        pni = PyCRAMNEEMInterface(f'mysql+pymysql://{os.environ["my_maria_uri"]}')
+        cls.ns = NEEMSegmenter(pni, detectors_to_start=[AgentPickUpDetector], annotate_events=True)
         cls.viz_mark_publisher = VizMarkerPublisher()
 
     @classmethod
