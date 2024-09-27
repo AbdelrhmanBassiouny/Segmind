@@ -135,6 +135,13 @@ class LossOfContactEvent(AbstractContactEvent):
         self.latest_contact_points = latest_contact_points
 
     @property
+    def latest_objects_that_got_removed(self):
+        return self.get_objects_that_got_removed(self.latest_contact_points)
+
+    def get_objects_that_got_removed(self, contact_points: ContactPointsList):
+        return self.contact_points.get_objects_that_got_removed(contact_points)
+
+    @property
     def color(self) -> Color:
         return Color(1, 0, 0, 1)
 

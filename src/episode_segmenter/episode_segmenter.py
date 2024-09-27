@@ -2,6 +2,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 
+import rospy
 from typing_extensions import List, Type, Optional
 
 from pycram.datastructures.dataclasses import ContactPointsList
@@ -10,7 +11,7 @@ from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
 
 from .event_detectors import ContactDetector, LossOfContactDetector, EventDetector
-from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent
+from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion
 from .event_logger import EventLogger
 
 
@@ -103,7 +104,7 @@ class EpisodeSegmenter(ABC):
                 continue
 
             if obj_in_contact not in self.tracked_objects:
-                print(f"Creating contact threads for object {obj_in_contact.name}")
+                rospy.logdebug(f"Creating contact threads for object {obj_in_contact.name}")
                 self.start_contact_threads_for_obj_and_update_tracked_objs(obj_in_contact, event)
 
             for event_detector in self.detectors_to_start:
@@ -130,7 +131,7 @@ class EpisodeSegmenter(ABC):
             self.detector_threads[(event, detector)] = detector_thread
         self.tracked_objects.append(obj)
 
-    def start_detector_thread_for_starter_event(self, starter_event: Event,
+    def start_detector_thread_for_starter_event(self, starter_event: EventUnion,
                                                 detector_type: Type[EventDetector]):
         """
         Start the detector thread for the given starter event.
@@ -145,7 +146,7 @@ class EpisodeSegmenter(ABC):
         detector = detector_type(self.logger, starter_event)
         detector.start()
         self.detector_threads[(starter_event, detector_type)] = detector
-        print(f"Created {detector_type.__name__} for starter event {starter_event}")
+        rospy.logdebug(f"Created {detector_type.__name__} for starter event {starter_event}")
 
     def join(self):
         """

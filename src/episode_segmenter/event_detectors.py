@@ -3,6 +3,7 @@ import time
 from abc import ABC, abstractmethod
 
 import numpy as np
+import rospy
 from typing_extensions import Optional, List, Union, Type
 
 from pycram.datastructures.dataclasses import ContactPointsList
@@ -89,10 +90,12 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         """
         return self.thread_id in self.logger.get_events().keys()
 
+    @classmethod
     @abstractmethod
-    def filter_event(self, event: Event) -> Event:
+    def filter_event(cls, event: EventUnion) -> EventUnion:
         """
-        Filters the event before logging/using it.
+        Filter the event before logging/using it.
+
         :param event: An object that represents the event.
         :return: An object that represents the filtered event.
         """
@@ -203,7 +206,7 @@ class LossOfContactDetector(AbstractContactDetector):
     """
 
     def trigger_events(self, contact_points: ContactPointsList) -> Union[List[LossOfContactEvent],
-    List[AgentLossOfContactEvent]]:
+                                                                         List[AgentLossOfContactEvent]]:
         """
         Check if the object lost contact with another object.
 
@@ -253,14 +256,14 @@ class LossOfSurfaceDetector(LossOfContactDetector):
 
 class EventDetector(PrimitiveEventDetector, ABC):
 
-    def __init__(self, logger: EventLogger, starter_event: Event, wait_time: Optional[float] = None):
+    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[float] = None):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
         super().__init__(logger, wait_time)
-        self.starter_event: Event = starter_event
+        self.starter_event: EventUnion = starter_event
 
     @classmethod
     @abstractmethod
@@ -271,6 +274,10 @@ class EventDetector(PrimitiveEventDetector, ABC):
         """
         pass
 
+    @property
+    def start_timestamp(self) -> float:
+        return self.starter_event.timestamp
+
 
 class AbstractPickUpDetector(EventDetector, ABC):
     thread_prefix = "pick_up_"
@@ -278,7 +285,7 @@ class AbstractPickUpDetector(EventDetector, ABC):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: Event):
+    def __init__(self, logger: EventLogger, starter_event: EventUnion):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of a type of Event that represents the event to
@@ -378,46 +385,42 @@ class AgentPickUpDetector(AbstractPickUpDetector):
 
     def detect_events(self) -> List[PickUpEvent]:
         """
-        Detects if the tracked_object was picked up by the hand.
+        Detect if the tracked_object was picked up by the hand.
         Used Features are:
         1. The hand should still be in contact with the tracked_object.
         2. While the tracked_object that is picked should lose contact with the surface.
         Other features that can be used: Grasping Type, Object Type, and Object Motion.
-        :return: An instance of the PickUpEvent class that represents the event if the tracked_object was picked up, else None.
+
+        :return: An instance of the PickUpEvent class that represents the event if the tracked_object was picked up,
+         else None.
         """
 
-        # detect all their contacts at the time of contact with each other.
-        # initial_contact_event = get_latest_event_of_detector_for_object(ContactDetector, self.tracked_object)
-        # initial_contact_points = initial_contact_event.contact_points
-        # if not initial_contact_points.is_object_in_the_list(self.agent):
-        #     print(f"Agent not in contact with tracked_object: {self.tracked_object.name}")
-        #     return []
+        pick_up_event = PickUpEvent(self.tracked_object, self.agent, self.start_timestamp)
 
-        pick_up_event = PickUpEvent(self.tracked_object, self.agent, self.starter_event.timestamp)
-
-        supporting_surface_found = False
-        while not supporting_surface_found:
-            time.sleep(0.01)
+        while True:
             loss_of_surface_event = get_latest_event_of_detector_for_object(LossOfSurfaceDetector,
                                                                             self.tracked_object,
-                                                                            after_timestamp=self.starter_event.timestamp
+                                                                            after_timestamp=self.start_timestamp
                                                                             )
             pick_up_event.record_end_timestamp()
-            loss_of_contact_points = loss_of_surface_event.contact_points
-            objects_that_lost_contact = loss_of_contact_points.get_objects_that_got_removed(self.starter_event.contact_points)
-            print(f"object_in_contact: {self.tracked_object.name}")
+            objects_that_lost_contact = loss_of_surface_event.get_objects_that_got_removed(self.start_contact_points)
             if len(objects_that_lost_contact) == 0:
-                print(f"continue, tracked_object: {self.tracked_object.name}")
+                rospy.logdebug(f"continue, tracked_object: {self.tracked_object.name}")
+                time.sleep(0.01)
                 continue
             if self.agent in objects_that_lost_contact:
-                print(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
+                rospy.logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
                 return []
 
             break
 
-        print(f"Object picked up: {self.tracked_object.name}")
+        rospy.loginfo(f"Object picked up: {self.tracked_object.name}")
 
         return [pick_up_event]
+
+    @property
+    def start_contact_points(self) -> ContactPointsList:
+        return self.starter_event.contact_points
 
     def join(self, timeout: Optional[float] = None):
         self.surface_detector.exit_thread = True
@@ -430,7 +433,8 @@ class MotionPickUpDetector(AbstractPickUpDetector):
     def __init__(self, logger: EventLogger, starter_event: LossOfContactEvent):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
-        :param starter_event: An instance of the ContactEvent class that represents the event to start the event detector.
+        :param starter_event: An instance of the ContactEvent class that represents the event to start the event
+         detector.
         """
         super().__init__(logger, starter_event)
         self.surface = self.get_surface_from_event(starter_event)

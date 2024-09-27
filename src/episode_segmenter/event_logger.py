@@ -2,6 +2,7 @@ import queue
 import threading
 import time
 
+import rospy
 from typing_extensions import List, Optional, Dict, Type
 
 from pycram.datastructures.dataclasses import TextAnnotation
@@ -44,8 +45,8 @@ class EventLogger:
         """
         Print all events that have been logged.
         """
-        print("Events:")
-        print(self)
+        rospy.loginfo("Events:")
+        rospy.loginfo(self)
 
     def get_events(self) -> Dict[str, List[Event]]:
         """
