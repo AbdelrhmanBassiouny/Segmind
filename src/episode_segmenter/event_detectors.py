@@ -420,6 +420,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         return [pick_up_event]
 
     def join(self, timeout: Optional[float] = None):
+        self.surface_detector.exit_thread = True
         self.surface_detector.join(timeout)
         super().join(timeout)
 
