@@ -245,6 +245,8 @@ class LossOfSurfaceDetector(LossOfContactDetector):
         if len(objects_that_lost_contact) == 0:
             return []
         supporting_surface = check_for_supporting_surface(objects_that_lost_contact, self.latest_contact_points)
+        if supporting_surface is None:
+            return []
         return [LossOfSurfaceEvent(contact_points, self.latest_contact_points, of_object=self.tracked_object,
                                    surface=supporting_surface)]
 
@@ -321,6 +323,8 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         self.agent = starter_event.agent
         self.agent_link = starter_event.agent_link
         self.object_link = self.get_object_link_from_event(starter_event)
+        self.surface_detector = LossOfSurfaceDetector(logger, self.tracked_object)
+        self.surface_detector.start()
 
     @classmethod
     def filter_event(cls, event: AgentContactEvent) -> Event:
@@ -383,23 +387,24 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         """
 
         # detect all their contacts at the time of contact with each other.
-        initial_contact_event = get_latest_event_of_detector_for_object(ContactDetector, self.tracked_object)
-        initial_contact_points = initial_contact_event.contact_points
-        if not initial_contact_points.is_object_in_the_list(self.agent):
-            print(f"Agent not in contact with tracked_object: {self.tracked_object.name}")
-            return []
+        # initial_contact_event = get_latest_event_of_detector_for_object(ContactDetector, self.tracked_object)
+        # initial_contact_points = initial_contact_event.contact_points
+        # if not initial_contact_points.is_object_in_the_list(self.agent):
+        #     print(f"Agent not in contact with tracked_object: {self.tracked_object.name}")
+        #     return []
 
-        pick_up_event = PickUpEvent(self.tracked_object, self.agent, initial_contact_event.timestamp)
-        latest_stamp = pick_up_event.timestamp
+        pick_up_event = PickUpEvent(self.tracked_object, self.agent, self.starter_event.timestamp)
 
         supporting_surface_found = False
         while not supporting_surface_found:
             time.sleep(0.01)
-            loss_of_contact_event = get_latest_event_of_detector_for_object(LossOfContactDetector,
+            loss_of_surface_event = get_latest_event_of_detector_for_object(LossOfSurfaceDetector,
                                                                             self.tracked_object,
-                                                                            after_timestamp=latest_stamp)
-            loss_of_contact_points = loss_of_contact_event.contact_points
-            objects_that_lost_contact = loss_of_contact_points.get_objects_that_got_removed(initial_contact_points)
+                                                                            after_timestamp=self.starter_event.timestamp
+                                                                            )
+            pick_up_event.record_end_timestamp()
+            loss_of_contact_points = loss_of_surface_event.contact_points
+            objects_that_lost_contact = loss_of_contact_points.get_objects_that_got_removed(self.starter_event.contact_points)
             print(f"object_in_contact: {self.tracked_object.name}")
             if len(objects_that_lost_contact) == 0:
                 print(f"continue, tracked_object: {self.tracked_object.name}")
@@ -408,17 +413,15 @@ class AgentPickUpDetector(AbstractPickUpDetector):
                 print(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
                 return []
 
-            supporting_surface = check_for_supporting_surface(objects_that_lost_contact, initial_contact_points)
-            if supporting_surface is not None:
-                pick_up_event.record_end_timestamp()
-                break
-            else:
-                print(f"Supporting surface not found, tracked_object: {self.tracked_object.name}")
-                continue
+            break
 
         print(f"Object picked up: {self.tracked_object.name}")
 
         return [pick_up_event]
+
+    def join(self, timeout: Optional[float] = None):
+        self.surface_detector.join(timeout)
+        super().join(timeout)
 
 
 class MotionPickUpDetector(AbstractPickUpDetector):
