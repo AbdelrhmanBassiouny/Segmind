@@ -4,7 +4,6 @@ from typing_extensions import Optional, List, Type
 from neem_pycram_interface import PyCRAMNEEMInterface
 
 from .event_detectors import EventDetector
-from .events import Event
 from .episode_segmenter import EpisodePlayer, AgentBasedEpisodeSegmenter
 
 
