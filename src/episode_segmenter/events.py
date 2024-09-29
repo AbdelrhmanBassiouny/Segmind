@@ -1,12 +1,11 @@
-import queue
-import threading
 import time
 from abc import abstractmethod, ABC
 
 import rospy
-from typing_extensions import Optional, List, Dict, Type, Union
+from typing_extensions import Optional, List, Union
 
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation
+from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object, Link
 
@@ -28,6 +27,37 @@ class Event(ABC):
     @abstractmethod
     def __hash__(self):
         pass
+
+
+class MotionEvent(Event):
+    """
+    The MotionEvent class is used to represent an event that involves an object that was stationary and then moved.
+    """
+    def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
+                 timestamp: Optional[float] = None):
+        super().__init__(timestamp)
+        self.end_timestamp: Optional[float] = None
+        self.start_pose: Pose = start_pose
+        self.current_pose: Pose = current_pose
+        self.tracked_object: Object = tracked_object
+
+    def record_end_timestamp(self):
+        self.end_timestamp = time.time()
+
+    def duration(self):
+        if self.end_timestamp is None:
+            return None
+        return self.end_timestamp - self.timestamp
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (self.tracked_object == other
+                and self.start_pose == other.start_pose
+                and self.timestamp == other.timestamp)
+
+    def __hash__(self):
+        return hash((self.tracked_object, self.start_pose, self.timestamp))
 
 
 class AbstractContactEvent(Event, ABC):

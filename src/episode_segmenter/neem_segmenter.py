@@ -34,7 +34,7 @@ class NEEMSegmenter(AgentBasedEpisodeSegmenter):
 
         self.neem_player_thread.query_neems_motion_replay_data(sql_neem_ids)
 
-        self.start_motion_generator_thread_and_wait_till_ready()
+        self.start_episode_player_and_wait_till_ready()
 
         self.run_event_detectors()
 

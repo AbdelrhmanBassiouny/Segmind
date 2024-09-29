@@ -73,6 +73,28 @@ def calculate_translation_difference(trans_1: List[float], trans_2: List[float])
     return [abs(t1 - t2) for t1, t2 in zip(trans_1, trans_2)]
 
 
+def calculate_euclidean_distance(point_1: List[float], point_2: List[float]) -> float:
+    """
+    Calculate the Euclidean distance between two points.
+
+    :param point_1: The first point.
+    :param point_2: The second point.
+    :return: A float value that represents the Euclidean distance between the two points.
+    """
+    return np.linalg.norm(np.array(point_1) - np.array(point_2))
+
+
+def calculate_translation_vector(point_1: List[float], point_2: List[float]):
+    """
+    Calculate the translation vector between two points.
+
+    :param point_1: The first point.
+    :param point_2: The second point.
+    :return: A list of float values that represent the translation vector between the two points.
+    """
+    return [p2 - p1 for p1, p2 in zip(point_1, point_2)]
+
+
 def calculate_angle_between_quaternions_and_check(quat_1: List[float], quat_2: List[float], threshold: float) -> bool:
     """
     Calculate the angle between two quaternions and checks if it is small.
