@@ -12,7 +12,7 @@ from pycram.datastructures.pose import Pose
 from pycram.world_concepts.world_object import Object, Link
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, AbstractContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent
+    AgentLossOfContactEvent, AbstractContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent, StopMotionEvent
 from .utils import get_angle_between_vectors, calculate_translation_difference, is_translation_difference_small
 
 
@@ -91,17 +91,6 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         """
         return self.thread_id in self.logger.get_events().keys()
 
-    @classmethod
-    @abstractmethod
-    def filter_event(cls, event: EventUnion) -> EventUnion:
-        """
-        Filter the event before logging/using it.
-
-        :param event: An object that represents the event.
-        :return: An object that represents the filtered event.
-        """
-        pass
-
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
     def __init__(self, logger: EventLogger, tracked_object: Object, with_object: Optional[Object] = None,
@@ -157,16 +146,6 @@ class AbstractContactDetector(PrimitiveEventDetector, ABC):
         :return: An object that represents the event.
         """
         pass
-
-    def filter_event(self, event: AbstractContactEvent) -> Event:
-        """
-        Filter the contact event by removing the contact points that are not in the list of objects to track.
-
-        :param event: An object that represents the event.
-        :return: An object that represents the filtered event.
-        """
-        event.with_object = self.with_object
-        return event
 
 
 class ContactDetector(AbstractContactDetector):
@@ -258,7 +237,7 @@ class LossOfSurfaceDetector(LossOfContactDetector):
 
 class MotionDetector(PrimitiveEventDetector):
     """
-    A thread that detects if the object is moving.
+    A thread that detects if the object starts or stops moving and logs the MotionEvent or StopMotionEvent.
     """
 
     thread_prefix = "motion_"
@@ -266,25 +245,31 @@ class MotionDetector(PrimitiveEventDetector):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, tracked_object: Object, wait_time: Optional[float] = 0.1):
+    def __init__(self, logger: EventLogger, tracked_object: Object, translation_threshold: float = 0.01,
+                 wait_time: Optional[float] = 0.1):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param tracked_object: An instance of the Object class that represents the object to track.
+        :param translation_threshold: An optional float value that represents the translation threshold above which the
+        object is considered to be moving.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
         super().__init__(logger, wait_time)
         self.objects_to_track = [tracked_object]
         self.tracked_object = tracked_object
         self.latest_pose = self.tracked_object.pose
+        self.translation_threshold = translation_threshold
+        self.was_moving: bool = False
 
-    def detect_events(self) -> List[Event]:
+    def detect_events(self) -> List[Union[MotionEvent, StopMotionEvent]]:
         """
-        Detect if the object is moving.
+        Detect if the object starts or stops moving.
 
         :return: An instance of the MotionEvent class that represents the event if the object is moving, else None.
         """
         current_pose = self.tracked_object.pose
-        if self.is_moving(current_pose):
+        if self.is_moving(current_pose) != self.was_moving:
+            self.was_moving = not self.was_moving
             return [self.create_event(current_pose)]
         return []
 
@@ -295,20 +280,21 @@ class MotionDetector(PrimitiveEventDetector):
         :param current_pose: The current pose of the object.
         :return: A boolean value that represents if the object is moving.
         """
-        return not is_translation_difference_small(calculate_translation_difference(self.latest_pose.position,
-                                                                                    current_pose.position
+        return not is_translation_difference_small(calculate_translation_difference(self.latest_pose.position_as_list(),
+                                                                                    current_pose.position_as_list()
                                                                                     ),
-                                                   threshold=0.01
+                                                   threshold=self.translation_threshold
                                                    )
 
-    def create_event(self, current_pose: Pose) -> Event:
+    def create_event(self, current_pose: Pose) -> Union[MotionEvent, StopMotionEvent]:
         """
         Create a motion event.
 
         :param current_pose: The current pose of the object.
         :return: An instance of the MotionEvent class that represents the event.
         """
-        event = MotionEvent(self.tracked_object, self.latest_pose, current_pose)
+        event_type = MotionEvent if self.was_moving else StopMotionEvent
+        event = event_type(self.tracked_object, self.latest_pose, current_pose, self.latest_pose.timestamp)
         self.latest_pose = current_pose
         return event
 
@@ -329,6 +315,7 @@ class EventDetector(PrimitiveEventDetector, ABC):
     def start_condition_checker(cls, event: Event) -> bool:
         """
         Check if the event is a starter event.
+
         :param event: The Event instance that represents the event.
         """
         pass
@@ -337,8 +324,23 @@ class EventDetector(PrimitiveEventDetector, ABC):
     def start_timestamp(self) -> float:
         return self.starter_event.timestamp
 
+    @classmethod
+    @abstractmethod
+    def filter_event(cls, event: EventUnion) -> EventUnion:
+        """
+        Filter the event before logging/using it.
+
+        :param event: An object that represents the event.
+        :return: An object that represents the filtered event.
+        """
+        pass
+
 
 class AbstractPickUpDetector(EventDetector, ABC):
+    """
+    An abstract detector that detects if the tracked_object was picked up.
+    """
+
     thread_prefix = "pick_up_"
     """
     A string that is used as a prefix for the thread ID.
@@ -376,7 +378,7 @@ class AbstractPickUpDetector(EventDetector, ABC):
 
 class AgentPickUpDetector(AbstractPickUpDetector):
     """
-    A thread that detects if the tracked_object was picked up by the hand.
+    A detector that detects if the tracked_object was picked up by an agent, such as a human or a robot.
     """
 
     def __init__(self, logger: EventLogger, starter_event: AgentContactEvent):

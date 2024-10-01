@@ -31,7 +31,7 @@ class FileEpisodeSegmenter(EpisodeSegmenter):
      loss of contact, and pick up events.
     """
 
-    def process_event(self, event: Event) -> None:
+    def _process_event(self, event: Event) -> None:
         pass
 
     def run_initial_event_detectors(self) -> None:

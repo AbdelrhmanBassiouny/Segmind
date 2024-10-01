@@ -36,18 +36,9 @@ class MotionEvent(Event):
     def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
                  timestamp: Optional[float] = None):
         super().__init__(timestamp)
-        self.end_timestamp: Optional[float] = None
         self.start_pose: Pose = start_pose
         self.current_pose: Pose = current_pose
         self.tracked_object: Object = tracked_object
-
-    def record_end_timestamp(self):
-        self.end_timestamp = time.time()
-
-    def duration(self):
-        if self.end_timestamp is None:
-            return None
-        return self.end_timestamp - self.timestamp
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -58,6 +49,10 @@ class MotionEvent(Event):
 
     def __hash__(self):
         return hash((self.tracked_object, self.start_pose, self.timestamp))
+
+
+class StopMotionEvent(MotionEvent):
+    ...
 
 
 class AbstractContactEvent(Event, ABC):
