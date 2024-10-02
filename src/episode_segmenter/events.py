@@ -19,6 +19,7 @@ class Event(ABC):
 
     def __init__(self, timestamp: Optional[float] = None):
         self.timestamp = time.time() if timestamp is None else timestamp
+        self.text_id: Optional[int] = None
 
     @abstractmethod
     def __eq__(self, other):
@@ -28,11 +29,50 @@ class Event(ABC):
     def __hash__(self):
         pass
 
+    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = None,
+                 color: Optional[Color] = None) -> TextAnnotation:
+        """
+        Annotates the event with the text from the :meth:`__str__` method using the specified position, size, and color.
+
+        :param position: The position of the annotation text.
+        :param size: The size of the annotation text.
+        :param color: The color of the annotation text and/or object.
+        :return: The TextAnnotation object that references the annotation text.
+        """
+        position = position if position is not None else [2, 1, 2]
+        size = size if size is not None else self.annotation_size
+        self.set_color(color)
+        self.text_id = World.current_world.add_text(
+            self.annotation_text,
+            position,
+            color=self.color,
+            size=size)
+        return TextAnnotation(self.annotation_text, position, self.text_id, color=self.color, size=size)
+
+    @abstractmethod
+    def set_color(self, color: Optional[Color] = None):
+        pass
+
+    @property
+    @abstractmethod
+    def color(self) -> Color:
+        pass
+
+    @property
+    def annotation_text(self) -> str:
+        return self.__str__()
+
+    @abstractmethod
+    def __str__(self):
+        pass
+
 
 class MotionEvent(Event):
     """
-    The MotionEvent class is used to represent an event that involves an object that was stationary and then moved.
+    The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
+    vice versa.
     """
+
     def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
                  timestamp: Optional[float] = None):
         super().__init__(timestamp)
@@ -50,6 +90,17 @@ class MotionEvent(Event):
     def __hash__(self):
         return hash((self.tracked_object, self.start_pose, self.timestamp))
 
+    def set_color(self, color: Optional[Color] = None):
+        color = color if color is not None else self.color
+        self.tracked_object.set_color(color)
+
+    @property
+    def color(self) -> Color:
+        return Color(0, 1, 1, 1)
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.tracked_object.name}"
+
 
 class StopMotionEvent(MotionEvent):
     ...
@@ -66,7 +117,6 @@ class AbstractContactEvent(Event, ABC):
         self.contact_points = contact_points
         self.of_object: Object = of_object
         self.with_object: Optional[Object] = with_object
-        self.text_id: Optional[int] = None
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -77,26 +127,10 @@ class AbstractContactEvent(Event, ABC):
         return hash((self.of_object.name, self.with_object.name if self.with_object is not None else '',
                      self.__class__.__name__))
 
-    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = None) -> TextAnnotation:
-        if position is None:
-            position = [2, 1, 2]
-        self.main_link.color = self.color
-        [link.set_color(self.color) for link in self.links]
-        self.text_id = World.current_world.add_text(
-            self.annotation_text,
-            position,
-            color=self.color,
-            size=size)
-        return TextAnnotation(self.annotation_text, position, self.text_id, color=self.color, size=size)
-
-    @property
-    @abstractmethod
-    def color(self) -> Color:
-        pass
-
-    @property
-    def annotation_text(self) -> str:
-        return self.__str__()
+    def set_color(self, color: Optional[Color] = None):
+        color = color if color is not None else self.color
+        self.main_link.color = color
+        [link.set_color(color) for link in self.links]
 
     def __str__(self):
         return f"{self.__class__.__name__}: {self.of_object.name} - {self.with_object.name if self.with_object else ''}"
@@ -259,20 +293,14 @@ class PickUpEvent(Event):
             return None
         return self.end_timestamp - self.timestamp
 
-    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = None) -> TextAnnotation:
-        if position is None:
-            position = [2, 1, 2]
-        if size is None:
-            size = self.annotation_size
-        color = Color(0, 1, 0, 1)
+    def set_color(self, color: Optional[Color] = None):
+        color = color if color is not None else self.color
         self.agent.set_color(color)
         self.picked_object.set_color(color)
-        text = f"Picked {self.picked_object.name}"
-        self.text_id = World.current_world.add_text(text,
-                                                    position,
-                                                    color=color,
-                                                    size=size)
-        return TextAnnotation(text, position, self.text_id, color=color, size=size)
+
+    @property
+    def color(self) -> Color:
+        return Color(0, 1, 0, 1)
 
     def __str__(self):
         return f"Pick up event: Agent:{self.agent.name}, Object: {self.picked_object.name}, Timestamp: {self.timestamp}"
@@ -282,8 +310,11 @@ class PickUpEvent(Event):
 
 
 # Create a type that is the union of all event types
-EventUnion = Union[ContactEvent,
+EventUnion = Union[MotionEvent,
+                   StopMotionEvent,
+                   ContactEvent,
                    LossOfContactEvent,
                    AgentContactEvent,
                    AgentLossOfContactEvent,
+                   LossOfSurfaceEvent,
                    PickUpEvent]

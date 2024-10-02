@@ -30,7 +30,7 @@ from pycram.worlds.bullet_world import BulletWorld
 BulletWorld(WorldMode.GUI)
 pni = PyCRAMNEEMInterface('mysql+pymysql://newuser:password@localhost/test')
 ns = NEEMSegmenter(pni, annotate_events=True)
-ns.run_event_detectors_on_neem([15])
+ns.start([15])
 ```
 
 https://github.com/AbdelrhmanBassiouny/EpisodeSegmenter/assets/36744004/186bfd79-f30b-4b4f-ae84-03d2bcce821a

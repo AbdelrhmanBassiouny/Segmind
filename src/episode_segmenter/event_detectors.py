@@ -294,7 +294,7 @@ class MotionDetector(PrimitiveEventDetector):
         :return: An instance of the MotionEvent class that represents the event.
         """
         event_type = MotionEvent if self.was_moving else StopMotionEvent
-        event = event_type(self.tracked_object, self.latest_pose, current_pose, self.latest_pose.timestamp)
+        event = event_type(self.tracked_object, self.latest_pose, current_pose)
         self.latest_pose = current_pose
         return event
 

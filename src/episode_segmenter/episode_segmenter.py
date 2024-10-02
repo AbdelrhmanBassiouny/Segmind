@@ -14,33 +14,19 @@ from .event_detectors import ContactDetector, LossOfContactDetector, EventDetect
     AbstractContactDetector
 from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent
 from .event_logger import EventLogger
-
-
-class EpisodePlayer(threading.Thread, ABC):
-    def __init__(self):
-        super().__init__()
-        self._ready = False
-
-    @property
-    def ready(self):
-        return self._ready
-
-    @abstractmethod
-    def run(self):
-        """
-        The run method that is called when the thread is started. This should start the episode player thread.
-        """
-        pass
+from .episode_player import EpisodePlayer
 
 
 class EpisodeSegmenter(ABC):
 
-    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: List[Type[EventDetector]],
+    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: Optional[List[Type[EventDetector]]] = None,
                  annotate_events: bool = False):
         """
         Initializes the EpisodeSegmenter class.
 
         :param episode_player: The thread that plays the episode and generates the motion.
+        :param detectors_to_start: The list of event detectors that should be started.
+        :param annotate_events: A boolean value that indicates if the events should be annotated.
         """
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[Type[EventDetector]] = detectors_to_start
@@ -51,6 +37,13 @@ class EpisodeSegmenter(ABC):
         self.tracked_object_motions: Dict[Object, MotionDetector] = {}
         self.detector_threads = {}
         self.pick_up_detectors = {}
+
+    def start(self) -> None:
+        """
+        Start the episode player and the event detectors.
+        """
+        self.start_episode_player_and_wait_till_ready()
+        self.run_event_detectors()
 
     def start_episode_player_and_wait_till_ready(self) -> None:
         """
@@ -280,6 +273,6 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         Start the motion detection threads for the objects in the world.
         """
         for obj in World.current_world.objects:
-            if obj.obj_type != ObjectType.ENVIRONMENT and obj not in self.objects_to_avoid:
+            if obj.obj_type != ObjectType.ENVIRONMENT and (obj not in self.objects_to_avoid):
                 self.start_motion_detection_threads_for_object(obj)
 

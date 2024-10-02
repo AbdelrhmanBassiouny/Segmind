@@ -2,53 +2,45 @@ import datetime
 import json
 import os
 import shutil
+import threading
 import time
+from abc import ABC, abstractmethod
 
 import numpy as np
 from tf.transformations import quaternion_from_matrix, euler_matrix
-from typing_extensions import List, Type, TYPE_CHECKING, Tuple, Dict
+from typing_extensions import List, Tuple, Dict, Optional
 
-from pycram.datastructures.enums import ObjectType, WorldMode
+from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Pose, Transform
 from pycram.world_concepts.world_object import Object
-from .events import Event
 
 try:
     from pycram.worlds.multiverse import Multiverse
 except ImportError:
     Multiverse = None
-from pycram.worlds.bullet_world import BulletWorld
-from .episode_segmenter import EpisodeSegmenter, EpisodePlayer
 
-if TYPE_CHECKING:
-    from pycram.datastructures.world import World
+from pycram.datastructures.world import World
 
 
-class FileEpisodeSegmenter(EpisodeSegmenter):
-    """
-    This class is used to segment the motions replayed from a file containing a sequence of frames, each frame contains
-     a list of objects and their poses, the segmentation is done by using event detectors, such as contact,
-     loss of contact, and pick up events.
-    """
+class EpisodePlayer(threading.Thread, ABC):
+    def __init__(self):
+        super().__init__()
+        self._ready = False
 
-    def _process_event(self, event: Event) -> None:
-        pass
+    @property
+    def ready(self):
+        return self._ready
 
-    def run_initial_event_detectors(self) -> None:
-        pass
-
-    def __init__(self, json_file: str,  annotate_events: bool = False):
+    @abstractmethod
+    def run(self):
         """
-        Initializes the class.
-
-        :param json_file: The json file that contains the data frames.
-        :param annotate_events: The boolean value that indicates whether the events should be annotated.
+        The run method that is called when the thread is started. This should start the episode player thread.
         """
-        super().__init__(FileEpisodePlayer(json_file), [], annotate_events=annotate_events)
+        pass
 
 
 class FileEpisodePlayer(EpisodePlayer):
-    def __init__(self, json_file: str, scene_id: int = 1, world: Type['World'] = BulletWorld,
+    def __init__(self, json_file: str, scene_id: int = 1, world: Optional[World] = None,
                  mesh_scale: float = 0.001,
                  time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=50)):
         """
@@ -66,21 +58,16 @@ class FileEpisodePlayer(EpisodePlayer):
             self.data_frames = json.load(f)[str(scene_id)]
         self.data_frames = {int(k): v for k, v in self.data_frames.items()}
         self.data_frames = dict(sorted(self.data_frames.items(), key=lambda x: x[0]))
-        self.world = world(WorldMode.GUI)
+        self.world = world if world is not None else World.current_world
         self.mesh_scale = mesh_scale
         self.time_between_frames: datetime.timedelta = time_between_frames
         self.copy_model_files_to_world_data_dir()
-        self._ready = False
 
     def copy_model_files_to_world_data_dir(self):
         parent_dir_of_json_file = os.path.abspath(os.path.dirname(self.json_file))
         models_path = os.path.join(parent_dir_of_json_file, "custom", "models")
         # Copy the entire folder and its contents
         shutil.copytree(models_path, self.world.cache_manager.data_directories[0], dirs_exist_ok=True)
-
-    @property
-    def ready(self):
-        return self._ready
 
     def run(self):
         for frame_id, objects_data in self.data_frames.items():
@@ -104,8 +91,8 @@ class FileEpisodePlayer(EpisodePlayer):
 
             # Create the object if it does not exist in the world and set its pose
             if obj_name not in self.world.get_object_names():
-                obj = Object(obj_name, ObjectType.GENERIC_OBJECT, mesh_name,
-                             pose=pose, scale_mesh=self.mesh_scale)
+                _ = Object(obj_name, ObjectType.GENERIC_OBJECT, mesh_name,
+                           pose=pose, scale_mesh=self.mesh_scale)
             else:
                 obj = self.world.get_object_by_name(obj_name)
                 objects_poses[obj] = pose

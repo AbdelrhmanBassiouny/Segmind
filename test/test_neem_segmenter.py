@@ -31,4 +31,4 @@ class TestNEEMSegmentor(TestCase):
         cls.ns.join()
 
     def test_event_detector(self):
-        self.ns.run_event_detectors_on_neem([17])
+        self.ns.start([17])
