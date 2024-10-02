@@ -1,10 +1,11 @@
+import datetime
 import threading
 import time
 from abc import ABC, abstractmethod
 
 import numpy as np
 import rospy
-from typing_extensions import Optional, List, Union, Type
+from typing_extensions import Optional, List, Union, Type, Tuple
 
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
@@ -12,8 +13,8 @@ from pycram.datastructures.pose import Pose
 from pycram.world_concepts.world_object import Object, Link
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, AbstractContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent, StopMotionEvent
-from .utils import get_angle_between_vectors, calculate_translation_difference, is_translation_difference_small
+    AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent, StopMotionEvent
+from .utils import get_angle_between_vectors, calculate_euclidean_distance
 
 
 class PrimitiveEventDetector(threading.Thread, ABC):
@@ -187,7 +188,7 @@ class LossOfContactDetector(AbstractContactDetector):
     """
 
     def trigger_events(self, contact_points: ContactPointsList) -> Union[List[LossOfContactEvent],
-                                                                         List[AgentLossOfContactEvent]]:
+    List[AgentLossOfContactEvent]]:
         """
         Check if the object lost contact with another object.
 
@@ -245,21 +246,36 @@ class MotionDetector(PrimitiveEventDetector):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, tracked_object: Object, translation_threshold: float = 0.01,
+    def __init__(self, logger: EventLogger, tracked_object: Object, velocity_threshold: float = 0.08,
                  wait_time: Optional[float] = 0.1):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param tracked_object: An instance of the Object class that represents the object to track.
-        :param translation_threshold: An optional float value that represents the translation threshold above which the
-        object is considered to be moving.
+        :param velocity_threshold: An optional float value that represents the velocity threshold for the object to be
+        considered as moving.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
         super().__init__(logger, wait_time)
         self.objects_to_track = [tracked_object]
         self.tracked_object = tracked_object
         self.latest_pose = self.tracked_object.pose
-        self.translation_threshold = translation_threshold
+        self.latest_time = time.time()
+        self.velocity_threshold = velocity_threshold
+        self.measure_timestep: datetime.timedelta = datetime.timedelta(milliseconds=204)
+        self.distance_threshold: float = self.velocity_threshold * self.measure_timestep.total_seconds()
         self.was_moving: bool = False
+
+    def update_latest_pose_and_time(self):
+        """
+        Update the latest pose and time of the object.
+        """
+        self.latest_pose, self.latest_time = self.get_current_pose_and_time()
+
+    def get_current_pose_and_time(self) -> Tuple[Pose, float]:
+        """
+        Get the current pose and time of the object.
+        """
+        return self.tracked_object.pose, time.time()
 
     def detect_events(self) -> List[Union[MotionEvent, StopMotionEvent]]:
         """
@@ -267,35 +283,37 @@ class MotionDetector(PrimitiveEventDetector):
 
         :return: An instance of the MotionEvent class that represents the event if the object is moving, else None.
         """
-        current_pose = self.tracked_object.pose
-        if self.is_moving(current_pose) != self.was_moving:
+        if self.time_since_last_event < self.measure_timestep.total_seconds():
+            time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
+        if self.is_moving() != self.was_moving:
             self.was_moving = not self.was_moving
-            return [self.create_event(current_pose)]
+            return [self.create_event()]
+        self.update_latest_pose_and_time()
         return []
 
-    def is_moving(self, current_pose: Pose) -> bool:
+    @property
+    def time_since_last_event(self) -> float:
+        return time.time() - self.latest_time
+
+    def is_moving(self) -> bool:
         """
         Check if the object is moving by comparing the current pose with the previous pose.
 
-        :param current_pose: The current pose of the object.
         :return: A boolean value that represents if the object is moving.
         """
-        return not is_translation_difference_small(calculate_translation_difference(self.latest_pose.position_as_list(),
-                                                                                    current_pose.position_as_list()
-                                                                                    ),
-                                                   threshold=self.translation_threshold
-                                                   )
+        current_pose = self.tracked_object.pose
+        distance = calculate_euclidean_distance(self.latest_pose.position_as_list(), current_pose.position_as_list())
+        return distance > self.distance_threshold
 
-    def create_event(self, current_pose: Pose) -> Union[MotionEvent, StopMotionEvent]:
+    def create_event(self) -> Union[MotionEvent, StopMotionEvent]:
         """
         Create a motion event.
 
-        :param current_pose: The current pose of the object.
         :return: An instance of the MotionEvent class that represents the event.
         """
+        current_pose, current_time = self.get_current_pose_and_time()
         event_type = MotionEvent if self.was_moving else StopMotionEvent
-        event = event_type(self.tracked_object, self.latest_pose, current_pose)
-        self.latest_pose = current_pose
+        event = event_type(self.tracked_object, self.latest_pose, current_pose, timestamp=current_time)
         return event
 
 

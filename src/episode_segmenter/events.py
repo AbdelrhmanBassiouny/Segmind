@@ -103,7 +103,9 @@ class MotionEvent(Event):
 
 
 class StopMotionEvent(MotionEvent):
-    ...
+    @property
+    def color(self) -> Color:
+        return Color(1, 1, 1, 1)
 
 
 class AbstractContactEvent(Event, ABC):

@@ -29,8 +29,8 @@ class TestFileEpisodeSegmenter(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.episode_segmenter.join()
         cls.world.exit()
+        cls.episode_segmenter.join()
 
     def test_replay_episode(self):
         self.episode_segmenter.start()

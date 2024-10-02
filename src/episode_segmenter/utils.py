@@ -59,7 +59,8 @@ def is_translation_difference_small(trans_diff: List[float], threshold: float) -
     :param threshold: The threshold for the translation difference to be considered as small.
     :return: A boolean value that represents the condition for the translation difference to be considered as small.
     """
-    return all([diff <= threshold for diff in trans_diff])
+    return np.linalg.norm(trans_diff) <= threshold
+    # return all([diff <= threshold for diff in trans_diff])
 
 
 def calculate_translation_difference(trans_1: List[float], trans_2: List[float]) -> List[float]:
