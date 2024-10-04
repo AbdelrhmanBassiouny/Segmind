@@ -7,8 +7,9 @@ from typing_extensions import List, Type, Optional, Dict
 
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
-from pycram.datastructures.world import World
+from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.world_concepts.world_object import Object
+from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
 
 from .event_detectors import ContactDetector, LossOfContactDetector, EventDetector, MotionDetector, \
     AbstractContactDetector
@@ -19,7 +20,8 @@ from .episode_player import EpisodePlayer
 
 class EpisodeSegmenter(ABC):
 
-    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: Optional[List[Type[EventDetector]]] = None,
+    def __init__(self, episode_player: EpisodePlayer,
+                 detectors_to_start: Optional[List[Type[EventDetector]]] = None,
                  annotate_events: bool = False):
         """
         Initializes the EpisodeSegmenter class.
@@ -275,4 +277,28 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         for obj in World.current_world.objects:
             if obj.obj_type != ObjectType.ENVIRONMENT and (obj not in self.objects_to_avoid):
                 self.start_motion_detection_threads_for_object(obj)
+                self.detect_missing_support_for_object(obj)
+
+    def detect_missing_support_for_object(self, obj: Object) -> None:
+        """
+        Detect if the object is not supported by any other object.
+
+        :param obj: The object to check if it is supported.
+        """
+        supported = True
+        with UseProspectionWorld():
+            prospection_obj = World.current_world.get_prospection_object_for_object(obj)
+            current_position = prospection_obj.get_position_as_list()
+            World.current_world.simulate(1)
+            new_position = prospection_obj.get_position_as_list()
+            if current_position[2] - new_position[2] >= 0.01:
+                rospy.logdebug(f"Object {obj.name} is not supported")
+                supported = False
+        if not supported:
+            support = GenericObjectDescription(f"support_for_{obj.name}", [0, 0, 0], [1, 1, 0.005])
+            support_obj = Object(f"support_for_{obj.name}", ObjectType.GENERIC_OBJECT, None, support)
+            obj_position = obj.get_position_as_list()
+            obj_position[2] -= 0.005
+            support_obj.set_position(obj_position)
+            self.start_contact_threads_for_object(support_obj)
 
