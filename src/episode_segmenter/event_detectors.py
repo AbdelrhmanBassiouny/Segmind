@@ -7,13 +7,14 @@ import numpy as np
 import rospy
 from typing_extensions import Optional, List, Union, Type, Tuple
 
+from pycram import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Pose
 from pycram.world_concepts.world_object import Object, Link
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent, StopMotionEvent
+    AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent, StopMotionEvent, NewObjectEvent
 from .utils import get_angle_between_vectors, calculate_euclidean_distance
 
 
@@ -48,6 +49,7 @@ class PrimitiveEventDetector(threading.Thread, ABC):
 
         self.exit_thread: Optional[bool] = False
         self.run_once = False
+        self._pause: bool = False
 
     @property
     def thread_id(self) -> str:
@@ -61,6 +63,18 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         """
         pass
 
+    def pause(self):
+        """
+        Pause the event detector.
+        """
+        self._pause: bool = True
+
+    def resume(self):
+        """
+        Resume the event detector.
+        """
+        self._pause: bool = False
+
     def run(self):
         """
         The main loop of the thread. The event detector is called in a loop until the thread is stopped by setting the
@@ -68,12 +82,38 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         value to introduce a delay between calls to the event detector.
         """
         while not self.exit_thread:
-            events = self.detect_events()
-            if self.wait_time is not None:
-                time.sleep(self.wait_time)
-            [self.log_event(event) for event in events]
+            self._wait_if_paused()
+            last_processing_time = time.time()
+            self.detect_and_log_events()
             if self.run_once:
                 break
+            self._wait_to_maintain_loop_rate(last_processing_time)
+
+    def detect_and_log_events(self):
+        """
+        Detect and log the events.
+        """
+        events = self.detect_events()
+        [self.log_event(event) for event in events]
+
+    def _wait_if_paused(self):
+        """
+        Wait if the event detector is paused.
+        """
+        while self._pause:
+            time.sleep(0.1)
+
+    def _wait_to_maintain_loop_rate(self, last_processing_time: float):
+        """
+        Wait to maintain the loop rate of the event detector.
+
+        :param last_processing_time: The time of the last processing.
+        """
+        if self.wait_time is None:
+            return
+        time_diff = time.time() - last_processing_time
+        if time_diff < self.wait_time:
+            time.sleep(self.wait_time - time_diff)
 
     def log_event(self, event: Event) -> None:
         """
@@ -91,6 +131,55 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         :return: A boolean value that represents if the event was detected before.
         """
         return self.thread_id in self.logger.get_events().keys()
+
+
+class NewObjectDetector(PrimitiveEventDetector):
+    """
+    A thread that detects if a new object is added to the scene and logs the NewObjectEvent.
+    """
+
+    thread_prefix = "new_object_"
+    """
+    A string that is used as a prefix for the thread ID.
+    """
+
+    def __init__(self, logger: EventLogger, wait_time: Optional[float] = 0.1):
+        """
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        """
+        super().__init__(logger, wait_time)
+        self.new_object: Optional[Object] = None
+        self.pause()
+        World.current_world.add_callback_on_add_object(self.on_add_object)
+
+    def on_add_object(self, obj: Object):
+        """
+        Callback function that is called when a new object is added to the scene.
+        """
+        self.new_object = obj
+        self.resume()
+
+    def detect_events(self) -> List[Event]:
+        """
+        Detect if a new object is added to the scene and invoke the NewObjectEvent.
+
+        :return: A NewObjectEvent that represents the addition of a new object to the scene.
+        """
+        if self.new_object is None:
+            return []
+        event = NewObjectEvent(self.new_object)
+        self.new_object = None
+        self.pause()
+        return [event]
+
+    def join(self, timeout=None):
+        """
+        Remove the callback on the add object event and resume the thread to be able to join.
+        """
+        World.current_world.remove_callback_on_add_object(self.on_add_object)
+        self.resume()
+        super().join(timeout)
 
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
@@ -563,3 +652,11 @@ def get_latest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDe
         if latest_event is None:
             time.sleep(0.01)
     return latest_event
+
+
+EventDetectorUnion = Union[ContactDetector, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector,
+                           NewObjectDetector, AgentPickUpDetector, MotionPickUpDetector, EventDetector]
+TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
+                               Type[MotionDetector], Type[NewObjectDetector], Type[AgentPickUpDetector],
+                               Type[MotionPickUpDetector], Type[EventDetector]
+                               ]

@@ -1,4 +1,4 @@
-import threading
+from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion
 import time
 from abc import ABC, abstractmethod
 
@@ -8,14 +8,14 @@ from typing_extensions import List, Type, Optional, Dict
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.world import World, UseProspectionWorld
-from pycram.world_concepts.world_object import Object
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
-
+from pycram.world_concepts.world_object import Object
+from .episode_player import EpisodePlayer
 from .event_detectors import ContactDetector, LossOfContactDetector, EventDetector, MotionDetector, \
     AbstractContactDetector
-from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent
 from .event_logger import EventLogger
-from .episode_player import EpisodePlayer
+from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
+    NewObjectEvent
 
 
 class EpisodeSegmenter(ABC):
@@ -37,7 +37,8 @@ class EpisodeSegmenter(ABC):
         self.tracked_objects: List[Object] = []
         self.tracked_object_contacts: Dict[Object, List[Type[AbstractContactDetector]]] = {}
         self.tracked_object_motions: Dict[Object, MotionDetector] = {}
-        self.detector_threads = {}
+        self.starter_event_to_detector_thread_map: [Event, Type[EventDetector]] = {}
+        self.detector_threads_list: List[EventDetectorUnion] = []
         self.pick_up_detectors = {}
 
     def start(self) -> None:
@@ -157,15 +158,16 @@ class EpisodeSegmenter(ABC):
         """
         return any([k in obj.name.lower() for k in self.objects_to_avoid])
 
-    def start_motion_detection_threads_for_object(self, obj: Object) -> None:
+    def start_motion_detection_threads_for_object(self, obj: Object, event: Optional[NewObjectEvent] = None) -> None:
         """
         Start the motion detection threads for the object.
 
         :param obj: The Object instance for which the motion detection threads are started.
+        :param event: The NewObjectEvent instance that represents the creation of the object.
         """
-        detector_thread = MotionDetector(self.logger, obj)
-        detector_thread.start()
-        self.detector_threads[(obj, MotionDetector)] = detector_thread
+        if event is None:
+            event = NewObjectEvent(obj)
+        self.start_and_add_detector_thread(MotionDetector, starter_event=event)
 
     def start_contact_threads_for_object(self, obj: Object,
                                          event: Optional[ContactEvent] = None) -> None:
@@ -181,27 +183,49 @@ class EpisodeSegmenter(ABC):
             else:
                 event = ContactEvent(ContactPointsList([]), obj)
         for detector in (ContactDetector, LossOfContactDetector):
-            detector_thread = detector(self.logger, obj)
-            detector_thread.start()
-            self.detector_threads[(event, detector)] = detector_thread
+            self.start_and_add_detector_thread(detector, starter_event=event)
         self.tracked_object_contacts[obj] = [ContactDetector, LossOfContactDetector]
 
     def start_detector_thread_for_starter_event(self, starter_event: EventUnion,
-                                                detector_type: Type[EventDetector]):
+                                                detector_type: TypeEventDetectorUnion):
         """
         Start the detector thread for the given starter event.
 
         :param starter_event: The event that starts the detector thread.
         :param detector_type: The type of the detector.
         """
-        if (starter_event, detector_type) in self.detector_threads.keys():
-            detector = self.detector_threads[(starter_event, detector_type)]
+        if not self.is_detector_redundant(detector_type, starter_event):
+            self.start_and_add_detector_thread(detector_type, starter_event=starter_event)
+
+    def is_detector_redundant(self, detector_type: TypeEventDetectorUnion, starter_event: EventUnion) -> bool:
+        """
+        Check if the detector is redundant.
+
+        :param detector_type: The type of the detector.
+        :param starter_event: The event that starts the detector thread.
+        :return: True if the detector is redundant, False otherwise.
+        """
+        if (starter_event, detector_type) in self.starter_event_to_detector_thread_map.keys():
+            detector = self.starter_event_to_detector_thread_map[(starter_event, detector_type)]
             if detector.is_alive() or (detector.detected_before and detector.run_once):
-                return
-        detector = detector_type(self.logger, starter_event)
+                return True
+        return False
+
+    def start_and_add_detector_thread(self, detector_type: TypeEventDetectorUnion,
+                                      starter_event: Optional[EventUnion] = None) -> None:
+        """
+        Start and add an event detector to the detector threads.
+
+        :param detector_type: The event detector to be started and added.
+        :param starter_event: The event that starts the detector thread.
+        """
+        detector = detector_type(self.logger, starter_event) if starter_event is None else detector_type(self.logger)
         detector.start()
-        self.detector_threads[(starter_event, detector_type)] = detector
-        rospy.logdebug(f"Created {detector_type.__name__} for starter event {starter_event}")
+        self.detector_threads_list.append(detector)
+        rospy.logdebug(f"Created {detector_type.__name__}")
+        if starter_event is not None:
+            self.starter_event_to_detector_thread_map[(starter_event, detector_type)] = detector
+            rospy.logdebug(f"For starter event {starter_event}")
 
     def join(self):
         """
@@ -209,7 +233,7 @@ class EpisodeSegmenter(ABC):
         """
         self.episode_player.join()
 
-        for detector_thread in self.detector_threads.values():
+        for detector_thread in self.starter_event_to_detector_thread_map.values():
             detector_thread.exit_thread = True
             detector_thread.join()
 
@@ -256,6 +280,10 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
      events that are relevant to the objects in the world with the lack of an agent in the episode.
     """
 
+    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: Optional[List[Type[EventDetector]]] = None,
+                 annotate_events: bool = False):
+        super().__init__(episode_player, detectors_to_start, annotate_events)
+
     def start_tracking_threads_for_new_object_and_event(self, new_object: Object, event: EventUnion):
         # if new_object not in self.tracked_object_motions:
         #     rospy.logdebug(f"Creating motion threads for object {new_object.name}")
@@ -278,6 +306,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
             if obj.obj_type != ObjectType.ENVIRONMENT and (obj not in self.objects_to_avoid):
                 self.start_motion_detection_threads_for_object(obj)
                 self.detect_missing_support_for_object(obj)
+        self.episode_player.resume()
 
     def detect_missing_support_for_object(self, obj: Object) -> None:
         """
@@ -286,6 +315,8 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         :param obj: The object to check if it is supported.
         """
         supported = True
+        support_name = f"imagined_support"
+        support_obj = World.current_world.get_object_by_name(support_name)
         with UseProspectionWorld():
             prospection_obj = World.current_world.get_prospection_object_for_object(obj)
             current_position = prospection_obj.get_position_as_list()
@@ -294,11 +325,16 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
             if current_position[2] - new_position[2] >= 0.01:
                 rospy.logdebug(f"Object {obj.name} is not supported")
                 supported = False
-        if not supported:
-            support = GenericObjectDescription(f"support_for_{obj.name}", [0, 0, 0], [1, 1, 0.005])
-            support_obj = Object(f"support_for_{obj.name}", ObjectType.GENERIC_OBJECT, None, support)
-            obj_position = obj.get_position_as_list()
-            obj_position[2] -= 0.005
-            support_obj.set_position(obj_position)
+        obj_base_position = obj.get_base_position_as_list()
+        if (not supported) and (support_obj is None):
+            support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, 0.005])
+            support_obj = Object(support_name, ObjectType.GENERIC_OBJECT, None, support)
+            support_position = obj_base_position.copy()
+            support_position[2] = obj_base_position[2] - 0.005
+            support_obj.set_position(support_position)
             self.start_contact_threads_for_object(support_obj)
-
+        elif (not supported) and (support_obj is not None):
+            support_position = support_obj.get_position_as_list()
+            if obj_base_position[2] <= support_position[2]:
+                support_position[2] = obj_base_position[2] - 0.005
+                support_obj.set_position(support_position)

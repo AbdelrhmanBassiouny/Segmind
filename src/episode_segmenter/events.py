@@ -67,6 +67,34 @@ class Event(ABC):
         pass
 
 
+class NewObjectEvent(Event):
+    """
+    The NewObjectEvent class is used to represent an event that involves the addition of a new object to the world.
+    """
+
+    def __init__(self, new_object: Object, timestamp: Optional[float] = None):
+        super().__init__(timestamp)
+        self.new_object: Object = new_object
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.new_object == other.new_object
+
+    def __hash__(self):
+        return hash((self.__class__.__name__, self.new_object.name))
+
+    def set_color(self, color: Optional[Color] = None):
+        ...
+
+    @property
+    def color(self) -> Color:
+        return self.new_object.color
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.new_object.name}"
+
+
 class MotionEvent(Event):
     """
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
@@ -312,7 +340,8 @@ class PickUpEvent(Event):
 
 
 # Create a type that is the union of all event types
-EventUnion = Union[MotionEvent,
+EventUnion = Union[NewObjectEvent,
+                   MotionEvent,
                    StopMotionEvent,
                    ContactEvent,
                    LossOfContactEvent,

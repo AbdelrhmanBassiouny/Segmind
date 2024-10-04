@@ -23,9 +23,11 @@ from pycram.datastructures.world import World
 
 
 class EpisodePlayer(threading.Thread, ABC):
-    def __init__(self):
+    def __init__(self, time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=0)):
         super().__init__()
         self._ready = False
+        self._pause: bool = False
+        self.time_between_frames: datetime.timedelta = time_between_frames
 
     @property
     def ready(self):
@@ -37,6 +39,35 @@ class EpisodePlayer(threading.Thread, ABC):
         The run method that is called when the thread is started. This should start the episode player thread.
         """
         pass
+
+    def pause(self):
+        """
+        Pause the episode player frame processing.
+        """
+        self._pause: bool = True
+
+    def resume(self):
+        """
+        Resume the episode player frame processing.
+        """
+        self._pause: bool = False
+
+    def _wait_if_paused(self):
+        """
+        Wait if the episode player is paused.
+        """
+        while self._pause:
+            time.sleep(0.1)
+
+    def _wait_to_maintain_frame_rate(self, last_processing_time: float):
+        """
+        Wait to maintain the frame rate of the episode player.
+
+        :param last_processing_time: The time of the last processing.
+        """
+        time_diff = time.time() - last_processing_time
+        if time_diff < self.time_between_frames.total_seconds():
+            time.sleep(self.time_between_frames.total_seconds() - time_diff)
 
 
 class FileEpisodePlayer(EpisodePlayer):
@@ -52,7 +83,7 @@ class FileEpisodePlayer(EpisodePlayer):
         :param mesh_scale: The scale of the mesh.
         :param time_between_frames: The time between frames.
         """
-        super().__init__()
+        super().__init__(time_between_frames=time_between_frames)
         self.json_file = json_file
         with open(self.json_file, 'r') as f:
             self.data_frames = json.load(f)[str(scene_id)]
@@ -60,8 +91,8 @@ class FileEpisodePlayer(EpisodePlayer):
         self.data_frames = dict(sorted(self.data_frames.items(), key=lambda x: x[0]))
         self.world = world if world is not None else World.current_world
         self.mesh_scale = mesh_scale
-        self.time_between_frames: datetime.timedelta = time_between_frames
         self.copy_model_files_to_world_data_dir()
+        self._pause: bool = False
 
     def copy_model_files_to_world_data_dir(self):
         parent_dir_of_json_file = os.path.abspath(os.path.dirname(self.json_file))
@@ -71,11 +102,10 @@ class FileEpisodePlayer(EpisodePlayer):
 
     def run(self):
         for frame_id, objects_data in self.data_frames.items():
-            curr_time = time.time()
+            self._wait_if_paused()
+            last_processing_time = time.time()
             self.process_objects_data(objects_data)
-            time_diff = time.time() - curr_time
-            if time_diff < self.time_between_frames.total_seconds():
-                time.sleep(self.time_between_frames.total_seconds() - time_diff)
+            self._wait_to_maintain_frame_rate(last_processing_time)
             self._ready = True
 
     def process_objects_data(self, objects_data: dict):
