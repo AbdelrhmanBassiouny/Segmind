@@ -318,7 +318,10 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         for obj in World.current_world.objects:
             if obj.obj_type != ObjectType.ENVIRONMENT and (obj not in self.objects_to_avoid):
                 self.start_motion_detection_threads_for_object(obj)
-                self.detect_missing_support_for_object(obj)
+                try:
+                    self.detect_missing_support_for_object(obj)
+                except NotImplementedError:
+                    rospy.logwarn("Support detection is not implemented for this simulator.")
         self.episode_player.resume()
 
     def detect_missing_support_for_object(self, obj: Object) -> None:

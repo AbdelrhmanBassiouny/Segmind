@@ -97,6 +97,7 @@ class FileEpisodePlayer(EpisodePlayer):
         self.world = world if world is not None else World.current_world
         self.mesh_scale = mesh_scale
         self.correction_quaternions: Dict[Object, np.ndarray] = {}
+        self.average_rotation_correction_matrix: np.ndarray = None
         self.copy_model_files_to_world_data_dir()
         self._pause: bool = False
 
@@ -146,9 +147,22 @@ class FileEpisodePlayer(EpisodePlayer):
         :param obj: The object.
         :param obj_pose: The pose of the object.
         """
-        current_quaternion = np.array(obj_pose.orientation_as_list())
-        new_quaternion = quaternion_multiply(self.correction_quaternions[obj], current_quaternion)
-        return Pose(obj_pose.position_as_list(), new_quaternion.tolist())
+        if self.average_rotation_correction_matrix is None:
+            self.average_rotation_correction_matrix = self.calculate_average_rotation()
+        homogeneous_pose = obj_pose.to_transform(obj.tf_frame).get_homogeneous_matrix()
+        new_pose_transform = np.dot(self.average_rotation_correction_matrix, homogeneous_pose)
+        new_quaternion = quaternion_from_matrix(new_pose_transform).tolist()
+        new_translation = new_pose_transform[:3, 3].tolist()
+        return Pose(new_translation, new_quaternion)
+
+    def calculate_average_rotation(self):
+        """
+        Calculate the average rotation of the correction rotations. (This is based on this stackoverflow post:
+        https://stackoverflow.com/a/51572039)
+        """
+        mean_rotation = np.mean([quaternion_matrix(v) for v in self.correction_quaternions.values()], axis=0)
+        u, s, vh = np.linalg.svd(mean_rotation)
+        return np.dot(u, vh)
 
     def estimate_object_mesh_orientation(self, obj: Object) -> np.ndarray:
         """

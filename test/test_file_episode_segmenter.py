@@ -22,8 +22,8 @@ class TestFileEpisodeSegmenter(TestCase):
     @classmethod
     def setUpClass(cls):
         json_file = "../resources/fame_episodes/alessandro_with_ycp_objects_in_max_room/refined_poses.json"
-        # simulator = BulletWorld if Multiverse is None else Multiverse
-        simulator = BulletWorld
+        simulator = BulletWorld if Multiverse is None else Multiverse
+        # simulator = BulletWorld
         cls.world = simulator(WorldMode.GUI)
         cls.file_player = FileEpisodePlayer(json_file, world=cls.world,
                                             time_between_frames=datetime.timedelta(milliseconds=100))
