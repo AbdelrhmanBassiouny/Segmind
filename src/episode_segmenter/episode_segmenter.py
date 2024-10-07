@@ -1,3 +1,5 @@
+import datetime
+
 from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion
 import time
 from abc import ABC, abstractmethod
@@ -167,7 +169,8 @@ class EpisodeSegmenter(ABC):
         """
         if event is None:
             event = NewObjectEvent(obj)
-        self.start_and_add_detector_thread(MotionDetector, starter_event=event)
+        self.start_and_add_detector_thread(MotionDetector, starter_event=event,
+                                           time_between_frames=self.time_between_frames)
 
     def start_contact_threads_for_object(self, obj: Object,
                                          event: Optional[ContactEvent] = None) -> None:
@@ -212,20 +215,30 @@ class EpisodeSegmenter(ABC):
         return False
 
     def start_and_add_detector_thread(self, detector_type: TypeEventDetectorUnion,
-                                      starter_event: Optional[EventUnion] = None) -> None:
+                                      starter_event: Optional[EventUnion] = None,
+                                      *detector_args, **detector_kwargs) -> None:
         """
         Start and add an event detector to the detector threads.
 
         :param detector_type: The event detector to be started and added.
         :param starter_event: The event that starts the detector thread.
+        :param detector_args: The positional arguments to be passed to the detector constructor.
+        :param detector_kwargs: The keyword arguments to be passed to the detector constructor.
         """
-        detector = detector_type(self.logger, starter_event) if starter_event is None else detector_type(self.logger)
+        detector = detector_type(self.logger, starter_event=starter_event, *detector_args, **detector_kwargs)
         detector.start()
         self.detector_threads_list.append(detector)
         rospy.logdebug(f"Created {detector_type.__name__}")
         if starter_event is not None:
             self.starter_event_to_detector_thread_map[(starter_event, detector_type)] = detector
             rospy.logdebug(f"For starter event {starter_event}")
+
+    @property
+    def time_between_frames(self) -> datetime.timedelta:
+        """
+        :return: The time between frames of the episode player.
+        """
+        return self.episode_player.time_between_frames
 
     def join(self):
         """

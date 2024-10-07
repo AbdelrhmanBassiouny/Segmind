@@ -1,3 +1,4 @@
+import datetime
 from unittest import TestCase
 
 from pycram.datastructures.world import World
@@ -24,7 +25,8 @@ class TestFileEpisodeSegmenter(TestCase):
         # simulator = BulletWorld if Multiverse is None else Multiverse
         simulator = BulletWorld
         cls.world = simulator(WorldMode.GUI)
-        cls.file_player = FileEpisodePlayer(json_file, world=cls.world)
+        cls.file_player = FileEpisodePlayer(json_file, world=cls.world,
+                                            time_between_frames=datetime.timedelta(milliseconds=100))
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, detectors_to_start=[], annotate_events=True)
 
     @classmethod

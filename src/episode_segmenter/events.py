@@ -74,25 +74,25 @@ class NewObjectEvent(Event):
 
     def __init__(self, new_object: Object, timestamp: Optional[float] = None):
         super().__init__(timestamp)
-        self.new_object: Object = new_object
+        self.tracked_object: Object = new_object
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return self.new_object == other.new_object
+        return self.tracked_object == other.tracked_object
 
     def __hash__(self):
-        return hash((self.__class__.__name__, self.new_object.name))
+        return hash((self.__class__.__name__, self.tracked_object.name))
 
     def set_color(self, color: Optional[Color] = None):
         ...
 
     @property
     def color(self) -> Color:
-        return self.new_object.color
+        return self.tracked_object.color
 
     def __str__(self):
-        return f"{self.__class__.__name__}: {self.new_object.name}"
+        return f"{self.__class__.__name__}: {self.tracked_object.name}"
 
 
 class MotionEvent(Event):
@@ -145,16 +145,16 @@ class AbstractContactEvent(Event, ABC):
                  timestamp: Optional[float] = None):
         super().__init__(timestamp)
         self.contact_points = contact_points
-        self.of_object: Object = of_object
+        self.tracked_object: Object = of_object
         self.with_object: Optional[Object] = with_object
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return self.of_object == other.of_object and self.with_object == other.with_object
+        return self.tracked_object == other.tracked_object and self.with_object == other.with_object
 
     def __hash__(self):
-        return hash((self.of_object.name, self.with_object.name if self.with_object is not None else '',
+        return hash((self.tracked_object.name, self.with_object.name if self.with_object is not None else '',
                      self.__class__.__name__))
 
     def set_color(self, color: Optional[Color] = None):
@@ -163,7 +163,7 @@ class AbstractContactEvent(Event, ABC):
         [link.set_color(color) for link in self.links]
 
     def __str__(self):
-        return f"{self.__class__.__name__}: {self.of_object.name} - {self.with_object.name if self.with_object else ''}"
+        return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.with_object.name if self.with_object else ''}"
 
     def __repr__(self):
         return self.__str__()
@@ -207,7 +207,7 @@ class ContactEvent(AbstractContactEvent):
         if len(self.contact_points) > 0:
             return self.contact_points[0].link_a
         else:
-            rospy.logwarn(f"No contact points found for {self.of_object.name} in {self.__class__.__name__}")
+            rospy.logwarn(f"No contact points found for {self.tracked_object.name} in {self.__class__.__name__}")
 
     @property
     def links(self) -> List[Link]:
@@ -250,7 +250,7 @@ class LossOfContactEvent(AbstractContactEvent):
 class AbstractAgentContact(AbstractContactEvent, ABC):
     @property
     def agent(self) -> Object:
-        return self.of_object
+        return self.tracked_object
 
     @property
     def agent_link(self) -> Link:

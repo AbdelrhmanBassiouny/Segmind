@@ -35,7 +35,7 @@ class PrimitiveEventDetector(threading.Thread, ABC):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, wait_time: Optional[float] = None):
+    def __init__(self, logger: EventLogger, wait_time: Optional[float] = None, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
@@ -143,12 +143,12 @@ class NewObjectDetector(PrimitiveEventDetector):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, wait_time: Optional[float] = 0.1):
+    def __init__(self, logger: EventLogger, wait_time: Optional[float] = 0.1, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
-        super().__init__(logger, wait_time)
+        super().__init__(logger, wait_time, *args, **kwargs)
         self.new_object: Optional[Object] = None
         self.pause()
         World.current_world.add_callback_on_add_object(self.on_add_object)
@@ -183,19 +183,20 @@ class NewObjectDetector(PrimitiveEventDetector):
 
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
-    def __init__(self, logger: EventLogger, tracked_object: Object, with_object: Optional[Object] = None,
-                 max_closeness_distance: Optional[float] = 0.05, wait_time: Optional[float] = 0.1):
+    def __init__(self, logger: EventLogger, starter_event: EventUnion, with_object: Optional[Object] = None,
+                 max_closeness_distance: Optional[float] = 0.05, wait_time: Optional[float] = 0.1,
+                 *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
-        :param tracked_object: An instance of the Object class that represents the object to track.
+        :param starter_event: An instance of the Event class that represents the event to start the event detector.
         :param max_closeness_distance: An optional float value that represents the maximum distance between the object
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
-        super().__init__(logger, wait_time)
-        self.objects_to_track = [tracked_object]
+        super().__init__(logger, wait_time, *args, **kwargs)
+        self.objects_to_track = [starter_event.tracked_object]
         if with_object is not None:
             self.objects_to_track.append(with_object)
-        self.tracked_object = tracked_object
+        self.tracked_object = starter_event.tracked_object
         self.with_object = with_object
         self.max_closeness_distance = max_closeness_distance
         self.latest_contact_points: Optional[ContactPointsList] = ContactPointsList([])
@@ -335,22 +336,25 @@ class MotionDetector(PrimitiveEventDetector):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, tracked_object: Object, velocity_threshold: float = 0.08,
-                 wait_time: Optional[float] = 0.1):
+    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, velocity_threshold: float = 0.08,
+                 wait_time: Optional[float] = 0.1,
+                 time_between_frames: Optional[datetime.timedelta] = datetime.timedelta(milliseconds=50),
+                 *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
-        :param tracked_object: An instance of the Object class that represents the object to track.
+        :param starter_event: An instance of the NewObjectEvent class that represents the event to start the event.
         :param velocity_threshold: An optional float value that represents the velocity threshold for the object to be
         considered as moving.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param time_between_frames: An optional datetime.timedelta value that represents the time between frames.
         """
-        super().__init__(logger, wait_time)
-        self.objects_to_track = [tracked_object]
-        self.tracked_object = tracked_object
+        super().__init__(logger, wait_time, *args, **kwargs)
+        self.objects_to_track = [starter_event.tracked_object]
+        self.tracked_object = starter_event.tracked_object
         self.latest_pose = self.tracked_object.pose
         self.latest_time = time.time()
         self.velocity_threshold = velocity_threshold
-        self.measure_timestep: datetime.timedelta = datetime.timedelta(milliseconds=204)
+        self.measure_timestep: datetime.timedelta = (time_between_frames + datetime.timedelta(milliseconds=1)) * 4
         self.distance_threshold: float = self.velocity_threshold * self.measure_timestep.total_seconds()
         self.was_moving: bool = False
 
@@ -408,13 +412,14 @@ class MotionDetector(PrimitiveEventDetector):
 
 class EventDetector(PrimitiveEventDetector, ABC):
 
-    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[float] = None):
+    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[float] = None,
+                 *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
-        super().__init__(logger, wait_time)
+        super().__init__(logger, wait_time, *args, **kwargs)
         self.starter_event: EventUnion = starter_event
 
     @classmethod
@@ -453,13 +458,13 @@ class AbstractPickUpDetector(EventDetector, ABC):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: EventUnion):
+    def __init__(self, logger: EventLogger, starter_event: EventUnion, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of a type of Event that represents the event to
          start the event detector.
         """
-        super().__init__(logger, starter_event)
+        super().__init__(logger, starter_event, *args, **kwargs)
         self.tracked_object = self.get_object_to_pick_from_event(starter_event)
         self.objects_to_track = [self.tracked_object]
         self.run_once = True
@@ -488,13 +493,13 @@ class AgentPickUpDetector(AbstractPickUpDetector):
     A detector that detects if the tracked_object was picked up by an agent, such as a human or a robot.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: AgentContactEvent):
+    def __init__(self, logger: EventLogger, starter_event: AgentContactEvent, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the AgentContactEvent class that represents the event to start the
         event detector, this is a contact between the agent and the tracked_object.
         """
-        super().__init__(logger, starter_event)
+        super().__init__(logger, starter_event, *args, **kwargs)
         self.agent = starter_event.agent
         self.agent_link = starter_event.agent_link
         self.object_link = self.get_object_link_from_event(starter_event)
@@ -598,13 +603,13 @@ class AgentPickUpDetector(AbstractPickUpDetector):
 
 class MotionPickUpDetector(AbstractPickUpDetector):
 
-    def __init__(self, logger: EventLogger, starter_event: LossOfContactEvent):
+    def __init__(self, logger: EventLogger, starter_event: LossOfContactEvent, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the ContactEvent class that represents the event to start the event
          detector.
         """
-        super().__init__(logger, starter_event)
+        super().__init__(logger, starter_event, *args, **kwargs)
         self.surface = self.get_surface_from_event(starter_event)
 
 
