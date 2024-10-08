@@ -20,7 +20,8 @@ class EventLogger:
     current_logger: Optional['EventLogger'] = None
 
     def __init__(self, annotate_events: bool = False, events_to_annotate: List[Type[Event]] = None):
-        self.timeline = {}
+        self.timeline_per_thread = {}
+        self.timeline = []
         self.event_queue = queue.Queue()
         self.lock = threading.Lock()
         self.annotate_events = annotate_events
@@ -37,9 +38,10 @@ class EventLogger:
         if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)):
             self.annotation_queue.put(event)
         with self.lock:
-            if thread_id not in self.timeline:
-                self.timeline[thread_id] = []
-            self.timeline[thread_id].append(event)
+            if thread_id not in self.timeline_per_thread:
+                self.timeline_per_thread[thread_id] = []
+            self.timeline_per_thread[thread_id].append(event)
+            self.timeline.append(event)
 
     def print_events(self):
         """
@@ -48,7 +50,15 @@ class EventLogger:
         rospy.loginfo("Events:")
         rospy.loginfo(self)
 
-    def get_events(self) -> Dict[str, List[Event]]:
+    def get_events_per_thread(self) -> Dict[str, List[Event]]:
+        """
+        Get all events that have been logged.
+        """
+        with self.lock:
+            events = self.timeline_per_thread.copy()
+        return events
+
+    def get_events(self) -> List[Event]:
         """
         Get all events that have been logged.
         """
@@ -75,7 +85,7 @@ class EventLogger:
         :return: The id of the thread or None if no such thread
         """
         with self.lock:
-            thread_id = [thread_id for thread_id in self.timeline.keys() if thread_id.startswith(prefix) and
+            thread_id = [thread_id for thread_id in self.timeline_per_thread.keys() if thread_id.startswith(prefix) and
                          object_name in thread_id]
         return None if len(thread_id) == 0 else thread_id[0]
 
@@ -87,9 +97,9 @@ class EventLogger:
         :return: The latest event of the thread or None if no such thread.
         """
         with self.lock:
-            if thread_id not in self.timeline:
+            if thread_id not in self.timeline_per_thread:
                 return None
-            return self.timeline[thread_id][-1]
+            return self.timeline_per_thread[thread_id][-1]
 
     def get_next_event(self):
         """
@@ -112,7 +122,7 @@ class EventLogger:
         self.event_queue.join()
 
     def __str__(self):
-        return '\n'.join([' '.join([str(v) for v in values]) for values in self.get_events().values()])
+        return '\n'.join([str(event) for event in self.get_events()])
 
 
 class EventAnnotationThread(threading.Thread):

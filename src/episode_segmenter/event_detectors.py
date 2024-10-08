@@ -2,6 +2,7 @@ import datetime
 import threading
 import time
 from abc import ABC, abstractmethod
+from math import ceil
 
 import numpy as np
 import rospy
@@ -130,7 +131,7 @@ class PrimitiveEventDetector(threading.Thread, ABC):
 
         :return: A boolean value that represents if the event was detected before.
         """
-        return self.thread_id in self.logger.get_events().keys()
+        return self.thread_id in self.logger.get_events_per_thread().keys()
 
 
 class NewObjectDetector(PrimitiveEventDetector):
@@ -336,7 +337,7 @@ class MotionDetector(PrimitiveEventDetector):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, velocity_threshold: float = 0.08,
+    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, velocity_threshold: float = 0.07,
                  wait_time: Optional[float] = 0.1,
                  time_between_frames: Optional[datetime.timedelta] = datetime.timedelta(milliseconds=50),
                  *args, **kwargs):
@@ -354,7 +355,13 @@ class MotionDetector(PrimitiveEventDetector):
         self.latest_pose = self.tracked_object.pose
         self.latest_time = time.time()
         self.velocity_threshold = velocity_threshold
-        self.measure_timestep: datetime.timedelta = (time_between_frames + datetime.timedelta(milliseconds=1)) * 4
+
+        self.measure_timestep: datetime.timedelta = datetime.timedelta(milliseconds=250)
+        # frames per measure timestep
+        self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
+                                              time_between_frames.total_seconds()) + 0.5
+        self.measure_timestep = time_between_frames * self.measure_frame_rate
+
         self.distance_threshold: float = self.velocity_threshold * self.measure_timestep.total_seconds()
         self.was_moving: bool = False
 
@@ -660,8 +667,8 @@ def get_latest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDe
 
 
 EventDetectorUnion = Union[ContactDetector, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector,
-                           NewObjectDetector, AgentPickUpDetector, MotionPickUpDetector, EventDetector]
+NewObjectDetector, AgentPickUpDetector, MotionPickUpDetector, EventDetector]
 TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
-                               Type[MotionDetector], Type[NewObjectDetector], Type[AgentPickUpDetector],
-                               Type[MotionPickUpDetector], Type[EventDetector]
-                               ]
+Type[MotionDetector], Type[NewObjectDetector], Type[AgentPickUpDetector],
+Type[MotionPickUpDetector], Type[EventDetector]
+]

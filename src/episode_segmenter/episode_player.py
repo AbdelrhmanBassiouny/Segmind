@@ -10,7 +10,7 @@ import numpy as np
 import scipy
 import trimesh
 from tf.transformations import (quaternion_from_matrix, euler_matrix, quaternion_matrix, quaternion_multiply,
-                                euler_from_quaternion, quaternion_inverse, quaternion_from_euler)
+                                euler_from_quaternion, quaternion_inverse, quaternion_from_euler, euler_from_matrix)
 from trimesh import Geometry
 from typing_extensions import List, Tuple, Dict, Optional, Union
 
@@ -96,7 +96,9 @@ class FileEpisodePlayer(EpisodePlayer):
         self.data_frames = dict(sorted(self.data_frames.items(), key=lambda x: x[0]))
         self.world = world if world is not None else World.current_world
         self.mesh_scale = mesh_scale
+        self.object_meshes: Dict[Object, Geometry] = {}
         self.correction_quaternions: Dict[Object, np.ndarray] = {}
+        self.base_origin_of_objects: Dict[Object, np.ndarray] = {}
         self.average_rotation_correction_matrix: np.ndarray = None
         self.copy_model_files_to_world_data_dir()
         self._pause: bool = False
@@ -172,39 +174,89 @@ class FileEpisodePlayer(EpisodePlayer):
         :param obj: The object.
         :return: The rotation matrix of the base plane.
         """
-        mesh = self.load_scale_and_transform_mesh_of_object(obj)
-        base_vertices = self.get_base_points_from_mesh(mesh)
+        base_vertices = self.get_base_points_of_object(obj)
         plane_normal = self.estimate_plane_normal_from_points(base_vertices)
         rotation_matrix = self.calculate_plane_rotation_from_normal(plane_normal)
         homogeneous_matrix = np.eye(4)
         homogeneous_matrix[:3, :3] = rotation_matrix
         return quaternion_from_matrix(homogeneous_matrix)
 
-    def load_scale_and_transform_mesh_of_object(self, obj: Object) -> Geometry:
+    def get_base_points_of_object(self, obj: Object, transform_points: bool = True) -> np.ndarray:
+        """
+        Get the base points of an object.
+
+        :param obj: The object.
+        :param transform_points: A boolean value that determines if the points should be transformed.
+        :return: The base points of the object.
+        """
+        mesh = self.get_mesh_of_object(obj, apply_transform=False)
+        base_points = self.get_base_points_from_mesh(mesh)
+        if transform_points:
+            base_points = np.dot(base_points, quaternion_matrix(obj.get_orientation_as_list())[:3, :3].T)
+        return base_points
+
+    def get_relative_base_origin_of_object(self, obj: Object) -> np.ndarray:
+        """
+        Get the origin of the base of the object relative to the origin of the object.
+
+        :param obj: The object.
+        :return: The origin of the base.
+        """
+        mesh = self.get_mesh_of_object(obj, apply_transform=False)
+        base_vertices, min_z = self.get_base_points_from_mesh(mesh, return_min_z=True)
+        base_origin = base_vertices.mean(axis=0)
+        base_origin[2] = min_z
+        return base_origin
+
+    def get_mesh_of_object(self, obj: Object, apply_scale: bool = True,
+                           apply_transform: bool = True) -> Geometry:
+        """
+        Get the mesh of an object.
+W
+        :param obj: The object.
+        :param apply_scale: A boolean value that determines if the mesh should be scaled.
+        :param apply_transform: A boolean value that determines if the mesh should be transformed.
+        :return: The mesh of the object.
+        """
+        return self.object_meshes.get(obj,
+                                      self.load_scale_and_transform_mesh_of_object(obj, apply_scale, apply_transform))
+
+    def load_scale_and_transform_mesh_of_object(self, obj: Object, apply_scale: bool = True,
+                                                apply_transform: bool = True) -> Geometry:
         """
         Load, scale and transform the mesh of an object.
 
         :param obj: The object.
+        :param apply_scale: A boolean value that determines if the mesh should be scaled.
+        :param apply_transform: A boolean value that determines if the mesh should be transformed.
         :return: The loaded and processed mesh.
         """
         mesh_path = obj.description.original_path
         mesh = trimesh.load(mesh_path)
-        mesh.apply_scale(self.mesh_scale)
-        mesh_transform = quaternion_matrix(obj.get_orientation_as_list())
-        mesh.apply_transform(mesh_transform)
+        if apply_scale:
+            mesh.apply_scale(self.mesh_scale)
+        if apply_transform:
+            mesh_transform = quaternion_matrix(obj.get_orientation_as_list())
+            mesh.apply_transform(mesh_transform)
         return mesh
 
     @staticmethod
-    def get_base_points_from_mesh(mesh: Geometry, threshold: float = 0.001) -> np.ndarray:
+    def get_base_points_from_mesh(mesh: Geometry, threshold: float = 0.001,
+                                  return_min_z: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, float]]:
         """
         Get the base points of an object from its mesh.
 
         :param mesh: The mesh of the object.
         :param threshold: The threshold to determine the base points.
-        :return: The base points of the object.
+        :param return_min_z: A boolean value that determines if the minimum z value should be returned.
+        :return: The base points of the object and the minimum z value if return_min_z is True.
         """
         min_z = np.min(mesh.vertices[:, 2])
-        return mesh.vertices[mesh.vertices[:, 2] <= threshold + min_z]
+        base_vertices = mesh.vertices[mesh.vertices[:, 2] <= threshold + min_z]
+        if return_min_z:
+            return base_vertices, min_z
+        else:
+            return base_vertices
 
     @staticmethod
     def estimate_plane_normal_from_points(base_vertices: np.ndarray) -> np.ndarray:
@@ -216,7 +268,7 @@ class FileEpisodePlayer(EpisodePlayer):
         """
         # barycenter of the points
         # compute centered coordinates
-        G = base_vertices.sum(axis=0) / base_vertices.shape[0]
+        G = base_vertices.mean(axis=0)
 
         # run SVD
         u, s, vh = np.linalg.svd(base_vertices - G)
