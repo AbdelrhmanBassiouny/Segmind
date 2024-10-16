@@ -78,7 +78,8 @@ class EpisodePlayer(threading.Thread, ABC):
 class FileEpisodePlayer(EpisodePlayer):
     def __init__(self, json_file: str, scene_id: int = 1, world: Optional[World] = None,
                  mesh_scale: float = 0.001,
-                 time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=50)):
+                 time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=50),
+                 objects_to_ignore: Optional[List[int]] = None):
         """
         Initializes the FAMEEpisodePlayer with the specified json file and scene id.
 
@@ -87,12 +88,15 @@ class FileEpisodePlayer(EpisodePlayer):
         :param world: The world that is used to replay the episode.
         :param mesh_scale: The scale of the mesh.
         :param time_between_frames: The time between frames.
+        :param objects_to_ignore: A list of object ids to ignore.
         """
         super().__init__(time_between_frames=time_between_frames)
         self.json_file = json_file
         with open(self.json_file, 'r') as f:
             self.data_frames = json.load(f)[str(scene_id)]
-        self.data_frames = {int(k): v for k, v in self.data_frames.items()}
+        self.data_frames = {int(frame_id): objects_data for frame_id, objects_data in self.data_frames.items()}
+        if objects_to_ignore is not None:
+            self._remove_ignored_objects(objects_to_ignore)
         self.data_frames = dict(sorted(self.data_frames.items(), key=lambda x: x[0]))
         self.world = world if world is not None else World.current_world
         self.mesh_scale = mesh_scale
@@ -103,7 +107,20 @@ class FileEpisodePlayer(EpisodePlayer):
         self.copy_model_files_to_world_data_dir()
         self._pause: bool = False
 
+    def _remove_ignored_objects(self, objects_to_ignore: List[int]):
+        """
+        Remove the objects to ignore from the data frames.
+
+        :param objects_to_ignore: The list of object ids to ignore.
+        """
+        self.data_frames = {frame_id: {obj_id: v for obj_id, v in objects_data.items()
+                                       if int(obj_id) not in objects_to_ignore}
+                            for frame_id, objects_data in self.data_frames.items()}
+
     def copy_model_files_to_world_data_dir(self):
+        """
+        Copy the model files to the world data directory.
+        """
         parent_dir_of_json_file = os.path.abspath(os.path.dirname(self.json_file))
         models_path = os.path.join(parent_dir_of_json_file, "custom", "models")
         # Copy the entire folder and its contents

@@ -356,7 +356,7 @@ class MotionDetector(PrimitiveEventDetector):
         self.latest_time = time.time()
         self.velocity_threshold = velocity_threshold
 
-        self.measure_timestep: datetime.timedelta = datetime.timedelta(milliseconds=250)
+        self.measure_timestep: datetime.timedelta = datetime.timedelta(milliseconds=350)
         # frames per measure timestep
         self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
                                               time_between_frames.total_seconds()) + 0.5
