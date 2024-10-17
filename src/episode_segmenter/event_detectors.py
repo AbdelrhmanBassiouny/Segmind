@@ -52,6 +52,12 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         self.run_once = False
         self._pause: bool = False
 
+    def stop(self):
+        """
+        Stop the event detector.
+        """
+        self.exit_thread = True
+
     @property
     def thread_id(self) -> str:
         return f"{self.thread_prefix}{'_'.join([obj.name for obj in self.objects_to_track])}"
@@ -101,8 +107,9 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         """
         Wait if the event detector is paused.
         """
-        while self._pause:
+        while self._pause and not self.exit_thread:
             time.sleep(0.1)
+            print(f"Paused {self.thread_id}")
 
     def _wait_to_maintain_loop_rate(self, last_processing_time: float):
         """
@@ -499,6 +506,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
     """
     A detector that detects if the tracked_object was picked up by an agent, such as a human or a robot.
     """
+    num_threads: int = 0
 
     def __init__(self, logger: EventLogger, starter_event: AgentContactEvent, *args, **kwargs):
         """
@@ -510,7 +518,8 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         self.agent = starter_event.agent
         self.agent_link = starter_event.agent_link
         self.object_link = self.get_object_link_from_event(starter_event)
-        self.surface_detector = LossOfSurfaceDetector(logger, self.tracked_object)
+        self.kill_event = threading.Event()
+        self.surface_detector = LossOfSurfaceDetector(logger, self.starter_event)
         self.surface_detector.start()
 
     @classmethod
@@ -577,13 +586,18 @@ class AgentPickUpDetector(AbstractPickUpDetector):
 
         pick_up_event = PickUpEvent(self.tracked_object, self.agent, self.start_timestamp)
 
-        while True:
+        while not self.kill_event.is_set():
             loss_of_surface_event = get_latest_event_of_detector_for_object(LossOfSurfaceDetector,
                                                                             self.tracked_object,
                                                                             after_timestamp=self.start_timestamp
                                                                             )
+            if loss_of_surface_event is None:
+                rospy.logdebug(f"continue, tracked_object: {self.tracked_object.name}")
+                time.sleep(0.01)
+                continue
             pick_up_event.record_end_timestamp()
             objects_that_lost_contact = loss_of_surface_event.get_objects_that_got_removed(self.start_contact_points)
+            print("Still here")
             if len(objects_that_lost_contact) == 0:
                 rospy.logdebug(f"continue, tracked_object: {self.tracked_object.name}")
                 time.sleep(0.01)
@@ -602,10 +616,11 @@ class AgentPickUpDetector(AbstractPickUpDetector):
     def start_contact_points(self) -> ContactPointsList:
         return self.starter_event.contact_points
 
-    def join(self, timeout: Optional[float] = None):
-        self.surface_detector.exit_thread = True
+    def stop(self, timeout: Optional[float] = None):
+        self.surface_detector.stop()
         self.surface_detector.join(timeout)
-        super().join(timeout)
+        self.kill_event.set()
+        self.exit_thread = True
 
 
 class MotionPickUpDetector(AbstractPickUpDetector):
@@ -655,14 +670,12 @@ def get_latest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDe
     :param after_timestamp: A float value that represents the timestamp to get the event after.
     :return: The latest event of the detector for the object.
     """
-    latest_event = None
     logger = EventLogger.current_logger
-    while latest_event is None:
-        latest_event = logger.get_latest_event_of_detector_for_object(detector_type.thread_prefix, obj)
-        if latest_event is not None and after_timestamp is not None:
-            latest_event = None if latest_event.timestamp < after_timestamp else latest_event
-        if latest_event is None:
-            time.sleep(0.01)
+    latest_event = logger.get_latest_event_of_detector_for_object(detector_type.thread_prefix, obj)
+    if latest_event is not None and after_timestamp is not None:
+        latest_event = None if latest_event.timestamp < after_timestamp else latest_event
+    if latest_event is None:
+        time.sleep(0.01)
     return latest_event
 
 

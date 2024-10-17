@@ -2,12 +2,12 @@ import queue
 import threading
 import time
 
-import rospy
 from typing_extensions import List, Optional, Dict, Type
 
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
+from pycram.ros.logging import loginfo
 
 from .events import Event
 
@@ -23,7 +23,7 @@ class EventLogger:
         self.timeline_per_thread = {}
         self.timeline = []
         self.event_queue = queue.Queue()
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.annotate_events = annotate_events
         self.events_to_annotate = events_to_annotate
         if annotate_events:
@@ -47,8 +47,8 @@ class EventLogger:
         """
         Print all events that have been logged.
         """
-        rospy.loginfo("Events:")
-        rospy.loginfo(self)
+        loginfo("Events:")
+        loginfo(self.__str__())
 
     def get_events_per_thread(self) -> Dict[str, List[Event]]:
         """
@@ -118,6 +118,7 @@ class EventLogger:
         """
         if self.annotate_events:
             self.annotation_thread.stop()
+            self.annotation_thread.join()
             self.annotation_queue.join()
         self.event_queue.join()
 
@@ -166,4 +167,3 @@ class EventAnnotationThread(threading.Thread):
 
     def stop(self):
         self.exit = True
-        self.join()
