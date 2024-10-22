@@ -24,11 +24,12 @@ class TestFileEpisodeSegmenter(TestCase):
         json_file = "../resources/fame_episodes/alessandro_with_ycp_objects_in_max_room_2/refined_poses.json"
         # simulator = BulletWorld if Multiverse is None else Multiverse
         simulator = BulletWorld
+        annotate_events = True if simulator == BulletWorld else False
         cls.world = simulator(WorldMode.GUI)
         cls.file_player = FileEpisodePlayer(json_file, world=cls.world,
                                             time_between_frames=datetime.timedelta(milliseconds=50),
                                             objects_to_ignore=[5])
-        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, detectors_to_start=[], annotate_events=True)
+        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=annotate_events)
 
     @classmethod
     def tearDownClass(cls):

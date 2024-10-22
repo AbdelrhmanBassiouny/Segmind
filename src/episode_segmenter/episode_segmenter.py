@@ -1,6 +1,6 @@
 import datetime
 
-from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion
+from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion, MotionPickUpDetector
 import time
 from abc import ABC, abstractmethod
 
@@ -75,7 +75,7 @@ class EpisodeSegmenter(ABC):
                     detector_thread.join()
                 closed_threads = True
 
-            thread_id, next_event = self.logger.get_next_event()
+            next_event = self.logger.get_next_event()
 
             if next_event is None:
                 time.sleep(0.01)
@@ -298,7 +298,9 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
 
     def __init__(self, episode_player: EpisodePlayer, detectors_to_start: Optional[List[Type[EventDetector]]] = None,
                  annotate_events: bool = False):
-        super().__init__(episode_player, detectors_to_start, annotate_events)
+        if detectors_to_start is None:
+            detectors_to_start = [MotionPickUpDetector]
+        super().__init__(episode_player, detectors_to_start=detectors_to_start, annotate_events=annotate_events)
 
     def start_tracking_threads_for_new_object_and_event(self, new_object: Object, event: EventUnion):
         pass
@@ -331,6 +333,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         supported = True
         support_name = f"imagined_support"
         support_obj = World.current_world.get_object_by_name(support_name)
+        support_thickness = 0.005
         with UseProspectionWorld():
             prospection_obj = World.current_world.get_prospection_object_for_object(obj)
             current_position = prospection_obj.get_position_as_list()
@@ -341,14 +344,14 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
                 supported = False
         obj_base_position = obj.get_base_position_as_list()
         if (not supported) and (support_obj is None):
-            support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, 0.005])
-            support_obj = Object(support_name, ObjectType.GENERIC_OBJECT, None, support)
+            support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, support_thickness])
+            support_obj = Object(support_name, ObjectType.IMAGINED_SURFACE, None, support)
             support_position = obj_base_position.copy()
-            support_position[2] = obj_base_position[2] - 0.005
+            support_position[2] = obj_base_position[2] - support_thickness * 0.5
             support_obj.set_position(support_position)
             self.start_contact_threads_for_object(support_obj)
         elif (not supported) and (support_obj is not None):
             support_position = support_obj.get_position_as_list()
             if obj_base_position[2] <= support_position[2]:
-                support_position[2] = obj_base_position[2] - 0.005
+                support_position[2] = obj_base_position[2] - support_thickness * 0.5
                 support_obj.set_position(support_position)

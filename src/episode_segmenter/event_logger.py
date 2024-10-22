@@ -33,8 +33,9 @@ class EventLogger:
         if EventLogger.current_logger is None:
             EventLogger.current_logger = self
 
-    def log_event(self, thread_id, event: Event):
-        self.event_queue.put((thread_id, event))
+    def log_event(self, event: Event):
+        thread_id = event.detector_thread_id
+        self.event_queue.put(event)
         if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)):
             self.annotation_queue.put(event)
         with self.lock:
@@ -106,9 +107,9 @@ class EventLogger:
         Get the next event from the event queue.
         """
         try:
-            thread_id, event = self.event_queue.get(block=False)
+            event = self.event_queue.get(block=False)
             self.event_queue.task_done()
-            return thread_id, event
+            return event
         except queue.Empty:
             return None, None
 
@@ -137,13 +138,13 @@ class EventAnnotationThread(threading.Thread):
         self.step_z_offset = step_z_offset
         self.current_annotations: List[TextAnnotation] = []
         self.max_annotations = max_annotations
-        self.exit = False
+        self.kill_event = threading.Event()
 
     def get_next_z_offset(self):
         return self.initial_z_offset - self.step_z_offset * len(self.current_annotations)
 
     def run(self):
-        while not self.exit:
+        while not self.kill_event.is_set():
             try:
                 event = self.logger.annotation_queue.get(timeout=1)
             except queue.Empty:
@@ -166,4 +167,4 @@ class EventAnnotationThread(threading.Thread):
             time.sleep(0.1)
 
     def stop(self):
-        self.exit = True
+        self.kill_event.set()

@@ -20,6 +20,7 @@ class Event(ABC):
     def __init__(self, timestamp: Optional[float] = None):
         self.timestamp = time.time() if timestamp is None else timestamp
         self.text_id: Optional[int] = None
+        self.detector_thread_id: Optional[str] = None
 
     @abstractmethod
     def __eq__(self, other):
@@ -127,7 +128,7 @@ class MotionEvent(Event):
         return Color(0, 1, 1, 1)
 
     def __str__(self):
-        return f"{self.__class__.__name__}: {self.tracked_object.name}"
+        return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
 
 
 class StopMotionEvent(MotionEvent):
@@ -163,7 +164,8 @@ class AbstractContactEvent(Event, ABC):
         [link.set_color(color) for link in self.links]
 
     def __str__(self):
-        return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.with_object.name if self.with_object else ''}"
+        return (f"{self.__class__.__name__}: {self.tracked_object.name} - "
+                f"{self.with_object.name if self.with_object else ''} - {self.timestamp}")
 
     def __repr__(self):
         return self.__str__()
@@ -325,7 +327,8 @@ class PickUpEvent(Event):
 
     def set_color(self, color: Optional[Color] = None):
         color = color if color is not None else self.color
-        self.agent.set_color(color)
+        if self.agent is not None:
+            self.agent.set_color(color)
         self.picked_object.set_color(color)
 
     @property
@@ -333,7 +336,8 @@ class PickUpEvent(Event):
         return Color(0, 1, 0, 1)
 
     def __str__(self):
-        return f"Pick up event: Agent:{self.agent.name}, Object: {self.picked_object.name}, Timestamp: {self.timestamp}"
+        return f"Pick up event: Object: {self.picked_object.name}, Timestamp: {self.timestamp}" + \
+                  (f", Agent: {self.agent.name}" if self.agent is not None else "")
 
     def __repr__(self):
         return self.__str__()

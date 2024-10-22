@@ -29,9 +29,6 @@ class TestNEEMSegmentor(TestCase):
         cls.viz_mark_publisher._stop_publishing()
         if World.current_world is not None:
             World.current_world.exit()
-        print("look at all threads")
-        for thread in threading.enumerate():
-            print(thread.name)
 
     def test_event_detector(self):
         self.ns.start([17])
