@@ -1,6 +1,7 @@
 import datetime
 
-from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion, MotionPickUpDetector
+from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion, MotionPickUpDetector, TranslationDetector, \
+    RotationDetector
 import time
 from abc import ABC, abstractmethod
 
@@ -17,7 +18,7 @@ from .event_detectors import ContactDetector, LossOfContactDetector, EventDetect
     AbstractContactDetector
 from .event_logger import EventLogger
 from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
-    NewObjectEvent
+    NewObjectEvent, RotationEvent, StopRotationEvent
 
 
 class EpisodeSegmenter(ABC):
@@ -34,7 +35,7 @@ class EpisodeSegmenter(ABC):
         """
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[Type[EventDetector]] = detectors_to_start
-        self.logger = EventLogger(annotate_events, [PickUpEvent])
+        self.logger = EventLogger(annotate_events, [PickUpEvent, RotationEvent, StopRotationEvent])
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']  # TODO: Make it a function, to be more general
         self.tracked_objects: List[Object] = []
         self.tracked_object_contacts: Dict[Object, List[Type[AbstractContactDetector]]] = {}
@@ -176,7 +177,9 @@ class EpisodeSegmenter(ABC):
         """
         if event is None:
             event = NewObjectEvent(obj)
-        self.start_and_add_detector_thread(MotionDetector, starter_event=event,
+        self.start_and_add_detector_thread(TranslationDetector, starter_event=event,
+                                           time_between_frames=self.time_between_frames)
+        self.start_and_add_detector_thread(RotationDetector, starter_event=event,
                                            time_between_frames=self.time_between_frames)
 
     def start_contact_threads_for_object(self, obj: Object,

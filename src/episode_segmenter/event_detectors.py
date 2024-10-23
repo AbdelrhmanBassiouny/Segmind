@@ -1,25 +1,28 @@
-import datetime
-from datetime import timedelta
-from queue import Queue
+import threading
 import threading
 import time
 from abc import ABC, abstractmethod
+from datetime import timedelta
 from math import ceil
+from queue import Queue
 
 import numpy as np
 import rospy
+from tf.transformations import euler_from_quaternion
 from typing_extensions import Optional, List, Union, Type, Tuple
 
 from pycram import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Pose
-from pycram.world_concepts.world_object import Object, Link
 from pycram.ros.logging import logdebug
+from pycram.world_concepts.world_object import Object, Link
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent, StopMotionEvent, NewObjectEvent
-from .utils import get_angle_between_vectors, calculate_euclidean_distance
+    AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent, StopMotionEvent, NewObjectEvent, \
+    RotationEvent, StopRotationEvent
+from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_angle_between_quaternions, \
+    calculate_quaternion_difference
 
 
 class PrimitiveEventDetector(threading.Thread, ABC):
@@ -353,7 +356,7 @@ class LossOfSurfaceDetector(LossOfContactDetector):
                                    surface=supporting_surface)]
 
 
-class MotionDetector(PrimitiveEventDetector):
+class MotionDetector(PrimitiveEventDetector, ABC):
     """
     A thread that detects if the object starts or stops moving and logs the MotionEvent or StopMotionEvent.
     """
@@ -426,8 +429,7 @@ class MotionDetector(PrimitiveEventDetector):
 
         :return: A boolean value that represents if the object is moving.
         """
-        current_pose = self.tracked_object.pose
-        distance = calculate_euclidean_distance(self.latest_pose.position_as_list(), current_pose.position_as_list())
+        distance = self.calculate_distance(self.tracked_object.pose)
         return distance > self.distance_threshold
 
     def create_event(self) -> Union[MotionEvent, StopMotionEvent]:
@@ -437,9 +439,58 @@ class MotionDetector(PrimitiveEventDetector):
         :return: An instance of the MotionEvent class that represents the event.
         """
         current_pose, current_time = self.get_current_pose_and_time()
-        event_type = MotionEvent if self.was_moving else StopMotionEvent
+        event_type = self.get_event_type()
         event = event_type(self.tracked_object, self.latest_pose, current_pose, timestamp=current_time)
         return event
+
+    @abstractmethod
+    def calculate_distance(self, current_pose: Pose):
+        pass
+
+    @abstractmethod
+    def get_event_type(self):
+        pass
+
+
+class TranslationDetector(MotionDetector):
+    thread_prefix = "translation_"
+
+    def calculate_distance(self, current_pose: Pose):
+        """
+        Calculate the Euclidean distance between the latest and current positions of the object.
+
+        :param current_pose: The current pose of the object.
+        """
+        return calculate_euclidean_distance(self.latest_pose.position_as_list(), current_pose.position_as_list())
+
+    def get_event_type(self):
+        return MotionEvent if self.was_moving else StopMotionEvent
+
+
+class RotationDetector(MotionDetector):
+    thread_prefix = "rotation_"
+
+    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent,
+                 angular_velocity_threshold: float = 10 * np.pi/180,
+                 wait_time: Optional[float] = 0.1,
+                 time_between_frames: Optional[timedelta] = timedelta(milliseconds=50),
+                 *args, **kwargs):
+        super().__init__(logger, starter_event, velocity_threshold=angular_velocity_threshold, wait_time=wait_time,
+                         time_between_frames=time_between_frames, *args, **kwargs)
+
+    def calculate_distance(self, current_pose: Pose):
+        """
+        Calculate the angle between the latest and current quaternions of the object
+
+        :param current_pose: The current pose of the object.
+        """
+        quat_diff = calculate_quaternion_difference(self.latest_pose.orientation_as_list(),
+                                                    current_pose.orientation_as_list())
+        xy_angles = euler_from_quaternion(quat_diff)[:2]
+        return (xy_angles[0] + xy_angles[1]) / 2.0
+
+    def get_event_type(self):
+        return RotationEvent if self.was_moving else StopRotationEvent
 
 
 class EventDetector(PrimitiveEventDetector, ABC):
@@ -560,7 +611,7 @@ class AbstractPickUpDetector(EventDetector, ABC):
         pass
 
     def check_object_lost_contact_with_surface(self) -> Union[Tuple[Optional[LossOfSurfaceEvent],
-                                                                    Optional[List[Object]]]]:
+    Optional[List[Object]]]]:
         """
         Check if the tracked_object lost contact with the surface.
 
@@ -749,7 +800,7 @@ class MotionPickUpDetector(AbstractPickUpDetector):
         """
         Check for upward motion after the object lost contact with the surface.
         """
-        latest_event = get_nearest_event_of_detector_for_object(MotionDetector, self.tracked_object,
+        latest_event = get_nearest_event_of_detector_for_object(TranslationDetector, self.tracked_object,
                                                                 self.start_timestamp, timedelta(milliseconds=1000))
 
         if latest_event is None:
@@ -810,7 +861,8 @@ def get_latest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDe
 def get_nearest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDetector],
                                              obj: Object,
                                              timestamp: float,
-                                             time_tolerance: timedelta = timedelta(milliseconds=200)) -> Optional[EventUnion]:
+                                             time_tolerance: timedelta = timedelta(milliseconds=200)) -> Optional[
+    EventUnion]:
     """
     Get the event of the detector for the object near the timestamp.
 
@@ -827,8 +879,9 @@ def get_nearest_event_of_detector_for_object(detector_type: Type[PrimitiveEventD
 
 
 EventDetectorUnion = Union[ContactDetector, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector,
-NewObjectDetector, AgentPickUpDetector, MotionPickUpDetector, EventDetector]
+TranslationDetector, RotationDetector, NewObjectDetector, AgentPickUpDetector, MotionPickUpDetector, EventDetector]
 TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
-Type[MotionDetector], Type[NewObjectDetector], Type[AgentPickUpDetector],
+Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[
+    AgentPickUpDetector],
 Type[MotionPickUpDetector], Type[EventDetector]
 ]

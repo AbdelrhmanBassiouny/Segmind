@@ -137,6 +137,16 @@ class StopMotionEvent(MotionEvent):
         return Color(1, 1, 1, 1)
 
 
+class RotationEvent(MotionEvent):
+    @property
+    def color(self) -> Color:
+        return Color(1, 1, 0, 1)
+
+
+class StopRotationEvent(StopMotionEvent):
+    ...
+
+
 class AbstractContactEvent(Event, ABC):
 
     def __init__(self,
