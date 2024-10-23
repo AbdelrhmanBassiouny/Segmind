@@ -34,7 +34,7 @@ class EpisodeSegmenter(ABC):
         """
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[Type[EventDetector]] = detectors_to_start
-        self.logger = EventLogger(annotate_events, [PickUpEvent, MotionEvent, StopMotionEvent])
+        self.logger = EventLogger(annotate_events, [PickUpEvent])
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']  # TODO: Make it a function, to be more general
         self.tracked_objects: List[Object] = []
         self.tracked_object_contacts: Dict[Object, List[Type[AbstractContactDetector]]] = {}

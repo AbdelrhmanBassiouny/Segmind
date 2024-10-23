@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 from queue import Queue
 import threading
 import time
@@ -49,10 +50,34 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         self.logger = logger
         self.wait_time = wait_time
         self.objects_to_track: List[Object] = []
+        self._tracked_object: Optional[Object] = None
+        self._with_object: Optional[Object] = None
         self.kill_event = threading.Event()
 
         self.run_once = False
         self._pause: bool = False
+
+    @property
+    def tracked_object(self) -> Object:
+        return self._tracked_object
+
+    @tracked_object.setter
+    def tracked_object(self, obj: Object):
+        self._tracked_object = obj
+        self.update_tracked_objects(obj)
+
+    @property
+    def with_object(self) -> Object:
+        return self._with_object
+
+    @with_object.setter
+    def with_object(self, obj: Object):
+        self._with_object = obj
+        self.update_tracked_objects(obj)
+
+    def update_tracked_objects(self, obj: Object):
+        if obj is not None:
+            self.objects_to_track.append(obj)
 
     def stop(self):
         """
@@ -198,9 +223,6 @@ class AbstractContactDetector(PrimitiveEventDetector, ABC):
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
         super().__init__(logger, wait_time, *args, **kwargs)
-        self.objects_to_track = [starter_event.tracked_object]
-        if with_object is not None:
-            self.objects_to_track.append(with_object)
         self.tracked_object = starter_event.tracked_object
         self.with_object = with_object
         self.max_closeness_distance = max_closeness_distance
@@ -343,7 +365,7 @@ class MotionDetector(PrimitiveEventDetector):
 
     def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, velocity_threshold: float = 0.07,
                  wait_time: Optional[float] = 0.1,
-                 time_between_frames: Optional[datetime.timedelta] = datetime.timedelta(milliseconds=50),
+                 time_between_frames: Optional[timedelta] = timedelta(milliseconds=50),
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -351,16 +373,15 @@ class MotionDetector(PrimitiveEventDetector):
         :param velocity_threshold: An optional float value that represents the velocity threshold for the object to be
         considered as moving.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
-        :param time_between_frames: An optional datetime.timedelta value that represents the time between frames.
+        :param time_between_frames: An optional timedelta value that represents the time between frames.
         """
         super().__init__(logger, wait_time, *args, **kwargs)
-        self.objects_to_track = [starter_event.tracked_object]
         self.tracked_object = starter_event.tracked_object
         self.latest_pose = self.tracked_object.pose
         self.latest_time = time.time()
         self.velocity_threshold = velocity_threshold
 
-        self.measure_timestep: datetime.timedelta = datetime.timedelta(milliseconds=350)
+        self.measure_timestep: timedelta = timedelta(milliseconds=350)
         # frames per measure timestep
         self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
                                               time_between_frames.total_seconds()) + 0.5
@@ -728,11 +749,16 @@ class MotionPickUpDetector(AbstractPickUpDetector):
         """
         Check for upward motion after the object lost contact with the surface.
         """
-        latest_event = get_latest_event_of_detector_for_object(MotionDetector, self.tracked_object,
-                                                               self.start_timestamp)
+        latest_event = get_nearest_event_of_detector_for_object(MotionDetector, self.tracked_object,
+                                                                self.start_timestamp, timedelta(milliseconds=1000))
 
         if latest_event is None:
             return False
+
+        z_motion = latest_event.current_pose.position.z - latest_event.start_pose.position.z
+        if z_motion > 0.001:
+            self.end_timestamp = latest_event.timestamp
+            return True
 
         return True
 
@@ -779,6 +805,25 @@ def get_latest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDe
     if latest_event is None:
         time.sleep(0.01)
     return latest_event
+
+
+def get_nearest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDetector],
+                                             obj: Object,
+                                             timestamp: float,
+                                             time_tolerance: timedelta = timedelta(milliseconds=200)) -> Optional[EventUnion]:
+    """
+    Get the event of the detector for the object near the timestamp.
+
+    :param obj: An instance of the Object class that represents the object to get the event for.
+    :param detector_type: The type of the event detector.
+    :param timestamp: A float value that represents the timestamp to get the event near.
+    :param time_tolerance: A float value that represents the time tolerance.
+    :return: The event of the detector for the object near the timestamp.
+    """
+    logger = EventLogger.current_logger
+    event = logger.get_nearest_event_of_detector_for_object(detector_type.thread_prefix, obj, timestamp)
+    if (event is not None) and (abs(event.timestamp - timestamp) <= time_tolerance.total_seconds()):
+        return event
 
 
 EventDetectorUnion = Union[ContactDetector, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector,

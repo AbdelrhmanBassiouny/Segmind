@@ -1,6 +1,7 @@
 import queue
 import threading
 import time
+from datetime import timedelta
 
 from typing_extensions import List, Optional, Dict, Type
 
@@ -9,7 +10,7 @@ from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import loginfo
 
-from .events import Event
+from .events import Event, EventUnion
 
 
 class EventLogger:
@@ -77,6 +78,18 @@ class EventLogger:
         thread_id = self.find_thread_with_prefix_and_object(detector_prefix, obj.name)
         return self.get_latest_event_of_thread(thread_id)
 
+    def get_nearest_event_of_detector_for_object(self, detector_prefix: str, obj: Object,
+                                                 timestamp: float) -> Optional[EventUnion]:
+        """
+        Get the nearest event of the thread that has the given prefix and object name in its id.
+
+        :param detector_prefix: The prefix of the thread id.
+        :param obj: The object that should have its name in the thread id.
+        :param timestamp: The timestamp of the event.
+        """
+        thread_id = self.find_thread_with_prefix_and_object(detector_prefix, obj.name)
+        return self.get_nearest_event_of_thread(thread_id, timestamp)
+
     def find_thread_with_prefix_and_object(self, prefix: str, object_name: str) -> Optional[str]:
         """
         Find the thread id that has the given prefix and object name in its id.
@@ -89,6 +102,21 @@ class EventLogger:
             thread_id = [thread_id for thread_id in self.timeline_per_thread.keys() if thread_id.startswith(prefix) and
                          object_name in thread_id]
         return None if len(thread_id) == 0 else thread_id[0]
+
+    def get_nearest_event_of_thread(self, thread_id: str, timestamp: float) -> Optional[EventUnion]:
+        """
+        Get the nearest event of the thread with the given id.
+
+        :param thread_id: The id of the thread.
+        :param timestamp: The timestamp of the event.
+        :return: The nearest event of the thread or None if no such thread.
+        """
+        with self.lock:
+            if thread_id not in self.timeline_per_thread:
+                return None
+            all_event_timestamps = [(event, event.timestamp) for event in self.timeline_per_thread[thread_id]]
+            print(all_event_timestamps)
+            return min(all_event_timestamps, key=lambda x: abs(x[1] - timestamp))[0]
 
     def get_latest_event_of_thread(self, thread_id: str) -> Optional[Event]:
         """
