@@ -3,7 +3,7 @@ import threading
 
 from neem_pycram_interface import PyCRAMNEEMInterface
 
-from episode_segmenter.event_detectors import AgentPickUpDetector
+from episode_segmenter.event_detectors import AgentPickUpDetector, PlacingDetector
 from episode_segmenter.neem_segmenter import NEEMSegmenter
 from unittest import TestCase
 
@@ -19,7 +19,7 @@ class TestNEEMSegmentor(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        BulletWorld(WorldMode.DIRECT)
+        BulletWorld(WorldMode.GUI)
         pni = PyCRAMNEEMInterface(f'mysql+pymysql://{os.environ["my_maria_uri"]}')
         cls.ns = NEEMSegmenter(pni, detectors_to_start=[AgentPickUpDetector], annotate_events=True)
         cls.viz_mark_publisher = VizMarkerPublisher()

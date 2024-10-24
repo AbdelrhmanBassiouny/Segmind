@@ -1,5 +1,4 @@
 import threading
-import threading
 import time
 from abc import ABC, abstractmethod
 from datetime import timedelta
@@ -16,13 +15,13 @@ from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Pose
 from pycram.ros.logging import logdebug
-from pycram.world_concepts.world_object import Object, Link
+from pycram.world_concepts.world_object import Object
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, MotionEvent, StopMotionEvent, NewObjectEvent, \
-    RotationEvent, StopRotationEvent
-from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_angle_between_quaternions, \
-    calculate_quaternion_difference
+    AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
+    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
+from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_quaternion_difference, \
+    check_if_object_is_supported
 
 
 class PrimitiveEventDetector(threading.Thread, ABC):
@@ -358,7 +357,7 @@ class LossOfSurfaceDetector(LossOfContactDetector):
 
 class MotionDetector(PrimitiveEventDetector, ABC):
     """
-    A thread that detects if the object starts or stops moving and logs the MotionEvent or StopMotionEvent.
+    A thread that detects if the object starts or stops moving and logs the TranslationEvent or StopTranslationEvent.
     """
 
     thread_prefix = "motion_"
@@ -405,11 +404,11 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         return self.tracked_object.pose, time.time()
 
-    def detect_events(self) -> List[Union[MotionEvent, StopMotionEvent]]:
+    def detect_events(self) -> List[Union[TranslationEvent, StopTranslationEvent]]:
         """
         Detect if the object starts or stops moving.
 
-        :return: An instance of the MotionEvent class that represents the event if the object is moving, else None.
+        :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
         if self.time_since_last_event < self.measure_timestep.total_seconds():
             time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
@@ -432,11 +431,11 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         distance = self.calculate_distance(self.tracked_object.pose)
         return distance > self.distance_threshold
 
-    def create_event(self) -> Union[MotionEvent, StopMotionEvent]:
+    def create_event(self) -> Union[TranslationEvent, StopTranslationEvent]:
         """
         Create a motion event.
 
-        :return: An instance of the MotionEvent class that represents the event.
+        :return: An instance of the TranslationEvent class that represents the event.
         """
         current_pose, current_time = self.get_current_pose_and_time()
         event_type = self.get_event_type()
@@ -464,7 +463,7 @@ class TranslationDetector(MotionDetector):
         return calculate_euclidean_distance(self.latest_pose.position_as_list(), current_pose.position_as_list())
 
     def get_event_type(self):
-        return MotionEvent if self.was_moving else StopMotionEvent
+        return TranslationEvent if self.was_moving else StopTranslationEvent
 
 
 class RotationDetector(MotionDetector):
@@ -515,28 +514,78 @@ class EventDetector(PrimitiveEventDetector, ABC):
         """
         pass
 
+    def check_for_event_post_starter_event(self, event_detector: Type[PrimitiveEventDetector]) -> Optional[EventUnion]:
+        """
+        Check if the tracked_object was involved in an event after the starter event.
+
+        :param event_detector: The event detector class that is used to detect the event.
+        :return: The event if the tracked_object was involved in an event, else None.
+        """
+        event = get_latest_event_of_detector_for_object(event_detector, self.tracked_object,
+                                                        after_timestamp=self.start_timestamp)
+        if event is None:
+            logdebug(f"{event_detector.__name__} found no event after {self.start_timestamp} with object :"
+                     f" {self.tracked_object.name}")
+            return None
+
+        return event
+
+    def check_for_event_near_starter_event(self, event_detector: Type[PrimitiveEventDetector],
+                                           time_tolerance: timedelta) -> Optional[EventUnion]:
+        """
+        Check if the tracked_object was involved in an event near the starter event (i.e. could be before or after).
+
+        :param event_detector: The event detector class that is used to detect the event.
+        :param time_tolerance: The time tolerance to consider the event as near the starter event.
+        :return: The event if the tracked_object was involved in an event, else None.
+        """
+        event = get_nearest_event_of_detector_for_object(event_detector, self.tracked_object,
+                                                         timestamp=self.start_timestamp, time_tolerance=time_tolerance)
+        if event is None:
+            logdebug(f"{event_detector.__name__} found no event after {self.start_timestamp} with object :"
+                     f" {self.tracked_object.name}")
+            return None
+
+        return event
+
     @property
     def start_timestamp(self) -> float:
         return self.starter_event.timestamp
 
+
+class MotionPlacingDetector(EventDetector, ABC):
+    """
+    A detector that detects if the tracked_object was placed on a surface by using motion and contact.
+    """
+
+    thread_prefix = "placing_"
+
+    def __init__(self, logger: EventLogger, starter_event: EventUnion, *args, **kwargs):
+        """
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param starter_event: An instance of a type of Event that represents the event to
+         start the event detector.
+        """
+        super().__init__(logger, starter_event, *args, **kwargs)
+        self.tracked_object = self.get_object_to_place_from_event(starter_event)
+        self.placing_event: Optional[PlacingEvent] = None
+        self.run_once = True
+
     @classmethod
     @abstractmethod
-    def filter_event(cls, event: EventUnion) -> EventUnion:
+    def get_object_to_place_from_event(cls, event: Event) -> Object:
         """
-        Filter the event before logging/using it.
-
-        :param event: An object that represents the event.
-        :return: An object that represents the filtered event.
+        Get the tracked_object to place from the event.
         """
         pass
 
 
-class AbstractPickUpDetector(EventDetector, ABC):
+class AbstractAgentObjectInteractionDetector(EventDetector, ABC):
     """
-    An abstract detector that detects if the tracked_object was picked up.
+    An abstract detector that detects an interaction between the agent and an object.
     """
 
-    thread_prefix = "pick_up_"
+    thread_prefix = "agent_object_interaction_"
     """
     A string that is used as a prefix for the thread ID.
     """
@@ -548,105 +597,71 @@ class AbstractPickUpDetector(EventDetector, ABC):
          start the event detector.
         """
         super().__init__(logger, starter_event, *args, **kwargs)
-        self.tracked_object = self.get_object_to_pick_from_event(starter_event)
-        self.objects_to_track = [self.tracked_object]
-        self.pick_up_event: Optional[PickUpEvent] = None
+        self.tracked_object = self.get_object_to_track_from_starter_event(starter_event)
+        self.interaction_event: EventUnion = self._init_interaction_event()
+        self.end_timestamp: Optional[float] = None
         self.run_once = True
-        self.break_loop = False
 
-    def detect_events(self) -> List[PickUpEvent]:
+    @abstractmethod
+    def _init_interaction_event(self) -> EventUnion:
         """
-        Detect if the tracked_object was picked up by the hand.
-        Used Features are:
-        1. The hand should still be in contact with the tracked_object.
-        2. While the tracked_object that is picked should lose contact with the surface.
-        Other features that can be used: Grasping Type, Object Type, and Object Motion.
-
-        :return: An instance of the PickUpEvent class that represents the event if the tracked_object was picked up,
-         else None.
+        Initialize the interaction event.
         """
+        pass
 
-        self.pick_up_event = PickUpEvent(self.tracked_object, timestamp=self.start_timestamp)
+    def detect_events(self) -> List[EventUnion]:
+        """
+        Detect if the tracked_object was interacted with by the agent.
+
+        :return: An instance of the interaction event if the tracked_object was interacted with, else None.
+        """
 
         while not self.kill_event.is_set():
 
-            if not self.extra_checks():
-                if self.break_loop:
-                    break
-                else:
-                    time.sleep(0.01)
-                    continue
+            if not self.interaction_checks():
+                time.sleep(0.01)
+                continue
 
-            self.pick_up_event.end_timestamp = self.get_end_timestamp()
+            self.interaction_event.end_timestamp = self.end_timestamp
 
             break
 
-        rospy.loginfo(f"Object picked up: {self.tracked_object.name}")
+        rospy.loginfo(f"{self.__class__.__name__} detected an interaction with: {self.tracked_object.name}")
 
-        self.fill_pick_up_event()
-
-        return [self.pick_up_event]
+        return [self.interaction_event]
 
     @abstractmethod
-    def get_end_timestamp(self) -> float:
+    def interaction_checks(self) -> bool:
         """
-        Get the end timestamp of the pickup event.
+        Perform checks to determine if the object was interacted with.
+
+        :return: A boolean value that represents if all the checks passed and the object was interacted with.
         """
         pass
-
-    @abstractmethod
-    def fill_pick_up_event(self):
-        """
-        Fill the pickup event with the necessary information.
-        """
-        pass
-
-    @abstractmethod
-    def extra_checks(self) -> bool:
-        """
-        Perform extra checks to determine if the object was picked up.
-
-        :return: A boolean value that represents if all the checks passed and the object was picked up.
-        """
-        pass
-
-    def check_object_lost_contact_with_surface(self) -> Union[Tuple[Optional[LossOfSurfaceEvent],
-    Optional[List[Object]]]]:
-        """
-        Check if the tracked_object lost contact with the surface.
-
-        :return: A list of Object instances that represent the objects that lost contact with the tracked_object.
-        """
-        loss_of_surface_event = get_latest_event_of_detector_for_object(LossOfSurfaceDetector,
-                                                                        self.tracked_object,
-                                                                        after_timestamp=self.start_timestamp
-                                                                        )
-        if loss_of_surface_event is None:
-            logdebug(f"continue, tracked_object: {self.tracked_object.name}")
-            return None, None
-
-        objects_that_lost_contact = loss_of_surface_event.latest_objects_that_got_removed
-
-        return loss_of_surface_event, objects_that_lost_contact
 
     @classmethod
     @abstractmethod
-    def get_object_to_pick_from_event(cls, event: Event) -> Object:
+    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
         """
-        Get the tracked_object to pick up from the event.
+        Get the object to track for interaction from the possible starter event.
+
+        :param starter_event: The possible starter event that can be used to get the object to track.
         """
         pass
 
-    @staticmethod
-    def select_pickable_objects(objects: List[Object]) -> List[Object]:
-        """
-        Select the objects that can be picked up.
 
-        :param objects: A list of Object instances.
-        """
-        return [obj for obj in objects
-                if obj.obj_type not in [ObjectType.HUMAN, ObjectType.ROBOT, ObjectType.ENVIRONMENT,
-                                        ObjectType.IMAGINED_SURFACE]]
+class AbstractPickUpDetector(AbstractAgentObjectInteractionDetector, ABC):
+    """
+    An abstract detector that detects if the tracked_object was picked up.
+    """
+
+    thread_prefix = "pick_up_"
+    """
+    A string that is used as a prefix for the thread ID.
+    """
+
+    def _init_interaction_event(self) -> EventUnion:
+        return PickUpEvent(self.tracked_object, timestamp=self.start_timestamp)
 
 
 class AgentPickUpDetector(AbstractPickUpDetector):
@@ -664,46 +679,11 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         self.surface_detector = LossOfSurfaceDetector(logger, self.starter_event)
         self.surface_detector.start()
         self.agent = starter_event.agent
-        self.agent_link = starter_event.agent_link
-        self.object_link = self.get_object_link_from_event(starter_event)
-        self.end_timestamp: Optional[float] = None
-
-    def get_end_timestamp(self) -> float:
-        return self.end_timestamp
-
-    def fill_pick_up_event(self):
-        self.pick_up_event.agent = self.agent
+        self.interaction_event.agent = self.agent
 
     @classmethod
-    def filter_event(cls, event: AgentContactEvent) -> Event:
-        """
-        Filter the event by removing objects that are not in the list of objects to track.
-
-        :param event: An object that represents the event.
-        :return: An object that represents the filtered event.
-        """
-        event.with_object = cls.get_object_to_pick_from_event(event)
-        return event
-
-    @classmethod
-    def get_object_to_pick_from_event(cls, event: AgentContactEvent) -> Object:
-        """
-        Get the tracked_object link from the event.
-
-        :param event: The AgentContactEvent instance that represents the contact event.
-        """
-        return cls.get_object_link_from_event(event).object
-
-    @classmethod
-    def get_object_link_from_event(cls, event: AgentContactEvent) -> Link:
-        """
-        Get the tracked_object link from the event.
-
-        :param event: The AgentContactEvent instance that represents the contact event.
-        """
-        pickable_objects = cls.find_pickable_objects_from_contact_event(event)
-        links_in_contact = event.links
-        return [link for link in links_in_contact if link.object in pickable_objects][0]
+    def get_object_to_track_from_starter_event(cls, event: AgentContactEvent) -> Object:
+        return select_transportable_objects_from_contact_event(event)[0]
 
     @classmethod
     def start_condition_checker(cls, event: Event) -> bool:
@@ -712,40 +692,25 @@ class AgentPickUpDetector(AbstractPickUpDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        return isinstance(event, AgentContactEvent) and any(cls.find_pickable_objects_from_contact_event(event))
+        return isinstance(event, AgentContactEvent) and any(select_transportable_objects_from_contact_event(event))
 
-    @classmethod
-    def find_pickable_objects_from_contact_event(cls, event: AgentContactEvent) -> List[Object]:
-        """
-        Find the pickable objects from the contact event.
-
-        :param event: The AgentContactEvent instance that represents the contact event.
-        """
-        contacted_objects = event.contact_points.get_objects_that_have_points()
-        return cls.select_pickable_objects(contacted_objects)
-
-    def extra_checks(self) -> bool:
+    def interaction_checks(self) -> bool:
         """
         Perform extra checks to determine if the object was picked up.
         """
-        loss_of_surface_event, objects_that_lost_contact = self.check_object_lost_contact_with_surface()
+        loss_of_surface_event = self.check_for_event_post_starter_event(LossOfSurfaceDetector)
 
-        if objects_that_lost_contact is None:
-            time.sleep(0.01)
+        if not loss_of_surface_event:
             return False
 
-        if self.agent in objects_that_lost_contact:
+        if self.agent in loss_of_surface_event.latest_objects_that_got_removed:
             rospy.logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
-            self.break_loop = True
+            self.kill_event.set()
             return False
 
         self.end_timestamp = loss_of_surface_event.timestamp
 
         return True
-
-    @property
-    def start_contact_points(self) -> ContactPointsList:
-        return self.starter_event.contact_points
 
     def stop(self, timeout: Optional[float] = None):
         self.surface_detector.stop()
@@ -762,21 +727,10 @@ class MotionPickUpDetector(AbstractPickUpDetector):
          detector.
         """
         super().__init__(logger, starter_event, *args, **kwargs)
-        self.end_timestamp: Optional[float] = None
-
-    def get_end_timestamp(self) -> float:
-        return self.end_timestamp
 
     @classmethod
-    def get_object_to_pick_from_event(cls, event: LossOfSurfaceEvent) -> Object:
-        return cls.find_pickable_objects_from_contact_event(event)[0]
-
-    def fill_pick_up_event(self):
-        pass
-
-    @classmethod
-    def filter_event(cls, event: LossOfContactEvent) -> Event:
-        return event
+    def get_object_to_track_from_starter_event(cls, event: LossOfContactEvent) -> Object:
+        return select_transportable_objects_from_loss_of_contact_event(event)[0]
 
     @classmethod
     def start_condition_checker(cls, event: Event) -> bool:
@@ -785,25 +739,16 @@ class MotionPickUpDetector(AbstractPickUpDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        return isinstance(event, LossOfContactEvent) and any(cls.find_pickable_objects_from_contact_event(event))
+        return (isinstance(event, LossOfContactEvent)
+                and any(select_transportable_objects_from_loss_of_contact_event(event)))
 
-    @classmethod
-    def find_pickable_objects_from_contact_event(cls, event: LossOfContactEvent) -> List[Object]:
-        """
-        Find the pickable objects from the contact event.
-
-        :param event: The AgentContactEvent instance that represents the contact event.
-        """
-        return cls.select_pickable_objects(event.latest_objects_that_got_removed + [event.tracked_object])
-
-    def extra_checks(self) -> bool:
+    def interaction_checks(self) -> bool:
         """
         Check for upward motion after the object lost contact with the surface.
         """
-        latest_event = get_nearest_event_of_detector_for_object(TranslationDetector, self.tracked_object,
-                                                                self.start_timestamp, timedelta(milliseconds=1000))
+        latest_event = self.check_for_event_near_starter_event(TranslationDetector, timedelta(milliseconds=1000))
 
-        if latest_event is None:
+        if not latest_event:
             return False
 
         z_motion = latest_event.current_pose.position.z - latest_event.start_pose.position.z
@@ -812,6 +757,50 @@ class MotionPickUpDetector(AbstractPickUpDetector):
             return True
 
         return True
+
+
+class PlacingDetector(AbstractAgentObjectInteractionDetector):
+    """
+    An abstract detector that detects if the tracked_object was placed by the agent.
+    """
+
+    thread_prefix = "placing_"
+
+    def _init_interaction_event(self) -> EventUnion:
+        return PlacingEvent(self.tracked_object, timestamp=self.start_timestamp)
+
+    def interaction_checks(self) -> bool:
+        return self.initial_interaction_checkers()
+
+    @classmethod
+    def get_object_to_track_from_starter_event(cls, starter_event: MotionEvent) -> Object:
+        return starter_event.tracked_object
+
+    @classmethod
+    def start_condition_checker(cls, event: Event) -> bool:
+        """
+        Check if an agent is in contact with the tracked_object.
+
+        :param event: The ContactEvent instance that represents the contact event.
+        """
+        if isinstance(event, MotionEvent) and any(select_transportable_objects([event.tracked_object])):
+            if not check_if_object_is_supported(event.tracked_object):
+                print('new placing detector')
+                return True
+        return False
+
+    def initial_interaction_checkers(self) -> bool:
+        """
+        Perform initial checks to determine if the object was placed.
+        """
+        contact_event = self.check_for_event_post_starter_event(ContactDetector)
+        print(f"contact_event: {contact_event}")
+        if contact_event and check_if_object_is_supported(self.tracked_object):
+            self.end_timestamp = contact_event.timestamp
+            print(f"end_timestamp: {self.end_timestamp}")
+            return True
+
+        return False
 
 
 def check_for_supporting_surface(objects_that_lost_contact: List[Object],
@@ -876,6 +865,37 @@ def get_nearest_event_of_detector_for_object(detector_type: Type[PrimitiveEventD
     event = logger.get_nearest_event_of_detector_for_object(detector_type.thread_prefix, obj, timestamp)
     if (event is not None) and (abs(event.timestamp - timestamp) <= time_tolerance.total_seconds()):
         return event
+
+
+def select_transportable_objects_from_contact_event(event: Union[ContactEvent, AgentContactEvent]) -> List[Object]:
+    """
+    Select the objects that can be transported from the contact event.
+
+    :param event: The contact event
+    """
+    contacted_objects = event.contact_points.get_objects_that_have_points()
+    return select_transportable_objects(contacted_objects + [event.tracked_object])
+
+
+def select_transportable_objects_from_loss_of_contact_event(event: Union[LossOfContactEvent,
+                                                                         AgentLossOfContactEvent,
+                                                                         LossOfSurfaceEvent]) -> List[Object]:
+    """
+    Select the objects that can be transported from the loss of contact event.
+    """
+    objects_that_lost_contact = event.latest_objects_that_got_removed
+    return select_transportable_objects(objects_that_lost_contact + [event.tracked_object])
+
+
+def select_transportable_objects(objects: List[Object]) -> List[Object]:
+    """
+    Select the objects that can be transported
+
+    :param objects: A list of Object instances.
+    """
+    return [obj for obj in objects
+            if obj.obj_type not in [ObjectType.HUMAN, ObjectType.ROBOT, ObjectType.ENVIRONMENT,
+                                    ObjectType.IMAGINED_SURFACE]]
 
 
 EventDetectorUnion = Union[ContactDetector, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector,
