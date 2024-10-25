@@ -1,8 +1,52 @@
 import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
-from typing_extensions import List
+from typing_extensions import List, Optional
 
 from pycram.datastructures.pose import Transform
+from pycram.datastructures.world import World, UseProspectionWorld
+from pycram.datastructures.enums import ObjectType
+from pycram.world_concepts.world_object import Object
+from pycram.ros.logging import logdebug
+from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
+
+
+def check_if_object_is_supported(obj: Object) -> bool:
+    """
+    Check if the object is supported by any other object.
+
+    :param obj: The object to check if it is supported.
+    :return: True if the object is supported, False otherwise.
+    """
+    supported = True
+    with UseProspectionWorld():
+        prospection_obj = World.current_world.get_prospection_object_for_object(obj)
+        current_position = prospection_obj.get_position_as_list()
+        World.current_world.simulate(1)
+        new_position = prospection_obj.get_position_as_list()
+        if current_position[2] - new_position[2] >= 0.2:
+            logdebug(f"Object {obj.name} is not supported")
+            supported = False
+    return supported
+
+
+def add_imaginary_support_for_object(obj: Object,
+                                     support_name: Optional[str] = f"imagined_support",
+                                     support_thickness: Optional[float] = 0.005) -> Object:
+    """
+    Add an imaginary support for the object.
+
+    :param obj: The object for which the support should be added.
+    :param support_name: The name of the support object.
+    :param support_thickness: The thickness of the support.
+    :return: The support object.
+    """
+    obj_base_position = obj.get_base_position_as_list()
+    support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, obj_base_position[2]*0.5])
+    support_obj = Object(support_name, ObjectType.IMAGINED_SURFACE, None, support)
+    support_position = obj_base_position.copy()
+    support_position[2] = obj_base_position[2] * 0.5
+    support_obj.set_position(support_position)
+    return support_obj
 
 
 def get_angle_between_vectors(vector_1: List[float], vector_2: List[float]) -> float:

@@ -23,7 +23,7 @@ class NEEMPlayer(EpisodePlayer):
 
     def run(self):
         self.pni.replay_motions_in_query(real_time=False,
-                                         step_time=datetime.timedelta(milliseconds=1))
+                                         step_time=datetime.timedelta(milliseconds=0))
 
 
 class NEEMSegmenter(AgentBasedEpisodeSegmenter):

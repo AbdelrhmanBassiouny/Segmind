@@ -3,7 +3,7 @@ import threading
 
 from neem_pycram_interface import PyCRAMNEEMInterface
 
-from episode_segmenter.event_detectors import AgentPickUpDetector
+from episode_segmenter.event_detectors import AgentPickUpDetector, PlacingDetector
 from episode_segmenter.neem_segmenter import NEEMSegmenter
 from unittest import TestCase
 

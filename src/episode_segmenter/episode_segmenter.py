@@ -1,6 +1,7 @@
 import datetime
 
-from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion, MotionPickUpDetector
+from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion, MotionPickUpDetector, TranslationDetector, \
+    RotationDetector, PlacingDetector
 import time
 from abc import ABC, abstractmethod
 
@@ -17,7 +18,8 @@ from .event_detectors import ContactDetector, LossOfContactDetector, EventDetect
     AbstractContactDetector
 from .event_logger import EventLogger
 from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
-    NewObjectEvent
+    NewObjectEvent, RotationEvent, StopRotationEvent, PlacingEvent
+from .utils import check_if_object_is_supported, add_imaginary_support_for_object
 
 
 class EpisodeSegmenter(ABC):
@@ -34,7 +36,7 @@ class EpisodeSegmenter(ABC):
         """
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[Type[EventDetector]] = detectors_to_start
-        self.logger = EventLogger(annotate_events, [PickUpEvent])
+        self.logger = EventLogger(annotate_events, [PickUpEvent, PlacingEvent])
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']  # TODO: Make it a function, to be more general
         self.tracked_objects: List[Object] = []
         self.tracked_object_contacts: Dict[Object, List[Type[AbstractContactDetector]]] = {}
@@ -102,8 +104,7 @@ class EpisodeSegmenter(ABC):
         """
         for event_detector in self.detectors_to_start:
             if event_detector.start_condition_checker(event):
-                filtered_event = event_detector.filter_event(event)
-                self.start_detector_thread_for_starter_event(filtered_event, event_detector)
+                self.start_detector_thread_for_starter_event(event, event_detector)
 
     @abstractmethod
     def _process_event(self, event: Event) -> None:
@@ -176,7 +177,9 @@ class EpisodeSegmenter(ABC):
         """
         if event is None:
             event = NewObjectEvent(obj)
-        self.start_and_add_detector_thread(MotionDetector, starter_event=event,
+        self.start_and_add_detector_thread(TranslationDetector, starter_event=event,
+                                           time_between_frames=self.time_between_frames)
+        self.start_and_add_detector_thread(RotationDetector, starter_event=event,
                                            time_between_frames=self.time_between_frames)
 
     def start_contact_threads_for_object(self, obj: Object,
@@ -299,7 +302,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
     def __init__(self, episode_player: EpisodePlayer, detectors_to_start: Optional[List[Type[EventDetector]]] = None,
                  annotate_events: bool = False):
         if detectors_to_start is None:
-            detectors_to_start = [MotionPickUpDetector]
+            detectors_to_start = [MotionPickUpDetector, PlacingDetector]
         super().__init__(episode_player, detectors_to_start=detectors_to_start, annotate_events=annotate_events)
 
     def start_tracking_threads_for_new_object_and_event(self, new_object: Object, event: EventUnion):
@@ -330,27 +333,17 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
 
         :param obj: The object to check if it is supported.
         """
-        supported = True
         support_name = f"imagined_support"
         support_obj = World.current_world.get_object_by_name(support_name)
         support_thickness = 0.005
-        with UseProspectionWorld():
-            prospection_obj = World.current_world.get_prospection_object_for_object(obj)
-            current_position = prospection_obj.get_position_as_list()
-            World.current_world.simulate(1)
-            new_position = prospection_obj.get_position_as_list()
-            if current_position[2] - new_position[2] >= 0.01:
-                logdebug(f"Object {obj.name} is not supported")
-                supported = False
+        supported = check_if_object_is_supported(obj)
+        if supported:
+            return
         obj_base_position = obj.get_base_position_as_list()
-        if (not supported) and (support_obj is None):
-            support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, support_thickness])
-            support_obj = Object(support_name, ObjectType.IMAGINED_SURFACE, None, support)
-            support_position = obj_base_position.copy()
-            support_position[2] = obj_base_position[2] - support_thickness * 0.5
-            support_obj.set_position(support_position)
+        if support_obj is None:
+            support_obj = add_imaginary_support_for_object(obj, support_name, support_thickness)
             self.start_contact_threads_for_object(support_obj)
-        elif (not supported) and (support_obj is not None):
+        else:
             support_position = support_obj.get_position_as_list()
             if obj_base_position[2] <= support_position[2]:
                 support_position[2] = obj_base_position[2] - support_thickness * 0.5

@@ -173,8 +173,9 @@ class EventAnnotationThread(threading.Thread):
     def run(self):
         while not self.kill_event.is_set():
             try:
-                event = self.logger.annotation_queue.get(timeout=1)
+                event = self.logger.annotation_queue.get(block=False)
             except queue.Empty:
+                time.sleep(0.001)
                 continue
             self.logger.annotation_queue.task_done()
             if len(self.current_annotations) >= self.max_annotations:
@@ -191,7 +192,7 @@ class EventAnnotationThread(threading.Thread):
             z_offset = self.get_next_z_offset()
             text_ann = event.annotate([1.5, 1, z_offset])
             self.current_annotations.append(text_ann)
-            time.sleep(0.1)
+            time.sleep(0.001)
 
     def stop(self):
         self.kill_event.set()

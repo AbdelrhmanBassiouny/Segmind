@@ -96,7 +96,7 @@ class NewObjectEvent(Event):
         return f"{self.__class__.__name__}: {self.tracked_object.name}"
 
 
-class MotionEvent(Event):
+class MotionEvent(Event, ABC):
     """
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
     vice versa.
@@ -117,24 +117,40 @@ class MotionEvent(Event):
                 and self.timestamp == other.timestamp)
 
     def __hash__(self):
-        return hash((self.tracked_object, self.start_pose, self.timestamp))
+        return hash((self.tracked_object, self.timestamp))
 
     def set_color(self, color: Optional[Color] = None):
         color = color if color is not None else self.color
         self.tracked_object.set_color(color)
 
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
+
+
+class TranslationEvent(MotionEvent):
     @property
     def color(self) -> Color:
         return Color(0, 1, 1, 1)
 
-    def __str__(self):
-        return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
+
+class RotationEvent(MotionEvent):
+    @property
+    def color(self) -> Color:
+        return Color(1, 1, 0, 1)
 
 
 class StopMotionEvent(MotionEvent):
     @property
     def color(self) -> Color:
         return Color(1, 1, 1, 1)
+
+
+class StopTranslationEvent(StopMotionEvent):
+    ...
+
+
+class StopRotationEvent(StopMotionEvent):
+    ...
 
 
 class AbstractContactEvent(Event, ABC):
@@ -298,24 +314,24 @@ class LossOfSurfaceEvent(LossOfContactEvent):
         self.surface: Optional[Object] = surface
 
 
-class PickUpEvent(Event):
+class AbstractAgentObjectInteractionEvent(Event, ABC):
 
-    def __init__(self, picked_object: Object,
+    def __init__(self, participating_object: Object,
                  agent: Optional[Object] = None,
                  timestamp: Optional[float] = None):
         super().__init__(timestamp)
         self.agent: Optional[Object] = agent
-        self.picked_object: Object = picked_object
+        self.participating_object: Object = participating_object
         self.end_timestamp: Optional[float] = None
         self.text_id: Optional[int] = None
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return self.agent == other.agent and self.picked_object == other.picked_object
+        return self.agent == other.agent and self.participating_object == other.participating_object
 
     def __hash__(self):
-        return hash((self.agent, self.picked_object, self.__class__))
+        return hash((self.agent, self.participating_object, self.__class__))
 
     def record_end_timestamp(self):
         self.end_timestamp = time.time()
@@ -329,18 +345,28 @@ class PickUpEvent(Event):
         color = color if color is not None else self.color
         if self.agent is not None:
             self.agent.set_color(color)
-        self.picked_object.set_color(color)
+        self.participating_object.set_color(color)
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: Object: {self.participating_object.name}, Timestamp: {self.timestamp}" + \
+                  (f", Agent: {self.agent.name}" if self.agent is not None else "")
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class PickUpEvent(AbstractAgentObjectInteractionEvent):
 
     @property
     def color(self) -> Color:
         return Color(0, 1, 0, 1)
 
-    def __str__(self):
-        return f"Pick up event: Object: {self.picked_object.name}, Timestamp: {self.timestamp}" + \
-                  (f", Agent: {self.agent.name}" if self.agent is not None else "")
 
-    def __repr__(self):
-        return self.__str__()
+class PlacingEvent(AbstractAgentObjectInteractionEvent):
+
+    @property
+    def color(self) -> Color:
+        return Color(1, 0, 1, 1)
 
 
 # Create a type that is the union of all event types
@@ -352,4 +378,5 @@ EventUnion = Union[NewObjectEvent,
                    AgentContactEvent,
                    AgentLossOfContactEvent,
                    LossOfSurfaceEvent,
-                   PickUpEvent]
+                   PickUpEvent,
+                   PlacingEvent]
