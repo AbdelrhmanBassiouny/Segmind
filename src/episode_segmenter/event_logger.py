@@ -115,7 +115,6 @@ class EventLogger:
             if thread_id not in self.timeline_per_thread:
                 return None
             all_event_timestamps = [(event, event.timestamp) for event in self.timeline_per_thread[thread_id]]
-            print(all_event_timestamps)
             return min(all_event_timestamps, key=lambda x: abs(x[1] - timestamp))[0]
 
     def get_latest_event_of_thread(self, thread_id: str) -> Optional[Event]:

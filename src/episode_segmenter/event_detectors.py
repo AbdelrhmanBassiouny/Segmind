@@ -680,11 +680,10 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         loss_of_surface_event, objects_that_lost_contact = self.check_object_lost_contact_with_surface()
 
         if objects_that_lost_contact is None:
-            time.sleep(0.01)
             return False
 
         if self.agent in objects_that_lost_contact:
-            rospy.logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
+            logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
             self.break_loop = True
             return False
 

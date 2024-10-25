@@ -19,7 +19,7 @@ class TestNEEMSegmentor(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        BulletWorld(WorldMode.DIRECT)
+        BulletWorld(WorldMode.GUI)
         pni = PyCRAMNEEMInterface(f'mysql+pymysql://{os.environ["my_maria_uri"]}')
         cls.ns = NEEMSegmenter(pni, detectors_to_start=[AgentPickUpDetector], annotate_events=True)
         cls.viz_mark_publisher = VizMarkerPublisher()
