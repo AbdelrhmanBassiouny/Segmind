@@ -797,7 +797,6 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         """
         if isinstance(event, MotionEvent) and any(select_transportable_objects([event.tracked_object])):
             if not check_if_object_is_supported(event.tracked_object):
-                print('new placing detector')
                 return True
         return False
 
@@ -806,10 +805,8 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         Perform initial checks to determine if the object was placed.
         """
         contact_event = self.check_for_event_post_starter_event(ContactDetector)
-        print(f"contact_event: {contact_event}")
         if contact_event and check_if_object_is_supported(self.tracked_object):
             self.end_timestamp = contact_event.timestamp
-            print(f"end_timestamp: {self.end_timestamp}")
             return True
 
         return False
