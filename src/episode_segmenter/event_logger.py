@@ -115,7 +115,6 @@ class EventLogger:
             if thread_id not in self.timeline_per_thread:
                 return None
             all_event_timestamps = [(event, event.timestamp) for event in self.timeline_per_thread[thread_id]]
-            print(all_event_timestamps)
             return min(all_event_timestamps, key=lambda x: abs(x[1] - timestamp))[0]
 
     def get_latest_event_of_thread(self, thread_id: str) -> Optional[Event]:
@@ -174,8 +173,9 @@ class EventAnnotationThread(threading.Thread):
     def run(self):
         while not self.kill_event.is_set():
             try:
-                event = self.logger.annotation_queue.get(timeout=1)
+                event = self.logger.annotation_queue.get(block=False)
             except queue.Empty:
+                time.sleep(0.001)
                 continue
             self.logger.annotation_queue.task_done()
             if len(self.current_annotations) >= self.max_annotations:
@@ -192,7 +192,7 @@ class EventAnnotationThread(threading.Thread):
             z_offset = self.get_next_z_offset()
             text_ann = event.annotate([1.5, 1, z_offset])
             self.current_annotations.append(text_ann)
-            time.sleep(0.1)
+            time.sleep(0.001)
 
     def stop(self):
         self.kill_event.set()

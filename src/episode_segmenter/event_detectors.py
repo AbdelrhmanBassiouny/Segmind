@@ -216,7 +216,7 @@ class NewObjectDetector(PrimitiveEventDetector):
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
     def __init__(self, logger: EventLogger, starter_event: EventUnion, with_object: Optional[Object] = None,
-                 max_closeness_distance: Optional[float] = 0.05, wait_time: Optional[float] = 0.1,
+                 max_closeness_distance: Optional[float] = 0.05, wait_time: Optional[float] = 0.01,
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -590,6 +590,11 @@ class AbstractAgentObjectInteractionDetector(EventDetector, ABC):
     A string that is used as a prefix for the thread ID.
     """
 
+    currently_tracked_objects: List[Object] = []
+    """
+    A list of Object instances that represent the objects that are currently being tracked.
+    """
+
     def __init__(self, logger: EventLogger, starter_event: EventUnion, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -598,6 +603,7 @@ class AbstractAgentObjectInteractionDetector(EventDetector, ABC):
         """
         super().__init__(logger, starter_event, *args, **kwargs)
         self.tracked_object = self.get_object_to_track_from_starter_event(starter_event)
+        self.currently_tracked_objects.append(self.tracked_object)
         self.interaction_event: EventUnion = self._init_interaction_event()
         self.end_timestamp: Optional[float] = None
         self.run_once = True
@@ -676,14 +682,20 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         event detector, this is a contact between the agent and the tracked_object.
         """
         super().__init__(logger, starter_event, *args, **kwargs)
-        self.surface_detector = LossOfSurfaceDetector(logger, self.starter_event)
+        self.surface_detector = LossOfSurfaceDetector(logger, NewObjectEvent(self.tracked_object))
         self.surface_detector.start()
         self.agent = starter_event.agent
         self.interaction_event.agent = self.agent
 
     @classmethod
     def get_object_to_track_from_starter_event(cls, event: AgentContactEvent) -> Object:
-        return select_transportable_objects_from_contact_event(event)[0]
+        return cls.get_new_transportable_objects(event)[0]
+
+    @classmethod
+    def get_new_transportable_objects(cls, event: AgentContactEvent) -> List[Object]:
+        transportable_objects = select_transportable_objects_from_contact_event(event)
+        new_transportable_objects = [obj for obj in transportable_objects if obj not in cls.currently_tracked_objects]
+        return new_transportable_objects
 
     @classmethod
     def start_condition_checker(cls, event: Event) -> bool:
@@ -692,7 +704,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        return isinstance(event, AgentContactEvent) and any(select_transportable_objects_from_contact_event(event))
+        return isinstance(event, AgentContactEvent) and any(cls.get_new_transportable_objects(event))
 
     def interaction_checks(self) -> bool:
         """

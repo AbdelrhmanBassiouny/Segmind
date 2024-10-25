@@ -73,7 +73,7 @@ class EpisodeSegmenter(ABC):
 
                 for detector_thread in self.detector_threads_list:
                     detector_thread.stop()
-                    print(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
+                    logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
                     detector_thread.join()
                 closed_threads = True
 
@@ -256,7 +256,7 @@ class EpisodeSegmenter(ABC):
         """
         self.logger.print_events()
         self.logger.join()
-        print("All threads joined.")
+        logdebug("All threads joined.")
 
 
 class AgentBasedEpisodeSegmenter(EpisodeSegmenter):
