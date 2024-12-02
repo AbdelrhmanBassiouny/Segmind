@@ -10,16 +10,19 @@ import rospy
 from tf.transformations import euler_from_quaternion
 from typing_extensions import Optional, List, Union, Type, Tuple
 
+import pycrap
 from pycram import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Pose
 from pycram.ros.logging import logdebug
 from pycram.world_concepts.world_object import Object
+from pycrap import PhysicalObject
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
     AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
+from .object_tracker import ObjectTracker
 from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_quaternion_difference, \
     check_if_object_is_supported
 
@@ -29,11 +32,6 @@ class PrimitiveEventDetector(threading.Thread, ABC):
     A thread that detects events in another thread and logs them. The event detector is a function that has no arguments
     and returns an object that represents the event. The event detector is called in a loop until the thread is stopped
     by setting the exit_thread attribute to True.
-    """
-
-    agent_types: List[ObjectType] = [ObjectType.HUMAN, ObjectType.ROBOT]
-    """
-    A list of ObjectType values that represent the agent types.
     """
 
     thread_prefix: str = ""
@@ -180,20 +178,24 @@ class NewObjectDetector(PrimitiveEventDetector):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, wait_time: Optional[float] = 0.1, *args, **kwargs):
+    def __init__(self, logger: EventLogger, wait_time: Optional[float] = 0.1,
+                 avoid_objects: Optional[List[str]] = None, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param avoid_objects: An optional list of strings that represent the names of the objects to avoid.
         """
         super().__init__(logger, wait_time, *args, **kwargs)
-        self.new_object_queue: Queue = Queue()
+        self.new_object_queue: Queue[Object] = Queue()
+        self.avoid_objects = avoid_objects if avoid_objects is not None else []
         World.current_world.add_callback_on_add_object(self.on_add_object)
 
     def on_add_object(self, obj: Object):
         """
         Callback function that is called when a new object is added to the scene.
         """
-        self.new_object_queue.put(obj)
+        if not any([obj.name.lower() in name.lower() for name in self.avoid_objects]):
+            self.new_object_queue.put(obj)
 
     def detect_events(self) -> List[Event]:
         """
@@ -231,7 +233,7 @@ class AbstractContactDetector(PrimitiveEventDetector, ABC):
         self.latest_contact_points: Optional[ContactPointsList] = ContactPointsList([])
 
     @property
-    def obj_type(self) -> ObjectType:
+    def obj_type(self) -> Type[PhysicalObject]:
         """
         The object type of the object to track.
         """
@@ -291,7 +293,7 @@ class ContactDetector(AbstractContactDetector):
             new_objects_in_contact = [obj for obj in new_objects_in_contact if obj == self.with_object]
         if len(new_objects_in_contact) == 0:
             return []
-        event_type = AgentContactEvent if self.obj_type in self.agent_types else ContactEvent
+        event_type = AgentContactEvent if issubclass(self.obj_type, pycrap.Agent) else ContactEvent
         return [event_type(contact_points, of_object=self.tracked_object, with_object=new_obj)
                 for new_obj in new_objects_in_contact]
 
@@ -318,7 +320,7 @@ class LossOfContactDetector(AbstractContactDetector):
         objects_that_lost_contact = self.get_objects_that_lost_contact(contact_points)
         if len(objects_that_lost_contact) == 0:
             return []
-        event_type = AgentLossOfContactEvent if self.obj_type in self.agent_types else LossOfContactEvent
+        event_type = AgentLossOfContactEvent if issubclass(self.obj_type, pycrap.Agent) else LossOfContactEvent
         return [event_type(contact_points, self.latest_contact_points, of_object=self.tracked_object, with_object=obj)
                 for obj in objects_that_lost_contact]
 
@@ -412,7 +414,9 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         if self.time_since_last_event < self.measure_timestep.total_seconds():
             time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
-        if self.is_moving() != self.was_moving:
+        is_moving = self.is_moving()
+        if is_moving != self.was_moving:
+            self.update_object_motion_state(is_moving)
             self.was_moving = not self.was_moving
             return [self.create_event()]
         self.update_latest_pose_and_time()
@@ -421,6 +425,13 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     @property
     def time_since_last_event(self) -> float:
         return time.time() - self.latest_time
+
+    @abstractmethod
+    def update_object_motion_state(self, moving: bool) -> None:
+        """
+        Update the object motion state.
+        """
+        pass
 
     def is_moving(self) -> bool:
         """
@@ -454,6 +465,12 @@ class MotionDetector(PrimitiveEventDetector, ABC):
 class TranslationDetector(MotionDetector):
     thread_prefix = "translation_"
 
+    def update_object_motion_state(self, moving: bool) -> None:
+        """
+        Update the object motion state.
+        """
+        self.tracked_object.is_translating = moving
+
     def calculate_distance(self, current_pose: Pose):
         """
         Calculate the Euclidean distance between the latest and current positions of the object.
@@ -477,6 +494,12 @@ class RotationDetector(MotionDetector):
         super().__init__(logger, starter_event, velocity_threshold=angular_velocity_threshold, wait_time=wait_time,
                          time_between_frames=time_between_frames, *args, **kwargs)
 
+    def update_object_motion_state(self, moving: bool) -> None:
+        """
+        Update the object motion state.
+        """
+        self.tracked_object.is_rotating = moving
+
     def calculate_distance(self, current_pose: Pose):
         """
         Calculate the angle between the latest and current quaternions of the object
@@ -485,8 +508,8 @@ class RotationDetector(MotionDetector):
         """
         quat_diff = calculate_quaternion_difference(self.latest_pose.orientation_as_list(),
                                                     current_pose.orientation_as_list())
-        xy_angles = euler_from_quaternion(quat_diff)[:2]
-        return (xy_angles[0] + xy_angles[1]) / 2.0
+        angle = 2 * np.arccos(quat_diff[0])
+        return angle
 
     def get_event_type(self):
         return RotationEvent if self.was_moving else StopRotationEvent
@@ -768,7 +791,7 @@ class MotionPickUpDetector(AbstractPickUpDetector):
             self.end_timestamp = latest_event.timestamp
             return True
 
-        return True
+        return False
 
 
 class PlacingDetector(AbstractAgentObjectInteractionDetector):
