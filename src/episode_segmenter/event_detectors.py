@@ -22,7 +22,7 @@ from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
     AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
-from .object_tracker import ObjectTracker
+from .object_tracker import ObjectTracker, ObjectTrackerFactory
 from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_quaternion_difference, \
     check_if_object_is_supported
 
@@ -537,38 +537,40 @@ class EventDetector(PrimitiveEventDetector, ABC):
         """
         pass
 
-    def check_for_event_post_starter_event(self, event_detector: Type[PrimitiveEventDetector]) -> Optional[EventUnion]:
+    def check_for_event_post_starter_event(self, event_type: Type[Event]) -> Optional[EventUnion]:
         """
         Check if the tracked_object was involved in an event after the starter event.
 
-        :param event_detector: The event detector class that is used to detect the event.
+        :param event_type: The event type to check for.
         :return: The event if the tracked_object was involved in an event, else None.
         """
-        event = get_latest_event_of_detector_for_object(event_detector, self.tracked_object,
-                                                        after_timestamp=self.start_timestamp)
+        event = self.object_tracker.get_first_event_of_type_after_event(event_type, self.starter_event)
         if event is None:
-            logdebug(f"{event_detector.__name__} found no event after {self.start_timestamp} with object :"
+            logdebug(f"{event_type.__name__} found no event after {self.start_timestamp} with object :"
                      f" {self.tracked_object.name}")
             return None
-
         return event
 
-    def check_for_event_near_starter_event(self, event_detector: Type[PrimitiveEventDetector],
+    @property
+    def object_tracker(self) -> ObjectTracker:
+        return ObjectTrackerFactory.get_tracker(self.tracked_object)
+
+    def check_for_event_near_starter_event(self, event_type: Type[Event],
                                            time_tolerance: timedelta) -> Optional[EventUnion]:
         """
         Check if the tracked_object was involved in an event near the starter event (i.e. could be before or after).
 
-        :param event_detector: The event detector class that is used to detect the event.
+        :param event_type: The event type to check for.
         :param time_tolerance: The time tolerance to consider the event as near the starter event.
         :return: The event if the tracked_object was involved in an event, else None.
         """
-        event = get_nearest_event_of_detector_for_object(event_detector, self.tracked_object,
-                                                         timestamp=self.start_timestamp, time_tolerance=time_tolerance)
+        event = self.object_tracker.get_nearest_event_of_type_to_event(self.starter_event,
+                                                                       tolerance=time_tolerance,
+                                                                       event_type=event_type)
         if event is None:
-            logdebug(f"{event_detector.__name__} found no event after {self.start_timestamp} with object :"
+            logdebug(f"{event_type.__name__} found no event after {self.start_timestamp} with object :"
                      f" {self.tracked_object.name}")
             return None
-
         return event
 
     @property
@@ -733,7 +735,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         """
         Perform extra checks to determine if the object was picked up.
         """
-        loss_of_surface_event = self.check_for_event_post_starter_event(LossOfSurfaceDetector)
+        loss_of_surface_event = self.check_for_event_post_starter_event(LossOfSurfaceEvent)
 
         if not loss_of_surface_event:
             return False
@@ -828,7 +830,7 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         """
         Perform initial checks to determine if the object was placed.
         """
-        contact_event = self.check_for_event_post_starter_event(ContactDetector)
+        contact_event = self.check_for_event_post_starter_event(ContactEvent)
         print(f"contact_event: {contact_event}")
         if contact_event and check_if_object_is_supported(self.tracked_object):
             self.end_timestamp = contact_event.timestamp
