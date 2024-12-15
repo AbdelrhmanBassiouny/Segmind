@@ -14,8 +14,8 @@ from tf.transformations import (quaternion_from_matrix, euler_matrix, quaternion
 from trimesh import Geometry
 from typing_extensions import List, Tuple, Dict, Optional, Union
 
+import pycrap
 from episode_segmenter.utils import calculate_quaternion_difference
-from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Pose, Transform
 from pycram.world_concepts.world_object import Object
 
@@ -147,7 +147,7 @@ class FileEpisodePlayer(EpisodePlayer):
 
             # Create the object if it does not exist in the world and set its pose
             if obj_name not in self.world.get_object_names():
-                obj = Object(obj_name, ObjectType.GENERIC_OBJECT, mesh_name,
+                obj = Object(obj_name, pycrap.PhysicalObject, mesh_name,
                              pose=Pose(pose.position_as_list()), scale_mesh=self.mesh_scale)
                 quat_diff = calculate_quaternion_difference(pose.orientation_as_list(), [0, 0, 0, 1])
                 euler_diff = euler_from_quaternion(quat_diff)

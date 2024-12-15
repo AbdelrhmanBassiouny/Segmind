@@ -6,6 +6,7 @@ from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict
 
 import numpy as np
 
+from pycram.datastructures.dataclasses import ObjectState
 from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import logwarn
 
@@ -19,6 +20,10 @@ class ObjectTracker:
         self.obj = obj
         self._lock: RLock = RLock()
         self._event_history: List[Event] = []
+
+    @property
+    def current_state(self) -> ObjectState:
+        return self.obj.current_state
 
     def add_event(self, event: Event):
         with self._lock:
@@ -66,9 +71,10 @@ class ObjectTracker:
             time_stamps = self.time_stamps_array
             type_cond = np.array([isinstance(event, event_type) for event in self._event_history])
             valid_indices = np.where(type_cond)[0]
-            time_stamps = time_stamps[valid_indices]
-            nearest_event_index = self._get_nearest_index(time_stamps, timestamp, tolerance)
-            return self._event_history[valid_indices[nearest_event_index]]
+            if len(valid_indices) > 0:
+                time_stamps = time_stamps[valid_indices]
+                nearest_event_index = self._get_nearest_index(time_stamps, timestamp, tolerance)
+                return self._event_history[valid_indices[nearest_event_index]]
 
     def get_nearest_event_to(self, timestamp: float, tolerance: Optional[timedelta] = None) -> Optional[Event]:
         with self._lock:

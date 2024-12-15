@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from typing_extensions import List, Type, Optional, Dict
 
 from pycram.datastructures.dataclasses import ContactPointsList
-from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
 from pycram.world_concepts.world_object import Object
@@ -292,7 +291,7 @@ class AgentBasedEpisodeSegmenter(EpisodeSegmenter):
         """
         :return: A list of Object instances that represent the available agents in the world.
         """
-        return [obj for obj in World.current_world.objects if obj.obj_type in [ObjectType.HUMAN, ObjectType.ROBOT]]
+        return [obj for obj in World.current_world.objects if issubclass(obj.obj_type, pycrap.Agent)]
 
 
 class NoAgentEpisodeSegmenter(EpisodeSegmenter):
@@ -321,7 +320,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         Start the motion detection threads for the objects in the world.
         """
         for obj in World.current_world.objects:
-            if obj.obj_type != ObjectType.ENVIRONMENT and (obj not in self.objects_to_avoid):
+            if not obj.is_an_environment and (obj not in self.objects_to_avoid):
                 self.start_motion_detection_threads_for_object(obj)
                 try:
                     self.detect_missing_support_for_object(obj)

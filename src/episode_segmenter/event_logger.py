@@ -11,6 +11,7 @@ from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import loginfo
 
 from .events import Event, EventUnion
+from .object_tracker import ObjectTrackerFactory
 
 
 class EventLogger:
@@ -36,6 +37,7 @@ class EventLogger:
 
     def log_event(self, event: Event):
         thread_id = event.detector_thread_id
+        event.update_object_trackers()
         self.event_queue.put(event)
         if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)):
             self.annotation_queue.put(event)

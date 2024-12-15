@@ -2,6 +2,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from datetime import timedelta
+from functools import cached_property
 from math import ceil
 from queue import Queue
 
@@ -13,7 +14,6 @@ from typing_extensions import Optional, List, Union, Type, Tuple
 import pycrap
 from pycram import World
 from pycram.datastructures.dataclasses import ContactPointsList
-from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Pose
 from pycram.ros.logging import logdebug
 from pycram.world_concepts.world_object import Object
@@ -24,7 +24,8 @@ from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentC
     RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
 from .object_tracker import ObjectTracker, ObjectTrackerFactory
 from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_quaternion_difference, \
-    check_if_object_is_supported
+    check_if_object_is_supported, check_if_object_is_supported_using_contact_points, \
+    check_if_object_is_supported_by_another_object
 
 
 class PrimitiveEventDetector(threading.Thread, ABC):
@@ -294,7 +295,8 @@ class ContactDetector(AbstractContactDetector):
         if len(new_objects_in_contact) == 0:
             return []
         event_type = AgentContactEvent if issubclass(self.obj_type, pycrap.Agent) else ContactEvent
-        return [event_type(contact_points, of_object=self.tracked_object, with_object=new_obj)
+        return [event_type(contact_points.get_points_of_object(new_obj),
+                           of_object=self.tracked_object, with_object=new_obj)
                 for new_obj in new_objects_in_contact]
 
 
@@ -487,7 +489,7 @@ class RotationDetector(MotionDetector):
     thread_prefix = "rotation_"
 
     def __init__(self, logger: EventLogger, starter_event: NewObjectEvent,
-                 angular_velocity_threshold: float = 10 * np.pi/180,
+                 angular_velocity_threshold: float = 10 * np.pi / 180,
                  wait_time: Optional[float] = 0.1,
                  time_between_frames: Optional[timedelta] = timedelta(milliseconds=50),
                  *args, **kwargs):
@@ -551,7 +553,7 @@ class EventDetector(PrimitiveEventDetector, ABC):
             return None
         return event
 
-    @property
+    @cached_property
     def object_tracker(self) -> ObjectTracker:
         return ObjectTrackerFactory.get_tracker(self.tracked_object)
 
@@ -783,14 +785,14 @@ class MotionPickUpDetector(AbstractPickUpDetector):
         """
         Check for upward motion after the object lost contact with the surface.
         """
-        latest_event = self.check_for_event_near_starter_event(TranslationDetector, timedelta(milliseconds=1000))
+        latest_event = self.check_for_event_near_starter_event(TranslationEvent, timedelta(milliseconds=1000))
 
         if not latest_event:
             return False
 
         z_motion = latest_event.current_pose.position.z - latest_event.start_pose.position.z
         if z_motion > 0.001:
-            self.end_timestamp = latest_event.timestamp
+            self.end_timestamp = max(latest_event.timestamp, self.start_timestamp)
             return True
 
         return False
@@ -820,24 +822,31 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        if isinstance(event, MotionEvent) and any(select_transportable_objects([event.tracked_object])):
-            if not check_if_object_is_supported(event.tracked_object):
-                print('new placing detector')
-                return True
+        if isinstance(event, ContactEvent) and any(select_transportable_objects([event.tracked_object])):
+            print('new placing detector for object:', event.tracked_object.name)
+            return True
         return False
 
     def initial_interaction_checkers(self) -> bool:
         """
         Perform initial checks to determine if the object was placed.
         """
-        contact_event = self.check_for_event_post_starter_event(ContactEvent)
-        print(f"contact_event: {contact_event}")
-        if contact_event and check_if_object_is_supported(self.tracked_object):
-            self.end_timestamp = contact_event.timestamp
+        stop_motion_event = self.check_for_event_near_starter_event(StopMotionEvent, timedelta(milliseconds=1000))
+        if stop_motion_event and self.check_if_contact_event_is_with_surface(self.starter_event):
+            self.end_timestamp = self.start_timestamp
             print(f"end_timestamp: {self.end_timestamp}")
             return True
 
         return False
+
+    def check_if_contact_event_is_with_surface(self, contact_event: ContactEvent) -> bool:
+        """
+        Check if the contact event is with a surface.
+
+        :param contact_event: The ContactEvent instance that represents the contact event.
+        """
+        return check_if_object_is_supported_by_another_object(self.tracked_object, contact_event.with_object,
+                                                              contact_event.contact_points)
 
 
 def check_for_supporting_surface(objects_that_lost_contact: List[Object],
@@ -915,8 +924,8 @@ def select_transportable_objects_from_contact_event(event: Union[ContactEvent, A
 
 
 def select_transportable_objects_from_loss_of_contact_event(event: Union[LossOfContactEvent,
-                                                                         AgentLossOfContactEvent,
-                                                                         LossOfSurfaceEvent]) -> List[Object]:
+AgentLossOfContactEvent,
+LossOfSurfaceEvent]) -> List[Object]:
     """
     Select the objects that can be transported from the loss of contact event.
     """
@@ -930,9 +939,10 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
 
     :param objects: A list of Object instances.
     """
-    return [obj for obj in objects
-            if obj.obj_type not in [ObjectType.HUMAN, ObjectType.ROBOT, ObjectType.ENVIRONMENT,
-                                    ObjectType.IMAGINED_SURFACE]]
+    transportable_objects = [obj for obj in objects
+                             if
+                             not issubclass(obj.obj_type, (pycrap.Agent, pycrap.Location, pycrap.Floor, pycrap.Genobj))]
+    return transportable_objects
 
 
 EventDetectorUnion = Union[ContactDetector, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector,

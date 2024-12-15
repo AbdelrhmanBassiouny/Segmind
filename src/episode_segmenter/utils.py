@@ -2,9 +2,10 @@ import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional
 
+import pycrap
+from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
-from pycram.datastructures.enums import ObjectType
 from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import logdebug
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
@@ -29,6 +30,47 @@ def check_if_object_is_supported(obj: Object) -> bool:
     return supported
 
 
+def check_if_object_is_supported_using_contact_points(obj: Object, contact_points: ContactPointsList) -> bool:
+    """
+    Check if the object is supported by any other object using the contact points.
+
+    :param obj: The object to check if it is supported.
+    :param contact_points: The contact points of the object.
+    :return: True if the object is supported, False otherwise.
+    """
+    for body in contact_points.get_bodies_in_contact():
+        if check_if_object_is_supported_by_another_object(obj, body, contact_points.get_points_of_body(body)):
+            return True
+
+
+def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Object,
+                                                   contact_points: Optional[ContactPointsList] = None) -> bool:
+    """
+    Check if the object is supported by another object.
+
+    :param obj: The object to check if it is supported.
+    :param support_obj: The object that supports the object.
+    :param contact_points: The contact points between the object and the support object.
+    :return: True if the object is supported by the support object, False otherwise.
+    """
+    if contact_points is None:
+        contact_points = obj.get_contact_points_with_body(support_obj)
+    average_normal = np.mean([cp.normal for cp in contact_points], axis=0)
+    return is_vector_opposite_to_gravity(average_normal)
+
+
+def is_vector_opposite_to_gravity(vector: List[float], gravity_vector: Optional[List[float]] = None) -> bool:
+    """
+    Check if the vector is opposite to the gravity vector.
+
+    :param vector: A list of float values that represent the vector.
+    :param gravity_vector: A list of float values that represent the gravity vector.
+    :return: True if the vector is opposite to the gravity vector, False otherwise.
+    """
+    gravity_vector = [0, 0, -1] if gravity_vector is None else gravity_vector
+    return np.dot(vector, gravity_vector) < 0
+
+
 def add_imaginary_support_for_object(obj: Object,
                                      support_name: Optional[str] = f"imagined_support",
                                      support_thickness: Optional[float] = 0.005) -> Object:
@@ -42,7 +84,7 @@ def add_imaginary_support_for_object(obj: Object,
     """
     obj_base_position = obj.get_base_position_as_list()
     support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, obj_base_position[2]*0.5])
-    support_obj = Object(support_name, ObjectType.IMAGINED_SURFACE, None, support)
+    support_obj = Object(support_name, pycrap.Genobj, None, support)
     support_position = obj_base_position.copy()
     support_position[2] = obj_base_position[2] * 0.5
     support_obj.set_position(support_position)
