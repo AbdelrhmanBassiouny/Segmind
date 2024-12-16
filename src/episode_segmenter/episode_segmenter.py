@@ -20,7 +20,7 @@ from .event_logger import EventLogger
 from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
     NewObjectEvent, RotationEvent, StopRotationEvent, PlacingEvent, HasTrackedObject
 from .object_tracker import ObjectTracker
-from .utils import check_if_object_is_supported, add_imaginary_support_for_object, adjust_imaginary_support_for_object
+from .utils import check_if_object_is_supported, Imaginator
 
 
 class EpisodeSegmenter(ABC):
@@ -327,10 +327,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
                 set_of_objects.add(obj)
                 try:
                     if not check_if_object_is_supported(obj):
-                        if World.current_world.get_object_by_name('imagined_support') is not None:
-                            adjust_imaginary_support_for_object(obj)
-                        else:
-                            add_imaginary_support_for_object(obj)
+                        Imaginator.imagine_support(obj)
                 except NotImplementedError:
                     logwarn("Support detection is not implemented for this simulator.")
         for obj in set_of_objects:

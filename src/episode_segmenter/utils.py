@@ -76,46 +76,35 @@ def is_vector_opposite_to_gravity(vector: List[float], gravity_vector: Optional[
     return np.dot(vector, gravity_vector) < 0
 
 
-def adjust_imaginary_support_for_object(obj: Object,
-                                        support_name: Optional[str] = f"imagined_support",
-                                        support_thickness: Optional[float] = 0.005) -> None:
-    """
-    Adjust the imaginary support for the object such that it is at the base of the object.
+class Imaginator:
 
-    :param obj: The object to check if it is supported.
-    :param support_name: The name of the support object.
-    :param support_thickness: The thickness of the support.
     """
-    support_obj = World.current_world.get_object_by_name(support_name)
-    floor = World.current_world.get_object_by_name('floor')
-    obj_base_position = obj.get_base_position_as_list()
-    support_position = support_obj.get_position_as_list()
-    if obj_base_position[2] <= (support_position[2] + support_thickness * 0.5):
-        floor.detach(support_obj)
-        support_position[2] = obj_base_position[2] - support_thickness * 0.5
+    A class that provides methods for imagining objects.
+    """
+    surfaces_created: List[Object] = []
+    latest_surface_idx: int = 0
+
+    @classmethod
+    def imagine_support(cls, obj: Object, support_thickness: Optional[float] = 0.005) -> Object:
+        """
+        Imagine a support for the object.
+
+        :param obj: The object for which the support should be imagined.
+        :param support_thickness: The thickness of the support.
+        :return: The support object.
+        """
+        obj_base_position = obj.get_base_position_as_list()
+        obj_aabb = obj.get_axis_aligned_bounding_box()
+        support = GenericObjectDescription(f"imagined_support_{cls.latest_surface_idx}",
+                                           [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness*0.5])
+        support_obj = Object(f"imagined_support_{cls.latest_surface_idx}", pycrap.Genobj, None, support)
+        support_position = obj_base_position.copy()
+        support_position[2] -= support_thickness
         support_obj.set_position(support_position)
-        floor.attach(support_obj)
-
-
-def add_imaginary_support_for_object(obj: Object,
-                                     support_name: Optional[str] = f"imagined_support",
-                                     support_thickness: Optional[float] = 0.005) -> Object:
-    """
-    Add an imaginary support for the object.
-
-    :param obj: The object for which the support should be added.
-    :param support_name: The name of the support object.
-    :param support_thickness: The thickness of the support.
-    :return: The support object.
-    """
-    obj_base_position = obj.get_base_position_as_list()
-    support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, support_thickness*0.5])
-    support_obj = Object(support_name, pycrap.Genobj, None, support)
-    support_position = obj_base_position.copy()
-    support_position[2] -= support_thickness
-    support_obj.set_position(support_position)
-    World.current_world.get_object_by_name('floor').attach(support_obj)
-    return support_obj
+        World.current_world.get_object_by_name('floor').attach(support_obj)
+        cls.surfaces_created.append(support_obj)
+        cls.latest_surface_idx += 1
+        return support_obj
 
 
 def get_angle_between_vectors(vector_1: List[float], vector_2: List[float]) -> float:

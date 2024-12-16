@@ -150,6 +150,9 @@ class MotionEvent(HasTrackedObject, ABC):
     def __str__(self):
         return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class TranslationEvent(MotionEvent):
     @property
@@ -175,6 +178,13 @@ class StopTranslationEvent(StopMotionEvent):
 
 class StopRotationEvent(StopMotionEvent):
     ...
+
+
+class LiftingEvent(TranslationEvent):
+    def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
+                 timestamp: Optional[float] = None, from_surface: Optional[Object] = None):
+        super().__init__(tracked_object, start_pose, current_pose, timestamp)
+        self.from_surface: Optional[Object] = from_surface
 
 
 class HasTwoTrackedObjects(HasTrackedObject, ABC):

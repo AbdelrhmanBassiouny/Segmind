@@ -22,7 +22,7 @@ from pycrap import PhysicalObject
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
     AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
-    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
+    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent, LiftingEvent
 from .object_tracker import ObjectTracker, ObjectTrackerFactory
 from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_quaternion_difference, \
     check_if_object_is_supported, check_if_object_is_supported_using_contact_points, \
@@ -598,6 +598,154 @@ class EventDetector(PrimitiveEventDetector, ABC):
         return self.starter_event.timestamp
 
 
+class LiftingDetector(EventDetector):
+    """
+    A detector that detects if the tracked_object was lifted.
+    """
+
+    thread_prefix = "lifting_"
+
+    def __init__(self, logger: EventLogger, starter_event: LossOfSurfaceEvent, *args, **kwargs):
+        """
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param starter_event: An instance of the Event class that represents the event to start the event detector.
+        """
+        super().__init__(logger, starter_event, *args, **kwargs)
+        self.tracked_object = self.get_object_to_lift_from_event(starter_event)
+        self.lifting_event: Optional[LiftingEvent] = None
+        self.run_once = True
+
+    @classmethod
+    def get_object_to_lift_from_event(cls, event: LossOfSurfaceEvent) -> Object:
+        """
+        Get the tracked_object to lift from the event.
+        """
+        return event.tracked_object
+
+    @classmethod
+    def start_condition_checker(cls, event: Event) -> bool:
+        """
+        Check if the event is a starter event.
+
+        :param event: The Event instance that represents the event.
+        """
+        return isinstance(event, LossOfSurfaceEvent)
+
+    def detect_events(self) -> List[LiftingEvent]:
+        """
+        Detect if the tracked_object was lifted.
+
+        :return: An instance of the LiftingEvent class if the tracked_object was lifted, else None.
+        """
+        event = None
+        start_time = time.time()
+        while not self.kill_event.is_set() and (time.time() - start_time < 1):
+            if not self.lifting_checks():
+                time.sleep(0.01)
+                continue
+            event = self.lifting_event
+            break
+        if event:
+            rospy.loginfo(f"{self.__class__.__name__} detected a lifting of: {self.tracked_object.name}")
+            return [event]
+        return []
+
+    def lifting_checks(self) -> bool:
+        """
+        Perform checks to determine if the object was lifted.
+
+        :return: A boolean value that represents if all the checks passed and the object was lifted.
+        """
+        translation_event = self.check_for_event_near_starter_event(TranslationEvent, timedelta(seconds=1))
+        if translation_event and self.translation_event_condition(translation_event):
+            self.lifting_event = LiftingEvent(self.tracked_object, translation_event.start_pose,
+                                              translation_event.current_pose, timestamp=translation_event.timestamp,
+                                              from_surface=self.starter_event.surface)
+            return True
+        return False
+
+    def translation_event_condition(self, translation_event: TranslationEvent) -> bool:
+        """
+        Check if the translation event condition is met.
+
+        :param translation_event: The translation event instance.
+        """
+        return translation_event.current_pose.position.z > translation_event.start_pose.position.z
+
+
+class LoweringDetector(EventDetector):
+    """
+    A detector that detects if the tracked_object was lowered.
+    """
+
+    thread_prefix = "lowering_"
+
+    def __init__(self, logger: EventLogger, starter_event: LiftingEvent, *args, **kwargs):
+        """
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param starter_event: An instance of the Event class that represents the event to start the event detector.
+        """
+        super().__init__(logger, starter_event, *args, **kwargs)
+        self.tracked_object = self.get_object_to_lower_from_event(starter_event)
+        self.lowering_event: Optional[TranslationEvent] = None
+        self.run_once = True
+
+    @classmethod
+    def get_object_to_lower_from_event(cls, event: LiftingEvent) -> Object:
+        """
+        Get the tracked_object to lower from the event.
+        """
+        return event.tracked_object
+
+    @classmethod
+    def start_condition_checker(cls, event: Event) -> bool:
+        """
+        Check if the event is a starter event.
+
+        :param event: The Event instance that represents the event.
+        """
+        return isinstance(event, LiftingEvent)
+
+    def detect_events(self) -> List[TranslationEvent]:
+        """
+        Detect if the tracked_object was lowered.
+
+        :return: An instance of the TranslationEvent class if the tracked_object was lowered, else None.
+        """
+        event = None
+        start_time = time.time()
+        while not self.kill_event.is_set() and (time.time() - start_time < 1):
+            if not self.lowering_checks():
+                time.sleep(0.01)
+                continue
+            event = self.lowering_event
+            break
+        if event:
+            rospy.loginfo(f"{self.__class__.__name__} detected a lowering of: {self.tracked_object.name}")
+            return [event]
+        return []
+
+    def lowering_checks(self) -> bool:
+        """
+        Perform checks to determine if the object was lowered.
+
+        :return: A boolean value that represents if all the checks passed and the object was lowered.
+        """
+        translation_event = self.check_for_event_near_starter_event(TranslationEvent, timedelta(seconds=1))
+        if translation_event and self.translation_event_condition(translation_event):
+            self.lowering_event = translation_event
+            return True
+        return False
+
+    def translation_event_condition(self, translation_event: TranslationEvent) -> bool:
+        """
+        Check if the translation event condition is met.
+
+        :param translation_event: The translation event instance.
+        """
+        return translation_event.current_pose.position.z < translation_event.start_pose.position.z
+
+
 class MotionPlacingDetector(EventDetector, ABC):
     """
     A detector that detects if the tracked_object was placed on a surface by using motion and contact.
@@ -807,17 +955,17 @@ class MotionPickUpDetector(AbstractPickUpDetector):
         if check_for_supporting_surface(self.tracked_object,
                                         self.starter_event.latest_objects_that_got_removed) is not None:
             # wait for the object to be lifted TODO: Should be replaced with a wait on a lifting event
-            dt = timedelta(milliseconds=300)
+            dt = timedelta(milliseconds=400)
             time.sleep(dt.total_seconds())
             latest_event = self.check_for_event_near_starter_event(TranslationEvent, dt)
 
             if not latest_event:
                 return False
 
-            z_motion = latest_event.current_pose.position.z - latest_event.start_pose.position.z
-            if z_motion >= 0.005:
-                self.end_timestamp = max(latest_event.timestamp, self.start_timestamp)
-                return True
+            # z_motion = latest_event.current_pose.position.z - latest_event.start_pose.position.z
+            # if z_motion >= 0.005:
+            self.end_timestamp = max(latest_event.timestamp, self.start_timestamp)
+            return True
 
         return False
 
@@ -857,16 +1005,10 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         """
         dt = timedelta(milliseconds=1000)
         time.sleep(dt.total_seconds())
-        event = self.check_for_event_near_starter_event(StopTranslationEvent, dt)
+        event = self.check_for_event_near_starter_event(StopMotionEvent, dt)
         if event is not None:
-            print(f"found translation event: {event} for {self.tracked_object.name}")
-            print(f"object with history: {self.object_tracker.get_event_history()}")
-            if (event.current_pose.position.z - event.start_pose.position.z) > -0.001:
-                self.kill_event.set()
-                return False
-            # wait for the object to stop moving
-            dt = timedelta(milliseconds=500)
-            time.sleep(dt.total_seconds())
+            print(f"found event: {event} for {self.tracked_object.name}")
+            print(f"with history: {self.object_tracker.get_event_history()}")
             if not check_if_object_is_supported(self.tracked_object, 0.01):
                 self.kill_event.set()
                 return False
