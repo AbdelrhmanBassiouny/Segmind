@@ -8,6 +8,7 @@ from episode_segmenter.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation, ObjectState
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import World
+from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object, Link
 
 
@@ -355,7 +356,7 @@ class LossOfSurfaceEvent(LossOfContactEvent):
                  surface: Optional[Object] = None,
                  timestamp: Optional[float] = None):
         super().__init__(contact_points, latest_contact_points, of_object, surface, timestamp)
-        self.surface: Optional[Object] = surface
+        self.surface: Optional[PhysicalBody] = surface
 
 
 class AbstractAgentObjectInteractionEvent(HasTwoTrackedObjects, ABC):

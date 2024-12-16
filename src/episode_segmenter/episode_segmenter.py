@@ -323,7 +323,8 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         """
         set_of_objects = set()
         for obj in World.current_world.objects:
-            if not obj.is_an_environment and (obj not in self.objects_to_avoid):
+            if (not obj.is_an_environment and not issubclass(obj.obj_type, pycrap.Supporter)
+                    and (obj.name not in self.objects_to_avoid)):
                 set_of_objects.add(obj)
                 try:
                     if not check_if_object_is_supported(obj):

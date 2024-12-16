@@ -1,16 +1,22 @@
+from __future__ import annotations
+
 import math
 
 import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
-from typing_extensions import List, Optional
+from typing_extensions import List, Optional, TYPE_CHECKING
 
 import pycrap
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
+from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import logdebug
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
+
+if TYPE_CHECKING:
+    from .events import LossOfContactEvent
 
 
 def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
@@ -24,14 +30,17 @@ def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) 
     supported = True
     with UseProspectionWorld():
         prospection_obj = World.current_world.get_prospection_object_for_object(obj)
-        current_position = prospection_obj.get_position_as_list()
+        # current_position = prospection_obj.get_position_as_list()
         dt = math.sqrt(2 * distance / 9.81) + 0.01  # time to fall distance
         World.current_world.simulate(dt)
-        new_position = prospection_obj.get_position_as_list()
-        print("change in position", current_position[2] - new_position[2])
-        if current_position[2] - new_position[2] > distance:
-            logdebug(f"Object {obj.name} is not supported")
-            supported = False
+        cp = prospection_obj.contact_points
+        if not check_if_in_contact_with_support(prospection_obj, cp.get_bodies_in_contact()):
+            return False
+        # new_position = prospection_obj.get_position_as_list()
+        # print("change in position", current_position[2] - new_position[2])
+        # if current_position[2] - new_position[2] > distance:
+        #     logdebug(f"Object {obj.name} is not supported")
+        #     supported = False
     return supported
 
 
@@ -48,6 +57,23 @@ def check_if_object_is_supported_using_contact_points(obj: Object, contact_point
             return True
 
 
+def check_if_in_contact_with_support(obj: Object, contact_bodies: List[PhysicalBody]) -> Optional[PhysicalBody]:
+    """
+    Check if the object is in contact with a supporting surface.
+
+    :param obj: The object to check if it is in contact with a supporting surface.
+    :param contact_bodies: The bodies in contact with the object.
+    """
+    for body in contact_bodies:
+        if issubclass(body.parent_entity.obj_type, pycrap.Supporter):
+            body_aabb = body.get_axis_aligned_bounding_box()
+            surface_z = body_aabb.max_z
+            tracked_object_base = obj.get_base_origin().position
+            if tracked_object_base.z >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
+                    body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
+                return body
+
+
 def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Object,
                                                    contact_points: Optional[ContactPointsList] = None) -> bool:
     """
@@ -60,8 +86,11 @@ def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Obj
     """
     if contact_points is None:
         contact_points = obj.get_contact_points_with_body(support_obj)
-    average_normal = np.mean([cp.normal for cp in contact_points], axis=0)
-    return is_vector_opposite_to_gravity(average_normal)
+    normals = [cp.normal for cp in contact_points if any(cp.normal)]
+    if len(normals) > 0:
+        average_normal = np.mean(normals, axis=0)
+        return is_vector_opposite_to_gravity(average_normal)
+    return False
 
 
 def is_vector_opposite_to_gravity(vector: List[float], gravity_vector: Optional[List[float]] = None) -> bool:
@@ -97,7 +126,7 @@ class Imaginator:
         obj_aabb = obj.get_axis_aligned_bounding_box()
         support = GenericObjectDescription(f"imagined_support_{cls.latest_surface_idx}",
                                            [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness*0.5])
-        support_obj = Object(f"imagined_support_{cls.latest_surface_idx}", pycrap.Genobj, None, support)
+        support_obj = Object(f"imagined_support_{cls.latest_surface_idx}", pycrap.Supporter, None, support)
         support_position = obj_base_position.copy()
         support_position[2] -= support_thickness
         support_obj.set_position(support_position)
