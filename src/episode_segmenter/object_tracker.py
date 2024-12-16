@@ -74,13 +74,15 @@ class ObjectTracker:
             if len(valid_indices) > 0:
                 time_stamps = time_stamps[valid_indices]
                 nearest_event_index = self._get_nearest_index(time_stamps, timestamp, tolerance)
-                return self._event_history[valid_indices[nearest_event_index]]
+                if nearest_event_index is not None:
+                    return self._event_history[valid_indices[nearest_event_index]]
 
     def get_nearest_event_to(self, timestamp: float, tolerance: Optional[timedelta] = None) -> Optional[Event]:
         with self._lock:
             time_stamps = self.time_stamps_array
             nearest_event_index = self._get_nearest_index(time_stamps, timestamp, tolerance)
-            return self._event_history[nearest_event_index]
+            if nearest_event_index is not None:
+                return self._event_history[nearest_event_index]
 
     def _get_nearest_index(self, time_stamps: np.ndarray,
                            timestamp: float, tolerance: Optional[timedelta] = None) -> Optional[int]:
@@ -96,10 +98,21 @@ class ObjectTracker:
     def get_first_event_of_type_after_timestamp(self, event_type: Type[Event], timestamp: float) -> Optional[Event]:
         with self._lock:
             start_index = self.get_index_of_first_event_after(timestamp)
-            for event in self._event_history[start_index:]:
-                if isinstance(event, event_type):
-                    return event
-            return None
+            if start_index is not None:
+                for event in self._event_history[start_index:]:
+                    if isinstance(event, event_type):
+                        return event
+
+    def get_first_event_of_type_before_event(self, event_type: Type[Event], event: Event) -> Optional[EventUnion]:
+        return self.get_first_event_of_type_before_timestamp(event_type, event.timestamp)
+
+    def get_first_event_of_type_before_timestamp(self, event_type: Type[Event], timestamp: float) -> Optional[Event]:
+        with self._lock:
+            start_index = self.get_index_of_first_event_before(timestamp)
+            if start_index is not None:
+                for event in reversed(self._event_history[:start_index]):
+                    if isinstance(event, event_type):
+                        return event
 
     def get_index_of_first_event_after(self, timestamp: float) -> Optional[int]:
         with self._lock:

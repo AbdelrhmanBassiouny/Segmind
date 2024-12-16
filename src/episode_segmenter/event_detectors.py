@@ -15,6 +15,7 @@ import pycrap
 from pycram import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
+from pycram.datastructures.world import UseProspectionWorld
 from pycram.ros.logging import logdebug
 from pycram.world_concepts.world_object import Object
 from pycrap import PhysicalObject
@@ -352,7 +353,8 @@ class LossOfSurfaceDetector(LossOfContactDetector):
         objects_that_lost_contact = self.get_objects_that_lost_contact(contact_points)
         if len(objects_that_lost_contact) == 0:
             return []
-        supporting_surface = check_for_supporting_surface(objects_that_lost_contact, self.latest_contact_points)
+        supporting_surface = check_for_supporting_surface(self.tracked_object,
+                                                          objects_that_lost_contact)
         if supporting_surface is None:
             return []
         return [LossOfSurfaceEvent(contact_points, self.latest_contact_points, of_object=self.tracked_object,
@@ -539,6 +541,22 @@ class EventDetector(PrimitiveEventDetector, ABC):
         """
         pass
 
+    def check_for_event_pre_starter_event(self, event_type: Type[Event],
+                                          time_tolerance: timedelta) -> Optional[EventUnion]:
+        """
+        Check if the tracked_object was involved in an event before the starter event.
+
+        :param event_type: The event type to check for.
+        :param time_tolerance: The time tolerance to consider the event as before the starter event.
+        """
+        event = self.object_tracker.get_first_event_of_type_before_event(event_type,
+                                                                         self.starter_event)
+        if event is None or event.timestamp < self.start_timestamp - time_tolerance.total_seconds():
+            logdebug(f"{event_type.__name__} found no event before {self.start_timestamp} with object :"
+                     f" {self.tracked_object.name}")
+            return None
+        return event
+
     def check_for_event_post_starter_event(self, event_type: Type[Event]) -> Optional[EventUnion]:
         """
         Check if the tracked_object was involved in an event after the starter event.
@@ -648,7 +666,7 @@ class AbstractAgentObjectInteractionDetector(EventDetector, ABC):
 
         :return: An instance of the interaction event if the tracked_object was interacted with, else None.
         """
-
+        event = None
         while not self.kill_event.is_set():
 
             if not self.interaction_checks():
@@ -656,12 +674,13 @@ class AbstractAgentObjectInteractionDetector(EventDetector, ABC):
                 continue
 
             self.interaction_event.end_timestamp = self.end_timestamp
+            event = self.interaction_event
 
             break
-
-        rospy.loginfo(f"{self.__class__.__name__} detected an interaction with: {self.tracked_object.name}")
-
-        return [self.interaction_event]
+        if event:
+            rospy.loginfo(f"{self.__class__.__name__} detected an interaction with: {self.tracked_object.name}")
+            return [event]
+        return []
 
     @abstractmethod
     def interaction_checks(self) -> bool:
@@ -785,15 +804,20 @@ class MotionPickUpDetector(AbstractPickUpDetector):
         """
         Check for upward motion after the object lost contact with the surface.
         """
-        latest_event = self.check_for_event_near_starter_event(TranslationEvent, timedelta(milliseconds=1000))
+        if check_for_supporting_surface(self.tracked_object,
+                                        self.starter_event.latest_objects_that_got_removed) is not None:
+            # wait for the object to be lifted TODO: Should be replaced with a wait on a lifting event
+            dt = timedelta(milliseconds=300)
+            time.sleep(dt.total_seconds())
+            latest_event = self.check_for_event_near_starter_event(TranslationEvent, dt)
 
-        if not latest_event:
-            return False
+            if not latest_event:
+                return False
 
-        z_motion = latest_event.current_pose.position.z - latest_event.start_pose.position.z
-        if z_motion > 0.001:
-            self.end_timestamp = max(latest_event.timestamp, self.start_timestamp)
-            return True
+            z_motion = latest_event.current_pose.position.z - latest_event.start_pose.position.z
+            if z_motion >= 0.005:
+                self.end_timestamp = max(latest_event.timestamp, self.start_timestamp)
+                return True
 
         return False
 
@@ -822,8 +846,8 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        if isinstance(event, ContactEvent) and any(select_transportable_objects([event.tracked_object])):
-            print('new placing detector for object:', event.tracked_object.name)
+        if (isinstance(event, ContactEvent)
+                and any(select_transportable_objects([event.tracked_object]))):
             return True
         return False
 
@@ -831,12 +855,25 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         """
         Perform initial checks to determine if the object was placed.
         """
-        stop_motion_event = self.check_for_event_near_starter_event(StopMotionEvent, timedelta(milliseconds=1000))
-        if stop_motion_event and self.check_if_contact_event_is_with_surface(self.starter_event):
+        dt = timedelta(milliseconds=1000)
+        time.sleep(dt.total_seconds())
+        event = self.check_for_event_near_starter_event(StopTranslationEvent, dt)
+        if event is not None:
+            print(f"found translation event: {event} for {self.tracked_object.name}")
+            print(f"object with history: {self.object_tracker.get_event_history()}")
+            if (event.current_pose.position.z - event.start_pose.position.z) > -0.001:
+                self.kill_event.set()
+                return False
+            # wait for the object to stop moving
+            dt = timedelta(milliseconds=500)
+            time.sleep(dt.total_seconds())
+            if not check_if_object_is_supported(self.tracked_object, 0.01):
+                self.kill_event.set()
+                return False
             self.end_timestamp = self.start_timestamp
             print(f"end_timestamp: {self.end_timestamp}")
             return True
-
+        self.kill_event.set()
         return False
 
     def check_if_contact_event_is_with_surface(self, contact_event: ContactEvent) -> bool:
@@ -847,30 +884,41 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         """
         return check_if_object_is_supported_by_another_object(self.tracked_object, contact_event.with_object,
                                                               contact_event.contact_points)
+        # return check_if_object_is_supported(self.tracked_object)
 
 
-def check_for_supporting_surface(objects_that_lost_contact: List[Object],
-                                 initial_contact_points: ContactPointsList) -> Optional[Object]:
+def check_for_supporting_surface(tracked_object: Object,
+                                 possible_surfaces: List[Object]) -> Optional[Object]:
     """
-    Check if any of the objects that lost contact are supporting surfaces.
+    Check if any of the possible surfaces are supporting the tracked_object.
 
-    :param objects_that_lost_contact: An instance of the Object class that represents the tracked_object to check.
-    :param initial_contact_points: A list of ContactPoint instances that represent the contact points of the
-     tracked_object before it lost contact.
+    :param tracked_object: An instance of the Object class that represents the tracked_object to check.
+    :param possible_surfaces: A list of Object instances that represent the possible surfaces.
     :return: An instance of the Object class that represents the supporting surface if found, else None.
     """
+    with UseProspectionWorld():
+        dt = 0.1
+        World.current_world.simulate(dt)
+        prospection_obj = World.current_world.get_prospection_object_for_object(tracked_object)
+        contact_points = prospection_obj.contact_points
+        contacted_bodies = contact_points.get_objects_that_have_points()
+        contacted_body_names = [body.name for body in contacted_bodies]
+        contacted_bodies = dict(zip(contacted_body_names, contacted_bodies))
+        possible_surface_names = [obj.name for obj in possible_surfaces]
+        possible_surface_names = list(set(contacted_body_names).intersection(possible_surface_names))
     supporting_surface = None
     opposite_gravity = [0, 0, 1]
-    smallest_angle = np.pi / 4
-    for obj in objects_that_lost_contact:
-        normals = initial_contact_points.get_normals_of_object(obj)
-        for normal in normals:
-            # check if normal is pointing upwards opposite to gravity by finding the angle between the normal
-            # and gravity vector.
-            angle = get_angle_between_vectors(normal, opposite_gravity)
-            if angle < smallest_angle:
-                smallest_angle = angle
-                supporting_surface = obj
+    smallest_angle = np.pi / 8
+    for obj_name in possible_surface_names:
+        obj = World.current_world.get_object_by_name(obj_name)
+        normals = contact_points.get_normals_of_object(contacted_bodies[obj_name])
+        normal = np.mean(normals, axis=0)
+        angle = get_angle_between_vectors(normal, opposite_gravity)
+        if 0 <= angle <= smallest_angle:
+            smallest_angle = angle
+            supporting_surface = obj
+    if supporting_surface is not None:
+        print("found surface ", supporting_surface.name)
     return supporting_surface
 
 
@@ -929,8 +977,7 @@ LossOfSurfaceEvent]) -> List[Object]:
     """
     Select the objects that can be transported from the loss of contact event.
     """
-    objects_that_lost_contact = event.latest_objects_that_got_removed
-    return select_transportable_objects(objects_that_lost_contact + [event.tracked_object])
+    return select_transportable_objects([event.tracked_object])
 
 
 def select_transportable_objects(objects: List[Object]) -> List[Object]:

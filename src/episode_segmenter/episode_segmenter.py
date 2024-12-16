@@ -20,7 +20,7 @@ from .event_logger import EventLogger
 from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
     NewObjectEvent, RotationEvent, StopRotationEvent, PlacingEvent, HasTrackedObject
 from .object_tracker import ObjectTracker
-from .utils import check_if_object_is_supported, add_imaginary_support_for_object
+from .utils import check_if_object_is_supported, add_imaginary_support_for_object, adjust_imaginary_support_for_object
 
 
 class EpisodeSegmenter(ABC):
@@ -209,6 +209,8 @@ class EpisodeSegmenter(ABC):
         :param detector_type: The type of the detector.
         """
         if not self.is_detector_redundant(detector_type, starter_event):
+            if detector_type == PlacingDetector:
+                print(f"new placing detector for object {starter_event.tracked_object.name}")
             self.start_and_add_detector_thread(detector_type, starter_event=starter_event)
 
     def is_detector_redundant(self, detector_type: TypeEventDetectorUnion, starter_event: EventUnion) -> bool:
@@ -319,33 +321,19 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         """
         Start the motion detection threads for the objects in the world.
         """
+        set_of_objects = set()
         for obj in World.current_world.objects:
             if not obj.is_an_environment and (obj not in self.objects_to_avoid):
-                self.start_motion_detection_threads_for_object(obj)
+                set_of_objects.add(obj)
                 try:
-                    self.detect_missing_support_for_object(obj)
+                    if not check_if_object_is_supported(obj):
+                        if World.current_world.get_object_by_name('imagined_support') is not None:
+                            adjust_imaginary_support_for_object(obj)
+                        else:
+                            add_imaginary_support_for_object(obj)
                 except NotImplementedError:
                     logwarn("Support detection is not implemented for this simulator.")
+        for obj in set_of_objects:
+            self.start_motion_detection_threads_for_object(obj)
+            self.start_contact_threads_for_object(obj)
         self.episode_player.resume()
-
-    def detect_missing_support_for_object(self, obj: Object) -> None:
-        """
-        Detect if the object is not supported by any other object.
-
-        :param obj: The object to check if it is supported.
-        """
-        support_name = f"imagined_support"
-        support_obj = World.current_world.get_object_by_name(support_name)
-        support_thickness = 0.005
-        supported = check_if_object_is_supported(obj)
-        if supported:
-            return
-        obj_base_position = obj.get_base_position_as_list()
-        if support_obj is None:
-            support_obj = add_imaginary_support_for_object(obj, support_name, support_thickness)
-            self.start_contact_threads_for_object(support_obj)
-        else:
-            support_position = support_obj.get_position_as_list()
-            if obj_base_position[2] <= support_position[2]:
-                support_position[2] = obj_base_position[2] - support_thickness * 0.5
-                support_obj.set_position(support_position)

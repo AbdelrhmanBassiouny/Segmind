@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional
@@ -11,20 +13,23 @@ from pycram.ros.logging import logdebug
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
 
 
-def check_if_object_is_supported(obj: Object) -> bool:
+def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
     """
     Check if the object is supported by any other object.
 
     :param obj: The object to check if it is supported.
+    :param distance: The distance to check if the object is supported.
     :return: True if the object is supported, False otherwise.
     """
     supported = True
     with UseProspectionWorld():
         prospection_obj = World.current_world.get_prospection_object_for_object(obj)
         current_position = prospection_obj.get_position_as_list()
-        World.current_world.simulate(1)
+        dt = math.sqrt(2 * distance / 9.81) + 0.01  # time to fall distance
+        World.current_world.simulate(dt)
         new_position = prospection_obj.get_position_as_list()
-        if current_position[2] - new_position[2] >= 0.2:
+        print("change in position", current_position[2] - new_position[2])
+        if current_position[2] - new_position[2] > distance:
             logdebug(f"Object {obj.name} is not supported")
             supported = False
     return supported
@@ -71,6 +76,27 @@ def is_vector_opposite_to_gravity(vector: List[float], gravity_vector: Optional[
     return np.dot(vector, gravity_vector) < 0
 
 
+def adjust_imaginary_support_for_object(obj: Object,
+                                        support_name: Optional[str] = f"imagined_support",
+                                        support_thickness: Optional[float] = 0.005) -> None:
+    """
+    Adjust the imaginary support for the object such that it is at the base of the object.
+
+    :param obj: The object to check if it is supported.
+    :param support_name: The name of the support object.
+    :param support_thickness: The thickness of the support.
+    """
+    support_obj = World.current_world.get_object_by_name(support_name)
+    floor = World.current_world.get_object_by_name('floor')
+    obj_base_position = obj.get_base_position_as_list()
+    support_position = support_obj.get_position_as_list()
+    if obj_base_position[2] <= (support_position[2] + support_thickness * 0.5):
+        floor.detach(support_obj)
+        support_position[2] = obj_base_position[2] - support_thickness * 0.5
+        support_obj.set_position(support_position)
+        floor.attach(support_obj)
+
+
 def add_imaginary_support_for_object(obj: Object,
                                      support_name: Optional[str] = f"imagined_support",
                                      support_thickness: Optional[float] = 0.005) -> Object:
@@ -83,11 +109,12 @@ def add_imaginary_support_for_object(obj: Object,
     :return: The support object.
     """
     obj_base_position = obj.get_base_position_as_list()
-    support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, obj_base_position[2]*0.5])
+    support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, support_thickness*0.5])
     support_obj = Object(support_name, pycrap.Genobj, None, support)
     support_position = obj_base_position.copy()
-    support_position[2] = obj_base_position[2] * 0.5
+    support_position[2] -= support_thickness
     support_obj.set_position(support_position)
+    World.current_world.get_object_by_name('floor').attach(support_obj)
     return support_obj
 
 
