@@ -148,6 +148,11 @@ class ObjectTrackerFactory:
     _lock: RLock = RLock()
 
     @classmethod
+    def get_all_trackers(cls) -> List[ObjectTracker]:
+        with cls._lock:
+            return list(cls._trackers.values())
+
+    @classmethod
     def get_tracker(cls, obj: Object) -> ObjectTracker:
         with cls._lock:
             if obj not in cls._trackers:

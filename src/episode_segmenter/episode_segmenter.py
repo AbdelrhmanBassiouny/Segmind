@@ -86,6 +86,8 @@ class EpisodeSegmenter(ABC):
 
             self.process_event(next_event)
 
+        self.logger.plot_events()
+
         self.join()
 
     def process_event(self, event: EventUnion) -> None:

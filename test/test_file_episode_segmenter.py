@@ -1,6 +1,7 @@
 import datetime
 from unittest import TestCase
 
+import pycrap
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from episode_segmenter.episode_player import FileEpisodePlayer
@@ -26,9 +27,13 @@ class TestFileEpisodeSegmenter(TestCase):
         simulator = BulletWorld
         annotate_events = True if simulator == BulletWorld else False
         cls.world = simulator(WorldMode.GUI)
+        obj_id_to_name = {1: "chips", 3: "bowl", 4: "cup"}
+        obj_id_to_type = {1: pycrap.Container, 3: pycrap.Bowl, 4: pycrap.Cup}
         cls.file_player = FileEpisodePlayer(json_file, world=cls.world,
                                             time_between_frames=datetime.timedelta(milliseconds=50),
-                                            objects_to_ignore=[5])
+                                            objects_to_ignore=[5],
+                                            obj_id_to_name=obj_id_to_name,
+                                            obj_id_to_type=obj_id_to_type)
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=annotate_events)
 
     @classmethod

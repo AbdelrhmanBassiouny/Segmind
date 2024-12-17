@@ -216,7 +216,7 @@ class NewObjectDetector(PrimitiveEventDetector):
         """
         World.current_world.remove_callback_on_add_object(self.on_add_object)
         self.new_object_queue.join()
-        super().join(timeout)
+        # super().join(timeout)
 
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
