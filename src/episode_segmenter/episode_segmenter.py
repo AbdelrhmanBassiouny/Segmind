@@ -330,7 +330,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
                 set_of_objects.add(obj)
                 try:
                     if not check_if_object_is_supported(obj):
-                        Imaginator.imagine_support(obj)
+                        Imaginator.imagine_support_for_object(obj)
                 except NotImplementedError:
                     logwarn("Support detection is not implemented for this simulator.")
         for obj in set_of_objects:

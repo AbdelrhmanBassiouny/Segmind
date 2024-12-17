@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import math
+import os
 
 import numpy as np
+import trimesh
 from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional, TYPE_CHECKING
 
 import pycrap
-from pycram.datastructures.dataclasses import ContactPointsList
-from pycram.datastructures.pose import Transform
+from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB,
+                                               BoxVisualShape, MeshVisualShape)
+from pycram.datastructures.pose import Transform, Pose
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object
@@ -114,22 +117,66 @@ class Imaginator:
     latest_surface_idx: int = 0
 
     @classmethod
-    def imagine_support(cls, obj: Object, support_thickness: Optional[float] = 0.005) -> Object:
+    def imagine_support_from_aabb(cls, aabb: AABB) -> Object:
         """
-        Imagine a support for the object.
+        Imagine a support with the size of the axis-aligned bounding box.
+
+        :param aabb: The axis-aligned bounding box for which the support of same size should be imagined.
+        :return: The support object.
+        """
+        return cls._imagine_support(aabb=aabb)
+
+    @classmethod
+    def imagine_support_for_object(cls, obj: Object, support_thickness: Optional[float] = 0.005) -> Object:
+        """
+        Imagine a support that supports the object and has a specified thickness.
 
         :param obj: The object for which the support should be imagined.
         :param support_thickness: The thickness of the support.
+        :return: The support object
+        """
+        return cls._imagine_support(obj=obj, support_thickness=support_thickness)
+
+    @classmethod
+    def _imagine_support(cls, obj: Optional[Object] = None,
+                         aabb: Optional[AABB] = None,
+                         support_thickness: Optional[float] = None) -> Object:
+        """
+        Imagine a support for the object or with the size of the axis-aligned bounding box.
+
+        :param obj: The object for which the support should be imagined.
+        :param aabb: The axis-aligned bounding box for which the support of same size should be imagined.
+        :param support_thickness: The thickness of the support.
         :return: The support object.
         """
-        obj_base_position = obj.get_base_position_as_list()
-        obj_aabb = obj.get_axis_aligned_bounding_box()
-        support = GenericObjectDescription(f"imagined_support_{cls.latest_surface_idx}",
+        if aabb is not None:
+            obj_aabb = aabb
+        elif obj is not None:
+            obj_aabb = obj.get_axis_aligned_bounding_box()
+        else:
+            raise ValueError("Either object or axis-aligned bounding box should be provided.")
+        support_name = f"imagined_support_{cls.latest_surface_idx}"
+        support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
+        support = GenericObjectDescription(support_name,
                                            [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness*0.5])
-        support_obj = Object(f"imagined_support_{cls.latest_surface_idx}", pycrap.Supporter, None, support)
-        support_position = obj_base_position.copy()
-        support_position[2] -= support_thickness
+        support_obj = Object(support_name, pycrap.Supporter, None, support)
+        support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
+        cp = support_obj.contact_points
+        contacted_objects = cp.get_objects_that_have_points()
+        contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created]
+        if len(contacted_surfaces) > 0:
+            all_boxes = [obj.get_axis_aligned_bounding_box() for obj in contacted_surfaces]
+            all_boxes.append(support_obj.get_axis_aligned_bounding_box())
+            mesh_name = f"{support_name}.obj"
+            mesh_path = os.path.join(World.current_world.conf.cache_dir, mesh_name)
+            new_surface_mesh = AABB.merge_multiple_bounding_boxes_into_mesh(all_boxes,
+                                                                            save_mesh_to=mesh_path)
+            new_surface_position = np.mean(np.array([box.origin for box in all_boxes]), axis=0).tolist()
+            support_obj.remove()
+            for surface in contacted_surfaces:
+                surface.remove()
+            support_obj = Object(support_name, pycrap.Supporter, mesh_name, pose=Pose(new_surface_position))
         World.current_world.get_object_by_name('floor').attach(support_obj)
         cls.surfaces_created.append(support_obj)
         cls.latest_surface_idx += 1
