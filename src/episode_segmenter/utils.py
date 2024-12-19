@@ -165,18 +165,8 @@ class Imaginator:
         cp = support_obj.contact_points
         contacted_objects = cp.get_objects_that_have_points()
         contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created]
-        if len(contacted_surfaces) > 0:
-            all_boxes = [obj.get_axis_aligned_bounding_box() for obj in contacted_surfaces]
-            all_boxes.append(support_obj.get_axis_aligned_bounding_box())
-            mesh_name = f"{support_name}.obj"
-            mesh_path = os.path.join(World.current_world.conf.cache_dir, mesh_name)
-            new_surface_mesh = AABB.merge_multiple_bounding_boxes_into_mesh(all_boxes,
-                                                                            save_mesh_to=mesh_path)
-            new_surface_position = np.mean(np.array([box.origin for box in all_boxes]), axis=0).tolist()
-            support_obj.remove()
-            for surface in contacted_surfaces:
-                surface.remove()
-            support_obj = Object(support_name, pycrap.Supporter, mesh_name, pose=Pose(new_surface_position))
+        for obj in contacted_surfaces:
+            support_obj = support_obj.merge(obj)
         World.current_world.get_object_by_name('floor').attach(support_obj)
         cls.surfaces_created.append(support_obj)
         cls.latest_surface_idx += 1
