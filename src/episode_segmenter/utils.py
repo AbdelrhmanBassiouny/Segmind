@@ -33,17 +33,11 @@ def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) 
     supported = True
     with UseProspectionWorld():
         prospection_obj = World.current_world.get_prospection_object_for_object(obj)
-        # current_position = prospection_obj.get_position_as_list()
         dt = math.sqrt(2 * distance / 9.81) + 0.01  # time to fall distance
         World.current_world.simulate(dt)
         cp = prospection_obj.contact_points
         if not check_if_in_contact_with_support(prospection_obj, cp.get_bodies_in_contact()):
             return False
-        # new_position = prospection_obj.get_position_as_list()
-        # print("change in position", current_position[2] - new_position[2])
-        # if current_position[2] - new_position[2] > distance:
-        #     logdebug(f"Object {obj.name} is not supported")
-        #     supported = False
     return supported
 
 

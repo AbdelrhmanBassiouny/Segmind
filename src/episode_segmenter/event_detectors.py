@@ -419,15 +419,16 @@ class MotionDetector(PrimitiveEventDetector, ABC):
 
         :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
+        events = []
         if self.time_since_last_event < self.measure_timestep.total_seconds():
             time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
         is_moving = self.is_moving()
         if is_moving != self.was_moving:
             self.update_object_motion_state(is_moving)
             self.was_moving = not self.was_moving
-            return [self.create_event()]
+            events.append(self.create_event())
         self.update_latest_pose_and_time()
-        return []
+        return events
 
     @property
     def time_since_last_event(self) -> float:
@@ -554,10 +555,10 @@ class EventDetector(PrimitiveEventDetector, ABC):
         """
         event = self.object_tracker.get_first_event_of_type_before_event(event_type,
                                                                          self.starter_event)
-        if event is None or event.timestamp < self.start_timestamp - time_tolerance.total_seconds():
-            logdebug(f"{event_type.__name__} found no event before {self.start_timestamp} with object :"
-                     f" {self.tracked_object.name}")
-            return None
+        if event is not None and event.timestamp < self.start_timestamp - time_tolerance.total_seconds():
+            event = None
+        if event is None:
+            self._no_event_found_log(event_type)
         return event
 
     def check_for_event_post_starter_event(self, event_type: Type[Event]) -> Optional[EventUnion]:
@@ -569,9 +570,7 @@ class EventDetector(PrimitiveEventDetector, ABC):
         """
         event = self.object_tracker.get_first_event_of_type_after_event(event_type, self.starter_event)
         if event is None:
-            logdebug(f"{event_type.__name__} found no event after {self.start_timestamp} with object :"
-                     f" {self.tracked_object.name}")
-            return None
+            self._no_event_found_log(event_type)
         return event
 
     @cached_property
@@ -591,10 +590,12 @@ class EventDetector(PrimitiveEventDetector, ABC):
                                                                        tolerance=time_tolerance,
                                                                        event_type=event_type)
         if event is None:
-            logdebug(f"{event_type.__name__} found no event after {self.start_timestamp} with object :"
-                     f" {self.tracked_object.name}")
-            return None
+            self._no_event_found_log(event_type)
         return event
+
+    def _no_event_found_log(self, event_type: Type[Event]):
+        logdebug(f"{self.__class__.__name__} found no event of type: {event_type} after {self.start_timestamp}"
+                 f" with object : {self.tracked_object.name}")
 
     @property
     def start_timestamp(self) -> float:
@@ -674,106 +675,6 @@ class LiftingDetector(EventDetector):
         :param translation_event: The translation event instance.
         """
         return translation_event.current_pose.position.z > translation_event.start_pose.position.z
-
-
-class LoweringDetector(EventDetector):
-    """
-    A detector that detects if the tracked_object was lowered.
-    """
-
-    thread_prefix = "lowering_"
-
-    def __init__(self, logger: EventLogger, starter_event: LiftingEvent, *args, **kwargs):
-        """
-        :param logger: An instance of the EventLogger class that is used to log the events.
-        :param starter_event: An instance of the Event class that represents the event to start the event detector.
-        """
-        super().__init__(logger, starter_event, *args, **kwargs)
-        self.tracked_object = self.get_object_to_lower_from_event(starter_event)
-        self.lowering_event: Optional[TranslationEvent] = None
-        self.run_once = True
-
-    @classmethod
-    def get_object_to_lower_from_event(cls, event: LiftingEvent) -> Object:
-        """
-        Get the tracked_object to lower from the event.
-        """
-        return event.tracked_object
-
-    @classmethod
-    def start_condition_checker(cls, event: Event) -> bool:
-        """
-        Check if the event is a starter event.
-
-        :param event: The Event instance that represents the event.
-        """
-        return isinstance(event, LiftingEvent)
-
-    def detect_events(self) -> List[TranslationEvent]:
-        """
-        Detect if the tracked_object was lowered.
-
-        :return: An instance of the TranslationEvent class if the tracked_object was lowered, else None.
-        """
-        event = None
-        start_time = time.time()
-        while not self.kill_event.is_set() and (time.time() - start_time < 1):
-            if not self.lowering_checks():
-                time.sleep(0.01)
-                continue
-            event = self.lowering_event
-            break
-        if event:
-            rospy.loginfo(f"{self.__class__.__name__} detected a lowering of: {self.tracked_object.name}")
-            return [event]
-        return []
-
-    def lowering_checks(self) -> bool:
-        """
-        Perform checks to determine if the object was lowered.
-
-        :return: A boolean value that represents if all the checks passed and the object was lowered.
-        """
-        translation_event = self.check_for_event_near_starter_event(TranslationEvent, timedelta(seconds=1))
-        if translation_event and self.translation_event_condition(translation_event):
-            self.lowering_event = translation_event
-            return True
-        return False
-
-    def translation_event_condition(self, translation_event: TranslationEvent) -> bool:
-        """
-        Check if the translation event condition is met.
-
-        :param translation_event: The translation event instance.
-        """
-        return translation_event.current_pose.position.z < translation_event.start_pose.position.z
-
-
-class MotionPlacingDetector(EventDetector, ABC):
-    """
-    A detector that detects if the tracked_object was placed on a surface by using motion and contact.
-    """
-
-    thread_prefix = "placing_"
-
-    def __init__(self, logger: EventLogger, starter_event: EventUnion, *args, **kwargs):
-        """
-        :param logger: An instance of the EventLogger class that is used to log the events.
-        :param starter_event: An instance of a type of Event that represents the event to
-         start the event detector.
-        """
-        super().__init__(logger, starter_event, *args, **kwargs)
-        self.tracked_object = self.get_object_to_place_from_event(starter_event)
-        self.placing_event: Optional[PlacingEvent] = None
-        self.run_once = True
-
-    @classmethod
-    @abstractmethod
-    def get_object_to_place_from_event(cls, event: Event) -> Object:
-        """
-        Get the tracked_object to place from the event.
-        """
-        pass
 
 
 class AbstractAgentObjectInteractionDetector(EventDetector, ABC):
@@ -983,7 +884,14 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         return PlacingEvent(self.tracked_object, timestamp=self.start_timestamp)
 
     def interaction_checks(self) -> bool:
-        return self.initial_interaction_checkers()
+        dt = timedelta(milliseconds=1000)
+        event = self.check_for_event_near_starter_event(StopMotionEvent, dt)
+        if event is not None:
+            self.end_timestamp = event.timestamp
+            return True
+        elif time.time() - self.start_timestamp > dt.total_seconds():
+            self.kill_event.set()
+        return False
 
     @classmethod
     def get_object_to_track_from_starter_event(cls, starter_event: MotionEvent) -> Object:
@@ -999,19 +907,6 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         if (isinstance(event, ContactEvent) and any(select_transportable_objects([event.tracked_object]))
                 and check_if_in_contact_with_support(event.tracked_object, event.links)):
             return True
-        return False
-
-    def initial_interaction_checkers(self) -> bool:
-        """
-        Perform initial checks to determine if the object was placed.
-        """
-        dt = timedelta(milliseconds=1000)
-        time.sleep(dt.total_seconds())
-        event = self.check_for_event_near_starter_event(StopMotionEvent, dt)
-        if event is not None:
-            self.end_timestamp = event.timestamp
-            return True
-        self.kill_event.set()
         return False
 
 
