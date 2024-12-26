@@ -209,7 +209,7 @@ def calculate_translation_difference_and_check(trans_1: List[float], trans_2: Li
     :return: A boolean value that represents the condition for the translation of the object to be considered as
     picked up.
     """
-    translation_diff = calculate_translation_difference(trans_1, trans_2)
+    translation_diff = calculate_abs_translation_difference(trans_1, trans_2)
     return is_translation_difference_small(translation_diff, threshold)
 
 
@@ -225,7 +225,18 @@ def is_translation_difference_small(trans_diff: List[float], threshold: float) -
     # return all([diff <= threshold for diff in trans_diff])
 
 
-def calculate_translation_difference(trans_1: List[float], trans_2: List[float]) -> List[float]:
+def calculate_translation(position_1: List[float], position_2: List[float]) -> List:
+    """
+    calculate the translation between two positions.
+
+    :param position_1: The first position.
+    :param position_2: The second position.
+    :return: A list of float values that represent the translation between the two positions.
+    """
+    return [p2 - p1 for p1, p2 in zip(position_1, position_2)]
+
+
+def calculate_abs_translation_difference(trans_1: List[float], trans_2: List[float]) -> List[float]:
     """
     Calculate the translation difference.
 

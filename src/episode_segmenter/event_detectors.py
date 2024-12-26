@@ -27,7 +27,7 @@ from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentC
 from .object_tracker import ObjectTracker, ObjectTrackerFactory
 from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_quaternion_difference, \
     check_if_object_is_supported, check_if_object_is_supported_using_contact_points, \
-    check_if_object_is_supported_by_another_object, check_if_in_contact_with_support
+    check_if_object_is_supported_by_another_object, check_if_in_contact_with_support, calculate_translation
 
 
 class PrimitiveEventDetector(threading.Thread, ABC):
@@ -374,7 +374,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, velocity_threshold: float = 0.07,
+    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, velocity_threshold: float = 0.25,
                  wait_time: Optional[float] = 0.1,
                  time_between_frames: Optional[timedelta] = timedelta(milliseconds=50),
                  *args, **kwargs):
@@ -392,7 +392,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         self.latest_time = time.time()
         self.velocity_threshold = velocity_threshold
 
-        self.measure_timestep: timedelta = timedelta(milliseconds=450)
+        self.measure_timestep: timedelta = timedelta(milliseconds=300)
         # frames per measure timestep
         self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
                                               time_between_frames.total_seconds()) + 0.5
@@ -400,6 +400,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
 
         self.distance_threshold: float = self.velocity_threshold * self.measure_timestep.total_seconds()
         self.was_moving: bool = False
+        self.latest_distances: List[float] = []
 
     def update_latest_pose_and_time(self):
         """
@@ -420,10 +421,10 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
         events = []
-        if self.time_since_last_event < self.measure_timestep.total_seconds():
-            time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
+        # if self.time_since_last_event < self.measure_timestep.total_seconds():
+        #     time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
         is_moving = self.is_moving()
-        if is_moving != self.was_moving:
+        if is_moving is not None and is_moving != self.was_moving:
             self.update_object_motion_state(is_moving)
             self.was_moving = not self.was_moving
             events.append(self.create_event())
@@ -441,14 +442,24 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         pass
 
-    def is_moving(self) -> bool:
+    def is_moving(self) -> Optional[bool]:
         """
         Check if the object is moving by comparing the current pose with the previous pose.
 
         :return: A boolean value that represents if the object is moving.
         """
         distance = self.calculate_distance(self.tracked_object.pose)
-        return distance > self.distance_threshold
+        self.latest_distances.append(distance)
+        self.latest_distances = list(map(lambda x: [x_i*0.9 for x_i in x], self.latest_distances))
+        if len(self.latest_distances) < self.measure_frame_rate:
+            return None
+        else:
+            self.latest_distances = self.latest_distances[-int(self.measure_frame_rate):]
+            return self._is_motion_condition_met
+
+    @property
+    def _is_motion_condition_met(self):
+        return np.linalg.norm(np.sum(self.latest_distances)) > self.distance_threshold
 
     def create_event(self) -> Union[TranslationEvent, StopTranslationEvent]:
         """
@@ -485,7 +496,8 @@ class TranslationDetector(MotionDetector):
 
         :param current_pose: The current pose of the object.
         """
-        return calculate_euclidean_distance(self.latest_pose.position_as_list(), current_pose.position_as_list())
+        # return calculate_euclidean_distance(self.latest_pose.position_as_list(), current_pose.position_as_list())
+        return calculate_translation(self.latest_pose.position_as_list(), current_pose.position_as_list())
 
     def get_event_type(self):
         return TranslationEvent if self.was_moving else StopTranslationEvent
@@ -495,12 +507,9 @@ class RotationDetector(MotionDetector):
     thread_prefix = "rotation_"
 
     def __init__(self, logger: EventLogger, starter_event: NewObjectEvent,
-                 angular_velocity_threshold: float = 10 * np.pi / 180,
-                 wait_time: Optional[float] = 0.1,
-                 time_between_frames: Optional[timedelta] = timedelta(milliseconds=50),
+                 angular_velocity_threshold: float = 30 * np.pi / 180,
                  *args, **kwargs):
-        super().__init__(logger, starter_event, velocity_threshold=angular_velocity_threshold, wait_time=wait_time,
-                         time_between_frames=time_between_frames, *args, **kwargs)
+        super().__init__(logger, starter_event, velocity_threshold=angular_velocity_threshold, *args, **kwargs)
 
     def update_object_motion_state(self, moving: bool) -> None:
         """
@@ -516,8 +525,8 @@ class RotationDetector(MotionDetector):
         """
         quat_diff = calculate_quaternion_difference(self.latest_pose.orientation_as_list(),
                                                     current_pose.orientation_as_list())
-        angle = 2 * np.arccos(quat_diff[0])
-        return angle
+        # angle = 2 * np.arccos(quat_diff[0])
+        return euler_from_quaternion(quat_diff)[:2]
 
     def get_event_type(self):
         return RotationEvent if self.was_moving else StopRotationEvent
