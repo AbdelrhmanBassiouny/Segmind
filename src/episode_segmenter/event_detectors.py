@@ -144,7 +144,8 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         Detect and log the events.
         """
         events = self.detect_events()
-        [self.log_event(event) for event in events]
+        if events:
+            [self.log_event(event) for event in events]
 
     def _wait_if_paused(self):
         """
@@ -159,11 +160,10 @@ class PrimitiveEventDetector(threading.Thread, ABC):
 
         :param last_processing_time: The time of the last processing.
         """
-        if self.wait_time is None:
-            return
-        time_diff = time.time() - last_processing_time
-        if time_diff < self.wait_time:
-            time.sleep(self.wait_time - time_diff)
+        if self.wait_time is not None:
+            time_diff = time.time() - last_processing_time
+            if time_diff < self.wait_time:
+                time.sleep(self.wait_time - time_diff)
 
     def log_event(self, event: Event) -> None:
         """
@@ -387,7 +387,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, distance_threshold: float = 0.04,
+    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, distance_threshold: float = 0.05,
                  wait_time: Optional[float] = 0.1,
                  time_between_frames: Optional[timedelta] = timedelta(milliseconds=50),
                  *args, **kwargs):
@@ -412,16 +412,20 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
                                               time_between_frames.total_seconds())
         self.measure_timestep = time_between_frames * self.measure_frame_rate
+        self.wait_time = self.measure_timestep.total_seconds()
 
         self.velocity_threshold: float = self.distance_threshold * self.measure_timestep.total_seconds()
         self.was_moving: bool = False
-        self.gamma: float = 1
+        self.use_decay: bool = False
+        self.gamma: float = 0.99
+        self.cut_off_frequency: float = 2
 
         self.window_size: int = ceil(timedelta(milliseconds=300).total_seconds() / time_between_frames.total_seconds())
 
         self.latest_distances: List[float] = []
         self.latest_times: List[float] = []
 
+        # for plotting purposes
         self.original_distances: List[List[List[float]]] = []
         self.all_filtered_distances: List[np.ndarray] = []
         self.all_times: List[List[float]] = []
@@ -430,52 +434,8 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         self.times: List[float] = []
 
         self.plot: bool = True
-
-    def stop(self):
-        """
-        Stop the event detector.
-        """
-        # plot the distances
-        plot_parts: bool = False
-        plot_freq: bool = False
-
-        if self.plot:
-            self._plot_avg_distances()
-
-        if plot_parts:
-            self._plot_parts(plot_freq)
-
-        super().stop()
-
-    def _plot_avg_distances(self):
-        plt.plot([t - self.times[0] for t in self.times], self.avg_distances[:len(self.times)])
-        plt.title(f"Results of {self.__class__.__name__} for {self.tracked_object.name}")
-        plt.show()
-
-    def _plot_parts(self, plot_freq=False):
-        plot_cols: int = 2 if plot_freq else 1
-        ax_labels: List[str] = ["x", "y", "z"]
-        for i, window_time in enumerate(self.all_times):
-            orig_distances = np.array(self.original_distances[i])
-            if (np.mean(orig_distances) <= 1e-3 and self.__class__ == TranslationDetector) \
-                    or (np.mean(orig_distances) <= 1e-4 and self.__class__ == RotationDetector):
-                continue
-            filtered_distances = self.all_filtered_distances[i]
-            times = [t - window_time[0] for t in window_time]
-            fig, axes = plt.subplots(3, plot_cols, figsize=(10, 10))
-            for j, ax in enumerate(axes[:, 0] if plot_freq else axes):
-                original = orig_distances[:, j]
-                filtered = filtered_distances[:, j]
-                ax.plot(times, original, label=f"original_{ax_labels[j]}")
-                ax.plot(times[:len(filtered)], filtered, label=f"filtered_{ax_labels[j]}")
-            if plot_freq:
-                for j, ax in enumerate(axes[:, 1]):
-                    xmag = np.fft.fft(orig_distances[:, j])
-                    freqs = np.fft.fftfreq(len(xmag), d=self.measure_timestep.total_seconds())
-                    ax.bar(freqs[:len(xmag) // 2], np.abs(xmag)[:len(xmag) // 2], width=0.1)
-            for ax in axes.flatten():
-                ax.legend()
-            plt.show()
+        self.plot_distance_windows: bool = False
+        self.plot_frequencies: bool = False
 
     def update_latest_pose_and_time(self):
         """
@@ -489,7 +449,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         return self.tracked_object.pose, time.time()
 
-    def detect_events(self) -> List[Union[TranslationEvent, StopTranslationEvent]]:
+    def detect_events(self) -> Optional[List[Union[TranslationEvent, StopTranslationEvent]]]:
         """
         Detect if the object starts or stops moving.
 
@@ -497,15 +457,15 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         if self.time_since_last_event < self.measure_timestep.total_seconds():
             time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
-        events = []
+
         is_moving = self.is_moving()
-        if is_moving is not None:
-            if is_moving != self.was_moving:
-                self.update_object_motion_state(is_moving)
-                self.was_moving = not self.was_moving
-                events.append(self.create_event())
-            self.update_latest_pose_and_time()
-        return events
+
+        self.update_latest_pose_and_time()
+
+        if is_moving is not None and is_moving != self.was_moving:
+            self.update_object_motion_state(is_moving)
+            self.was_moving = not self.was_moving
+            return [self.create_event()]
 
     @property
     def time_since_last_event(self) -> float:
@@ -525,36 +485,61 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         :return: A boolean value that represents if the object is moving.
         """
         distance = self.calculate_distance(self.tracked_object.pose)
+        self.update_latest_distances_and_times(distance)
+        if self.window_size_reached and self.measure_timestep_passed:
+            self._crop_distances_and_times_to_window_size()
+            is_moving = self._is_motion_condition_met
+            self._reset_distances_and_times()
+            return is_moving
+
+    @property
+    def measure_timestep_passed(self) -> bool:
+        """
+        :return: True if the measure timestep has passed since the last event.
+        """
+        return self.time_since_last_event >= self.measure_timestep.total_seconds()
+
+    def update_latest_distances_and_times(self, distance: float):
+        """
+        Update the latest distances and latest times lists.
+
+        :param distance: The distance to add to the list of distances.
+        """
         self.latest_distances.append(distance)
+        if self.use_decay:
+            self._apply_decay_to_distances()
         self.latest_times.append(self.latest_time)
+
+    @property
+    def window_size_reached(self) -> bool:
+        return len(self.latest_distances) >= self.window_size
+
+    def _apply_decay_to_distances(self) -> None:
+        """
+        Apply the moving average to the distances.
+        """
         if self.gamma < 1:
             self.latest_distances = list(map(lambda x: [x_i*self.gamma for x_i in x], self.latest_distances))
-        if (len(self.latest_distances) < self.window_size
-                or self.time_since_last_event < self.measure_timestep.total_seconds()):
-            return None
-        else:
-            self.latest_distances = self.latest_distances[-self.window_size:]
-            self.latest_times = self.latest_times[-self.window_size:]
-            return self._is_motion_condition_met
+
+    def _crop_distances_and_times_to_window_size(self):
+        self.latest_distances = self.latest_distances[-self.window_size:]
+        self.latest_times = self.latest_times[-self.window_size:]
+
+    def _reset_distances_and_times(self):
+        self.latest_distances = []
+        self.latest_times = []
 
     @property
     def _is_motion_condition_met(self):
-        assert len(self.latest_distances) == self.window_size
-        assert len(self.latest_times) == self.window_size
         latest_distances_arr = np.array(self.latest_distances)
-        assert latest_distances_arr.shape == (self.window_size, 3), \
-            f"latest_distances_arr.shape: {latest_distances_arr.shape}"
-        filtered_distances = butter_lowpass_filter(latest_distances_arr, 2,
+        filtered_distances = butter_lowpass_filter(latest_distances_arr, self.cut_off_frequency,
                                                    1/self.measure_timestep.total_seconds())
-        assert filtered_distances.shape == (self.window_size, 3), f"filtered_distances.shape: {filtered_distances.shape}"
         self.original_distances.append(self.latest_distances)
         self.all_filtered_distances.append(filtered_distances)
         self.all_times.append(self.latest_times)
         avg_distance = np.linalg.norm(np.sum(filtered_distances))
         self.avg_distances.append(avg_distance)
         self.times.append(self.latest_time)
-        self.latest_distances = []
-        self.latest_times = []
         return avg_distance > self.distance_threshold
 
     def create_event(self) -> Union[TranslationEvent, StopTranslationEvent]:
@@ -575,6 +560,78 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     @abstractmethod
     def get_event_type(self):
         pass
+
+    def stop(self):
+        """
+        Stop the event detector.
+        """
+        # plot the distances
+        if self.plot:
+            self._plot_and_show_avg_distances()
+
+        if self.plot_distance_windows:
+            self._plot_and_show_distance_windows(self.plot_frequencies)
+
+        super().stop()
+
+    def _plot_and_show_avg_distances(self) -> None:
+        """
+        Plot the average distances.
+        """
+        plt.plot([t - self.times[0] for t in self.times], self.avg_distances[:len(self.times)])
+        plt.title(f"Results of {self.__class__.__name__} for {self.tracked_object.name}")
+        plt.show()
+
+    def _plot_and_show_distance_windows(self, plot_freq: bool = False) -> None:
+        """
+        Plot the distances and the frequencies of the distances.
+
+        :param plot_freq: If True, plot the frequencies of the distances as well.
+        """
+        plot_cols: int = 2 if plot_freq else 1
+        for i, window_time in enumerate(self.all_times):
+            orig_distances = np.array(self.original_distances[i])
+            times = np.array(window_time) - window_time[0]
+            fig, axes = plt.subplots(3, plot_cols, figsize=(10, 10))
+            self._add_distance_vs_filtered_to_plot(orig_distances, self.all_filtered_distances[i], times,
+                                                   axes[:, 0] if plot_freq else axes)
+            if plot_freq:
+                self._add_frequencies_plot(orig_distances, axes[:, 1])
+            plt.show()
+
+    @staticmethod
+    def _add_distance_vs_filtered_to_plot(distances: np.ndarray, filtered_distances: np.ndarray, times: np.ndarray,
+                                          axes: np.ndarray) -> None:
+        """
+        Add the distances and the filtered distances to the figure.
+
+        :param distances: The original distances.
+        :param filtered_distances: The filtered distances.
+        :param times: The times.
+        :param axes: The axes to plot on.
+        """
+        ax_labels: List[str] = ["x", "y", "z"]
+        for j, ax in enumerate(axes):
+            original = distances[:, j]
+            if np.mean(original) <= 1e-3:
+                continue
+            filtered = filtered_distances[:, j]
+            ax.plot(times, original, label=f"original_{ax_labels[j]}")
+            ax.plot(times[-len(filtered):], filtered, label=f"filtered_{ax_labels[j]}")
+            ax.legend()
+
+    def _add_frequencies_plot(self, distances: np.ndarray, axes: np.ndarray) -> None:
+        """
+        Add the frequencies plot to the figure.
+
+        :param distances: The distances.
+        :param axes: The axes to plot on.
+        """
+        for j, ax in enumerate(axes):
+            xmag = np.fft.fft(distances[:, j])
+            freqs = np.fft.fftfreq(len(xmag), d=self.measure_timestep.total_seconds())
+            ax.bar(freqs[:len(xmag) // 2], np.abs(xmag)[:len(xmag) // 2], width=0.1)
+            ax.legend()
 
 
 class TranslationDetector(MotionDetector):
