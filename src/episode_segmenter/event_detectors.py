@@ -423,7 +423,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         self.use_average_distance: bool = False
         self.use_consistent_gradient: bool = True
 
-        self.window_size: int = ceil(timedelta(milliseconds=500).total_seconds() /
+        self.window_size: int = ceil(timedelta(milliseconds=700).total_seconds() /
                                      self.measure_timestep.total_seconds())
 
         self.latest_distances: List[float] = []
@@ -496,7 +496,8 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         if self.window_size_reached and self.measure_timestep_passed:
             self._crop_distances_and_times_to_window_size()
             is_moving = self._is_motion_condition_met
-            self._reset_distances_and_times()
+            if not self.use_consistent_gradient:
+                self._reset_distances_and_times()
             return is_moving
 
     @property
@@ -562,7 +563,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         distance_arr = np.array(distances)
         x, y, z = distance_arr[:, 0], distance_arr[:, 1], distance_arr[:, 2]
-        is_moving = any(np.all(axes > 0) or np.all(axes < 0) for axes in [x, y, z])
+        is_moving = any(np.all(axes > 1e-4) or np.all(axes < -1e-4) for axes in [x, y, z])
         self.start_pose = self.latest_poses[-self.window_size]
         self.event_time = self.latest_times[-self.window_size]
         return is_moving
