@@ -363,9 +363,10 @@ class AbstractAgentObjectInteractionEvent(HasTwoTrackedObjects, ABC):
 
     def __init__(self, participating_object: Object,
                  agent: Optional[Object] = None,
-                 timestamp: Optional[float] = None):
+                 timestamp: Optional[float] = None,
+                 end_timestamp: Optional[float] = None):
         HasTwoTrackedObjects.__init__(self, participating_object, agent, timestamp)
-        self.end_timestamp: Optional[float] = None
+        self.end_timestamp: Optional[float] = end_timestamp
         self.text_id: Optional[int] = None
 
     @property

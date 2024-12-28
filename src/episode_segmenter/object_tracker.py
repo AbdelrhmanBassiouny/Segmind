@@ -110,7 +110,7 @@ class ObjectTracker:
         with self._lock:
             start_index = self.get_index_of_first_event_before(timestamp)
             if start_index is not None:
-                for event in reversed(self._event_history[:start_index]):
+                for event in reversed(self._event_history[:min(start_index+1, len(self._event_history))]):
                     if isinstance(event, event_type):
                         return event
 

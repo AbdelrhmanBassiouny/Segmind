@@ -56,15 +56,14 @@ class EventLogger:
         import pandas as pd
         import plotly.express as px
         import plotly.graph_objects as go
-        import numpy as np
 
         data_dict = {'start': [], 'end': [], 'event': [], 'object': [], 'obj_type': []}
         for tracker in ObjectTrackerFactory.get_all_trackers():
             for event in tracker.get_event_history():
+                end_timestamp = event.timestamp + timedelta(seconds=0.1).total_seconds()
                 if hasattr(event, 'end_timestamp') and event.end_timestamp is not None:
-                    data_dict['end'].append(event.end_timestamp)
-                else:
-                    data_dict['end'].append(event.timestamp + timedelta(seconds=0.1).total_seconds())
+                    end_timestamp = max(event.end_timestamp, end_timestamp)
+                data_dict['end'].append(end_timestamp)
                 data_dict['start'].append(event.timestamp)
                 data_dict['event'].append(event.__class__.__name__)
                 data_dict['object'].append(tracker.obj.name)
