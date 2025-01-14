@@ -21,6 +21,7 @@ from pycram.datastructures.world_entity import PhysicalBody
 from pycram.ros.logging import logdebug
 from pycram.world_concepts.world_object import Object
 from pycrap import PhysicalObject
+from .enums import DistanceFilter, MotionDetectionMethod
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
     AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
@@ -387,27 +388,34 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     A string that is used as a prefix for the thread ID.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, distance_threshold: float = 0.05,
-                 wait_time: Optional[float] = 0.1,
-                 time_between_frames: Optional[timedelta] = timedelta(milliseconds=50),
+    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent,
+                 distance_filter_method: Optional[DistanceFilter] = None,
+                 detection_method: MotionDetectionMethod = MotionDetectionMethod.CONSISTENT_GRADIENT,
+                 distance_threshold: float = 0.05,
+                 cut_off_frequency: float = 2,
+                 moving_average_decay: float = 0.99,
+                 measure_timestep: timedelta = timedelta(milliseconds=100),
+                 time_between_frames: timedelta = timedelta(milliseconds=50),
+                 window_timeframe: timedelta = timedelta(milliseconds=700),
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the NewObjectEvent class that represents the event to start the event.
         :param distance_threshold: An optional float value that represents the distance threshold to consider the object
         as moving.
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
-        :param time_between_frames: An optional timedelta value that represents the time between frames.
+        :param measure_timestep: The time between calls to the event detector.
+        :param time_between_frames: The time between frames of episode player.
         """
-        super().__init__(logger, wait_time, *args, **kwargs)
+        super().__init__(logger, measure_timestep.total_seconds(), *args, **kwargs)
         self.tracked_object = starter_event.tracked_object
         self.latest_pose = self.tracked_object.pose
         self.latest_time = time.time()
+        self.event_time: float = self.latest_time
+        self.start_pose: Pose = self.latest_pose
         self.distance_threshold = distance_threshold
-        self.time_between_frames: Optional[timedelta] = time_between_frames
+        self.time_between_frames: timedelta = time_between_frames
+        self.measure_timestep: timedelta = measure_timestep
 
-        self.measure_timestep: timedelta = timedelta(seconds=max(timedelta(milliseconds=50).total_seconds(),
-                                                                 self.wait_time))
         # frames per measure timestep
         self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
                                               time_between_frames.total_seconds())
@@ -416,21 +424,21 @@ class MotionDetector(PrimitiveEventDetector, ABC):
 
         self.velocity_threshold: float = self.distance_threshold * self.measure_timestep.total_seconds()
         self.was_moving: bool = False
-        self.use_decay: bool = False
-        self.gamma: float = 0.99
-        self.cut_off_frequency: float = 2
-        self.use_low_pass_filter: bool = False
-        self.use_average_distance: bool = False
-        self.use_consistent_gradient: bool = True
 
+        # Window size for checking motion
         self.window_size: int = ceil(timedelta(milliseconds=700).total_seconds() /
                                      self.measure_timestep.total_seconds())
 
+        # Configurations
+        self.distance_filter: Optional[DistanceFilter] = distance_filter_method
+        self.detection_method: MotionDetectionMethod = detection_method
+        self.gamma: float = moving_average_decay
+        self.cut_off_frequency: float = cut_off_frequency
+
+        # Data
         self.latest_distances: List[float] = []
         self.latest_poses: List[Pose] = []
         self.latest_times: List[float] = []
-        self.event_time: float = self.latest_time
-        self.start_pose: Pose = self.latest_pose
 
         # for plotting purposes
         self.original_distances: List[List[List[float]]] = []
@@ -443,6 +451,22 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         self.plot: bool = False
         self.plot_distance_windows: bool = False
         self.plot_frequencies: bool = False
+
+    @property
+    def use_decay(self) -> bool:
+        return self.distance_filter == DistanceFilter.MOVING_AVERAGE
+
+    @property
+    def use_low_pass_filter(self) -> bool:
+        return self.distance_filter == DistanceFilter.LOW_PASS
+
+    @property
+    def use_average_distance(self) -> bool:
+        return self.detection_method == MotionDetectionMethod.DISTANCE
+
+    @property
+    def use_consistent_gradient(self) -> bool:
+        return self.detection_method == MotionDetectionMethod.CONSISTENT_GRADIENT
 
     def update_latest_pose_and_time(self):
         """
@@ -546,7 +570,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
 
         if self.use_low_pass_filter:
             self._apply_low_pass_filter()
-            distances = self.all_filtered_distances[-1]
+            distances = self.all_filtered_distances[-1].tolist()
 
         if self.use_average_distance:
             return self._check_motion_using_average_distance(distances)
