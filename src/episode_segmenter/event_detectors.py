@@ -8,7 +8,10 @@ from queue import Queue
 
 import numpy as np
 import rospy
-from matplotlib import pyplot as plt
+try:
+    from matplotlib import pyplot as plt
+except ImportError:
+    plt = None
 from tf.transformations import euler_from_quaternion
 from typing_extensions import Optional, List, Union, Type, Tuple
 
@@ -375,6 +378,27 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     A string that is used as a prefix for the thread ID.
     """
 
+    latest_pose: Optional[Pose]
+    """
+    The latest pose of the object.
+    """
+    latest_time: Optional[float]
+    """
+    The latest time where the latest pose was recorded.
+    """
+    event_time: Optional[float]
+    """
+    The time when the event occurred.
+    """
+    start_pose: Optional[Pose]
+    """
+    The start pose of the object at start of detection.
+    """
+    filtered_distances: Optional[np.ndarray]
+    """
+    The filtered distances during the window timeframe.
+    """
+
     def __init__(self, logger: EventLogger, starter_event: NewObjectEvent,
                  detection_method: MotionDetectionMethod = ConsistentGradient(),
                  measure_timestep: timedelta = timedelta(milliseconds=100),
@@ -391,6 +415,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         :param time_between_frames: The time between frames of episode player.
         """
         super().__init__(logger, measure_timestep.total_seconds(), *args, **kwargs)
+
         self.tracked_object = starter_event.tracked_object
         self.time_between_frames: timedelta = time_between_frames
         self.measure_timestep: timedelta = measure_timestep
@@ -412,6 +437,10 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         self.plot_distances: bool = False
         self.plot_distance_windows: bool = False
         self.plot_frequencies: bool = False
+
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
 
     def _init_event_data(self):
         """
@@ -605,10 +634,10 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         Stop the event detector.
         """
         # plot the distances
-        if self.plot_distances:
+        if self.plot_distances and plt:
             self.plot_and_show_distances()
 
-        if self.plot_distance_windows:
+        if self.plot_distance_windows and plt:
             self.plot_and_show_distance_windows()
 
         super().stop()

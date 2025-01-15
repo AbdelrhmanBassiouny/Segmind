@@ -273,7 +273,7 @@ class ContactEvent(AbstractContactEvent):
             rospy.logwarn(f"No contact points found for {self.tracked_object.name} in {self.__class__.__name__}")
 
     @property
-    def links(self) -> List[Link]:
+    def links(self) -> List[PhysicalBody]:
         return self.contact_points.get_bodies_in_contact()
 
 
@@ -353,7 +353,7 @@ class LossOfSurfaceEvent(LossOfContactEvent):
     def __init__(self, contact_points: ContactPointsList,
                  latest_contact_points: ContactPointsList,
                  of_object: Object,
-                 surface: Optional[Object] = None,
+                 surface: Optional[PhysicalBody] = None,
                  timestamp: Optional[float] = None):
         super().__init__(contact_points, latest_contact_points, of_object, surface, timestamp)
         self.surface: Optional[PhysicalBody] = surface
