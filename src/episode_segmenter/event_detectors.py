@@ -409,10 +409,11 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the NewObjectEvent class that represents the event to start the event.
-        :param distance_threshold: An optional float value that represents the distance threshold to consider the object
-        as moving.
+        :param detection_method: The motion detection method that is used to detect if the object is moving.
         :param measure_timestep: The time between calls to the event detector.
         :param time_between_frames: The time between frames of episode player.
+        :param window_timeframe: The timeframe of the window that is used to calculate the distances.
+        :param distance_filter_method: An optional DataFilter instance that is used to filter the distances.
         """
         super().__init__(logger, measure_timestep.total_seconds(), *args, **kwargs)
 
