@@ -26,26 +26,26 @@ class TestEventDetectors(TestCase):
             a = np.zeros((3, 3))
             a[:, i] = 1
             cg = ConsistentGradient()
-            self.assertTrue(cg.is_moving(a.tolist()) == (True, 0))
+            self.assertTrue(cg.is_moving(a.tolist()))
             a = np.zeros((3, 3))
             a[:, i] = -1
-            self.assertTrue(cg.is_moving(a.tolist()) == (True, 0))
+            self.assertTrue(cg.is_moving(a.tolist()))
             a = np.zeros((3, 3))
             a[:, i] = -1
             a[1, i] = 1
-            self.assertFalse(cg.is_moving(a.tolist()) == (True, 0))
+            self.assertFalse(cg.is_moving(a.tolist()))
 
     def test_displacement_motion_detection_method(self):
         for i in range(3):
             a = np.zeros((3, 3))
             a[:, i] = 1
             disp = Displacement(1.5)
-            self.assertTrue(disp.is_moving(a.tolist()) == (True, 0))
+            self.assertTrue(disp.is_moving(a.tolist()))
             a = np.zeros((3, 3))
             a[:, i] = -1
-            self.assertTrue(disp.is_moving(a.tolist()) == (True, 0))
+            self.assertTrue(disp.is_moving(a.tolist()))
             a = np.zeros((3, 3))
             a[:, i] = -1
             a[1, i] = 1
-            self.assertTrue(disp.is_moving(a.tolist()) == (False, 0))
+            self.assertFalse(disp.is_moving(a.tolist()))
 

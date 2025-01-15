@@ -21,27 +21,14 @@ from pycram.datastructures.world_entity import PhysicalBody
 from pycram.ros.logging import logdebug
 from pycram.world_concepts.world_object import Object
 from pycrap import PhysicalObject
-from .enums import DistanceFilter, MotionDetectionMethod
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
     AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
-    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent, LiftingEvent
+    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
+from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter
 from .object_tracker import ObjectTracker, ObjectTrackerFactory
-from .utils import get_angle_between_vectors, calculate_euclidean_distance, calculate_quaternion_difference, \
-    check_if_object_is_supported, check_if_object_is_supported_using_contact_points, \
-    check_if_object_is_supported_by_another_object, check_if_in_contact_with_support, calculate_translation
-
-from scipy.signal import butter, lfilter, sosfilt
-
-
-def butter_lowpass(cutoff, fs, order=5):
-    return butter(order, cutoff, fs=fs, btype='low', output='sos', analog=False)
-
-
-def butter_lowpass_filter(data, cutoff, fs, order=5):
-    sos = butter_lowpass(cutoff, fs, order=order)
-    y = sosfilt(sos, data, axis=0)
-    return y
+from .utils import get_angle_between_vectors, calculate_quaternion_difference, \
+    check_if_in_contact_with_support, calculate_translation
 
 
 class PrimitiveEventDetector(threading.Thread, ABC):
@@ -327,7 +314,7 @@ class LossOfContactDetector(AbstractContactDetector):
     """
 
     def trigger_events(self, contact_points: ContactPointsList) -> Union[List[LossOfContactEvent],
-    List[AgentLossOfContactEvent]]:
+                                                                         List[AgentLossOfContactEvent]]:
         """
         Check if the object lost contact with another object.
 
@@ -389,14 +376,11 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     """
 
     def __init__(self, logger: EventLogger, starter_event: NewObjectEvent,
-                 distance_filter_method: Optional[DistanceFilter] = None,
-                 detection_method: MotionDetectionMethod = MotionDetectionMethod.CONSISTENT_GRADIENT,
-                 distance_threshold: float = 0.05,
-                 cut_off_frequency: float = 2,
-                 moving_average_decay: float = 0.99,
+                 detection_method: MotionDetectionMethod = ConsistentGradient(),
                  measure_timestep: timedelta = timedelta(milliseconds=100),
                  time_between_frames: timedelta = timedelta(milliseconds=50),
                  window_timeframe: timedelta = timedelta(milliseconds=700),
+                 distance_filter_method: Optional[DataFilter] = None,
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -408,71 +392,73 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         super().__init__(logger, measure_timestep.total_seconds(), *args, **kwargs)
         self.tracked_object = starter_event.tracked_object
-        self.latest_pose = self.tracked_object.pose
-        self.latest_time = time.time()
-        self.event_time: float = self.latest_time
-        self.start_pose: Pose = self.latest_pose
-        self.distance_threshold = distance_threshold
         self.time_between_frames: timedelta = time_between_frames
         self.measure_timestep: timedelta = measure_timestep
+        self.window_timeframe: timedelta = window_timeframe
+        self.filter: Optional[DataFilter] = distance_filter_method
+        self.detection_method: MotionDetectionMethod = detection_method
 
-        # frames per measure timestep
-        self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
-                                              time_between_frames.total_seconds())
-        self.measure_timestep = time_between_frames * self.measure_frame_rate
-        self.wait_time = self.measure_timestep.total_seconds()
+        self._init_event_data()
 
-        self.velocity_threshold: float = self.distance_threshold * self.measure_timestep.total_seconds()
+        self._update_measure_timestep_and_wait_time()
+
+        self.window_size: int = ceil(self.window_timeframe.total_seconds()
+                                     / self.measure_timestep.total_seconds())
+
+        self._init_data_holders()
+
         self.was_moving: bool = False
 
-        # Window size for checking motion
-        self.window_size: int = ceil(timedelta(milliseconds=700).total_seconds() /
-                                     self.measure_timestep.total_seconds())
+        self.plot_distances: bool = False
+        self.plot_distance_windows: bool = False
+        self.plot_frequencies: bool = False
 
-        # Configurations
-        self.distance_filter: Optional[DistanceFilter] = distance_filter_method
-        self.detection_method: MotionDetectionMethod = detection_method
-        self.gamma: float = moving_average_decay
-        self.cut_off_frequency: float = cut_off_frequency
+    def _init_event_data(self):
+        """
+        Initialize the event time and start pose of the object/event.
+        """
+        self.latest_pose, self.latest_time = self.get_current_pose_and_time()
+        self.event_time: float = self.latest_time
+        self.start_pose: Pose = self.latest_pose
 
+    def _update_measure_timestep_and_wait_time(self):
+        """
+        Update the measure timestep and the wait time between calls to the event detector.
+        """
+        # frames per measure timestep
+        self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
+                                              self.time_between_frames.total_seconds())
+        self.measure_timestep = self.time_between_frames * self.measure_frame_rate
+        self.wait_time = self.measure_timestep.total_seconds()
+
+    def _init_data_holders(self):
+        """
+        Initialize the pose, time, and distance data holders.
+        """
         # Data
-        self.latest_distances: List[float] = []
-        self.latest_poses: List[Pose] = []
+        self.poses: List[Pose] = []
+        self.times: List[float] = []
+
+        # Window data
+        self.latest_distances: List[List[float]] = []
+        self.filtered_distances: Optional[np.ndarray] = None
         self.latest_times: List[float] = []
 
-        # for plotting purposes
+        # Plotting data
         self.original_distances: List[List[List[float]]] = []
         self.all_filtered_distances: List[np.ndarray] = []
         self.all_times: List[List[float]] = []
 
-        self.avg_distances: List[float] = []
-        self.times: List[float] = []
-
-        self.plot: bool = False
-        self.plot_distance_windows: bool = False
-        self.plot_frequencies: bool = False
-
-    @property
-    def use_decay(self) -> bool:
-        return self.distance_filter == DistanceFilter.MOVING_AVERAGE
-
-    @property
-    def use_low_pass_filter(self) -> bool:
-        return self.distance_filter == DistanceFilter.LOW_PASS
-
-    @property
-    def use_average_distance(self) -> bool:
-        return self.detection_method == MotionDetectionMethod.DISTANCE
-
-    @property
-    def use_consistent_gradient(self) -> bool:
-        return self.detection_method == MotionDetectionMethod.CONSISTENT_GRADIENT
-
-    def update_latest_pose_and_time(self):
+    def update_with_latest_motion_data(self):
         """
         Update the latest pose and time of the object.
         """
         self.latest_pose, self.latest_time = self.get_current_pose_and_time()
+        self.poses.append(self.latest_pose)
+        self.times.append(self.latest_time)
+        if len(self.poses) > 1:
+            self.calculate_and_update_latest_distance()
+            self._crop_distances_and_times_to_window_size()
 
     def get_current_pose_and_time(self) -> Tuple[Pose, float]:
         """
@@ -480,49 +466,85 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         return self.tracked_object.pose, time.time()
 
-    def detect_events(self) -> Optional[List[Union[TranslationEvent, StopTranslationEvent]]]:
+    def detect_events(self) -> Optional[List[MotionEvent]]:
         """
         Detect if the object starts or stops moving.
 
         :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
-        if self.time_since_last_event < self.measure_timestep.total_seconds():
+
+        if not self.measure_timestep_passed:
             time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
 
-        is_moving = self.is_moving()
+        self.update_with_latest_motion_data()
 
-        self.update_latest_pose_and_time()
+        if not self.window_size_reached:
+            return
 
-        if is_moving is not None and is_moving != self.was_moving:
-            self.update_object_motion_state(is_moving)
-            self.was_moving = not self.was_moving
-            return [self.create_event()]
+        events: Optional[List[MotionEvent]] = None
+        if self.motion_sate_changed:
+            events = [self.update_motion_state_and_create_event()]
+
+        if self.plot_distances:
+            self.keep_track_of_history()
+
+        return events
+
+    def update_motion_state_and_create_event(self) -> MotionEvent:
+        """
+        Update the motion state of the object and create an event.
+        :return: An instance of the MotionEvent class that represents the event.
+        """
+        self.was_moving = not self.was_moving
+        self.update_object_motion_state(self.was_moving)
+        self.update_start_pose_and_event_time()
+        return self.create_event()
+
+    @property
+    def motion_sate_changed(self):
+        """
+        Check if the motion state of the object has changed.
+        """
+        return self.is_moving != self.was_moving
+
+    def keep_track_of_history(self):
+        """
+        Keep track of the history of the object.
+        """
+        self.original_distances.append(self.latest_distances)
+        if self.filtered_distances:
+            self.all_filtered_distances.append(self.filtered_distances)
+        self.all_times.append(self.latest_times)
 
     @property
     def time_since_last_event(self) -> float:
         return time.time() - self.latest_time
 
     @abstractmethod
-    def update_object_motion_state(self, moving: bool) -> None:
+    def update_object_motion_state(self, is_moving: bool) -> None:
         """
         Update the object motion state.
+
+        :param is_moving: A boolean value that represents if the object is moving.
         """
         pass
 
-    def is_moving(self) -> Optional[bool]:
+    @property
+    def is_moving(self) -> bool:
         """
-        Check if the object is moving by comparing the current pose with the previous pose.
+        Check if the object is moving by using the motion detection method.
 
         :return: A boolean value that represents if the object is moving.
         """
-        distance = self.calculate_distance(self.tracked_object.pose)
-        self.update_latest_distances_and_times(distance)
-        if self.window_size_reached and self.measure_timestep_passed:
-            self._crop_distances_and_times_to_window_size()
-            is_moving = self._is_motion_condition_met
-            if not self.use_consistent_gradient:
-                self._reset_distances_and_times()
-            return is_moving
+        distances = self.filter_data() if self.filter else self.latest_distances
+        return self.detection_method.is_moving(distances)
+
+    def calculate_and_update_latest_distance(self):
+        """
+        Calculate the latest distance and time between the current pose and the previous pose.
+        """
+        distance = self.calculate_distance()
+        self.latest_distances.append(distance)
 
     @property
     def measure_timestep_passed(self) -> bool:
@@ -531,93 +553,35 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         return self.time_since_last_event >= self.measure_timestep.total_seconds()
 
-    def update_latest_distances_and_times(self, distance: float):
-        """
-        Update the latest distances and latest times lists.
-
-        :param distance: The distance to add to the list of distances.
-        """
-        self.latest_poses.append(self.latest_pose)
-        self.latest_distances.append(distance)
-        if self.use_decay:
-            self._apply_decay_to_distances()
-        self.latest_times.append(self.latest_time)
-
     @property
     def window_size_reached(self) -> bool:
         return len(self.latest_distances) >= self.window_size
 
-    def _apply_decay_to_distances(self) -> None:
-        """
-        Apply the moving average to the distances.
-        """
-        if self.gamma < 1:
-            self.latest_distances = list(map(lambda x: [x_i*self.gamma for x_i in x], self.latest_distances))
-
     def _crop_distances_and_times_to_window_size(self):
         self.latest_distances = self.latest_distances[-self.window_size:]
-        self.latest_times = self.latest_times[-self.window_size:]
+        self.latest_times = self.times[-self.window_size:]
 
     def _reset_distances_and_times(self):
         self.latest_distances = []
         self.latest_times = []
 
-    @property
-    def _is_motion_condition_met(self):
-        self.times.append(self.latest_time)
-
-        distances = self.latest_distances
-
-        if self.use_low_pass_filter:
-            self._apply_low_pass_filter()
-            distances = self.all_filtered_distances[-1].tolist()
-
-        if self.use_average_distance:
-            return self._check_motion_using_average_distance(distances)
-
-        elif self.use_consistent_gradient:
-            return self._check_motion_using_consistent_gradient(distances)
-
-    def _check_motion_using_consistent_gradient(self, distances: List[List[float]]) -> bool:
+    def update_start_pose_and_event_time(self, index: int = 0):
         """
-        Check if the object is moving using the consistent gradient.
+        Update the start pose and event time.
 
-        :param distances: The distances.
-        :return: A boolean value that represents if the object is moving.
+        :param index: The index of the latest pose, and time.
         """
-        distance_arr = np.array(distances)
-        x, y, z = distance_arr[:, 0], distance_arr[:, 1], distance_arr[:, 2]
-        is_moving = any(np.all(axes > 1e-4) or np.all(axes < -1e-4) for axes in [x, y, z])
-        self.start_pose = self.latest_poses[-self.window_size]
-        self.event_time = self.latest_times[-self.window_size]
-        return is_moving
+        self.start_pose = self.poses[index]
+        self.event_time = self.latest_times[index]
 
-    def _check_motion_using_average_distance(self, distances: List[List[float]]) -> bool:
+    def filter_data(self) -> np.ndarray:
         """
-        Check if the object is moving using the average distance.
+        Apply a preprocessing filter to the distances.
+        """
+        self.filtered_distances = self.filter.filter_data(np.array(self.latest_distances))
+        return self.filtered_distances
 
-        :param distances: The distances.
-        :return: A boolean value that represents if the object is moving.
-        """
-        avg_distance = np.linalg.norm(np.sum(distances))
-        self.avg_distances.append(avg_distance)
-        is_moving = avg_distance > self.distance_threshold
-        self.start_pose = self.latest_poses[-int(self.window_size / 2)]
-        self.event_time = self.latest_times[-int(self.window_size / 2)]
-        return is_moving
-
-    def _apply_low_pass_filter(self) -> None:
-        """
-        Apply a low pass filter to the distances.
-        """
-        latest_distances_arr = np.array(self.latest_distances)
-        filtered_distances = butter_lowpass_filter(latest_distances_arr, self.cut_off_frequency,
-                                                   1 / self.measure_timestep.total_seconds())
-        self.original_distances.append(self.latest_distances)
-        self.all_filtered_distances.append(filtered_distances)
-        self.all_times.append(self.latest_times)
-
-    def create_event(self) -> Union[TranslationEvent, StopTranslationEvent]:
+    def create_event(self) -> MotionEvent:
         """
         Create a motion event.
 
@@ -629,7 +593,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         return event
 
     @abstractmethod
-    def calculate_distance(self, current_pose: Pose):
+    def calculate_distance(self):
         pass
 
     @abstractmethod
@@ -641,25 +605,25 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         Stop the event detector.
         """
         # plot the distances
-        if self.plot:
-            self._plot_and_show_avg_distances()
+        if self.plot_distances:
+            self.plot_and_show_distances()
 
         if self.plot_distance_windows:
-            self._plot_and_show_distance_windows(self.plot_frequencies)
+            self.plot_and_show_distance_windows()
 
         super().stop()
 
-    def _plot_and_show_avg_distances(self) -> None:
+    def plot_and_show_distances(self, plot_filtered: bool = True) -> None:
         """
         Plot the average distances.
         """
-        if len(self.avg_distances) == 0:
-            return
-        plt.plot([t - self.times[0] for t in self.times], self.avg_distances[:len(self.times)])
+        plt.plot([t - self.times[0] for t in self.times], self.original_distances[:len(self.times)])
+        if plot_filtered and self.all_filtered_distances:
+            plt.plot([t - self.times[0] for t in self.times], self.all_filtered_distances[:len(self.times)])
         plt.title(f"Results of {self.__class__.__name__} for {self.tracked_object.name}")
         plt.show()
 
-    def _plot_and_show_distance_windows(self, plot_freq: bool = False) -> None:
+    def plot_and_show_distance_windows(self, plot_freq: bool = False) -> None:
         """
         Plot the distances and the frequencies of the distances.
 
@@ -714,20 +678,18 @@ class MotionDetector(PrimitiveEventDetector, ABC):
 class TranslationDetector(MotionDetector):
     thread_prefix = "translation_"
 
-    def update_object_motion_state(self, moving: bool) -> None:
+    def update_object_motion_state(self, is_moving: bool) -> None:
         """
         Update the object motion state.
         """
-        self.tracked_object.is_translating = moving
+        self.tracked_object.is_translating = is_moving
 
-    def calculate_distance(self, current_pose: Pose):
+    def calculate_distance(self):
         """
         Calculate the Euclidean distance between the latest and current positions of the object.
-
-        :param current_pose: The current pose of the object.
         """
         # return calculate_euclidean_distance(self.latest_pose.position_as_list(), current_pose.position_as_list())
-        return calculate_translation(self.latest_pose.position_as_list(), current_pose.position_as_list())
+        return calculate_translation(self.poses[-2].position_as_list(), self.poses[-1].position_as_list())
 
     def get_event_type(self):
         return TranslationEvent if self.was_moving else StopTranslationEvent
@@ -736,10 +698,8 @@ class TranslationDetector(MotionDetector):
 class RotationDetector(MotionDetector):
     thread_prefix = "rotation_"
 
-    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent,
-                 angular_threshold: float = 30 * np.pi / 180,
-                 *args, **kwargs):
-        super().__init__(logger, starter_event, distance_threshold=angular_threshold, *args, **kwargs)
+    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, *args, **kwargs):
+        super().__init__(logger, starter_event, *args, **kwargs)
 
     def update_object_motion_state(self, moving: bool) -> None:
         """
@@ -747,14 +707,12 @@ class RotationDetector(MotionDetector):
         """
         self.tracked_object.is_rotating = moving
 
-    def calculate_distance(self, current_pose: Pose):
+    def calculate_distance(self):
         """
         Calculate the angle between the latest and current quaternions of the object
-
-        :param current_pose: The current pose of the object.
         """
-        quat_diff = calculate_quaternion_difference(self.latest_pose.orientation_as_list(),
-                                                    current_pose.orientation_as_list())
+        quat_diff = calculate_quaternion_difference(self.poses[-2].orientation_as_list(),
+                                                    self.poses[-1].orientation_as_list())
         # angle = 2 * np.arccos(quat_diff[0])
         euler_diff = list(euler_from_quaternion(quat_diff))
         euler_diff[2] = 0
@@ -846,81 +804,6 @@ class EventDetector(PrimitiveEventDetector, ABC):
     @start_timestamp.setter
     def start_timestamp(self, timestamp: float):
         self._start_timestamp = timestamp
-
-
-class LiftingDetector(EventDetector):
-    """
-    A detector that detects if the tracked_object was lifted.
-    """
-
-    thread_prefix = "lifting_"
-
-    def __init__(self, logger: EventLogger, starter_event: LossOfSurfaceEvent, *args, **kwargs):
-        """
-        :param logger: An instance of the EventLogger class that is used to log the events.
-        :param starter_event: An instance of the Event class that represents the event to start the event detector.
-        """
-        super().__init__(logger, starter_event, *args, **kwargs)
-        self.tracked_object = self.get_object_to_lift_from_event(starter_event)
-        self.lifting_event: Optional[LiftingEvent] = None
-        self.run_once = True
-
-    @classmethod
-    def get_object_to_lift_from_event(cls, event: LossOfSurfaceEvent) -> Object:
-        """
-        Get the tracked_object to lift from the event.
-        """
-        return event.tracked_object
-
-    @classmethod
-    def start_condition_checker(cls, event: Event) -> bool:
-        """
-        Check if the event is a starter event.
-
-        :param event: The Event instance that represents the event.
-        """
-        return isinstance(event, LossOfSurfaceEvent)
-
-    def detect_events(self) -> List[LiftingEvent]:
-        """
-        Detect if the tracked_object was lifted.
-
-        :return: An instance of the LiftingEvent class if the tracked_object was lifted, else None.
-        """
-        event = None
-        start_time = time.time()
-        while not self.kill_event.is_set() and (time.time() - start_time < 1):
-            if not self.lifting_checks():
-                time.sleep(0.01)
-                continue
-            event = self.lifting_event
-            break
-        if event:
-            rospy.loginfo(f"{self.__class__.__name__} detected a lifting of: {self.tracked_object.name}")
-            return [event]
-        return []
-
-    def lifting_checks(self) -> bool:
-        """
-        Perform checks to determine if the object was lifted.
-
-        :return: A boolean value that represents if all the checks passed and the object was lifted.
-        """
-        translation_event = self.check_for_event_near_starter_event(TranslationEvent, timedelta(seconds=1))
-        if translation_event and self.translation_event_condition(translation_event):
-            self.lifting_event = LiftingEvent(self.tracked_object, translation_event.start_pose,
-                                              translation_event.current_pose, timestamp=translation_event.timestamp,
-                                              from_surface=self.starter_event.surface)
-            return True
-        return False
-
-    def translation_event_condition(self, translation_event: TranslationEvent) -> bool:
-        """
-        Check if the translation event condition is met.
-
-        :param translation_event: The translation event instance.
-        """
-        return translation_event.current_pose.position.z > translation_event.start_pose.position.z
 
 
 class AbstractAgentObjectInteractionDetector(EventDetector, ABC):
@@ -1189,7 +1072,7 @@ def check_for_supporting_surface(tracked_object: Object,
     for obj_name in possible_surface_names:
         obj = World.current_world.get_object_by_name(obj_name)
         normals = contact_points.get_normals_of_object(contacted_bodies[obj_name])
-        normal = np.mean(normals, axis=0)
+        normal = np.mean(np.array(normals), axis=0)
         angle = get_angle_between_vectors(normal, opposite_gravity)
         if 0 <= angle <= smallest_angle:
             smallest_angle = angle
@@ -1222,7 +1105,7 @@ def get_nearest_event_of_detector_for_object(detector_type: Type[PrimitiveEventD
                                              obj: Object,
                                              timestamp: float,
                                              time_tolerance: timedelta = timedelta(milliseconds=200)) -> Optional[
-    EventUnion]:
+                                                                                                         EventUnion]:
     """
     Get the event of the detector for the object near the timestamp.
 
@@ -1249,8 +1132,8 @@ def select_transportable_objects_from_contact_event(event: Union[ContactEvent, A
 
 
 def select_transportable_objects_from_loss_of_contact_event(event: Union[LossOfContactEvent,
-AgentLossOfContactEvent,
-LossOfSurfaceEvent]) -> List[Object]:
+                                                                         AgentLossOfContactEvent,
+                                                                         LossOfSurfaceEvent]) -> List[Object]:
     """
     Select the objects that can be transported from the loss of contact event.
     """
@@ -1269,9 +1152,9 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
 
 
 EventDetectorUnion = Union[ContactDetector, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector,
-TranslationDetector, RotationDetector, NewObjectDetector, AgentPickUpDetector, MotionPickUpDetector, EventDetector]
+                           TranslationDetector, RotationDetector, NewObjectDetector, AgentPickUpDetector,
+                           MotionPickUpDetector, EventDetector]
 TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
-Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[
-    AgentPickUpDetector],
-Type[MotionPickUpDetector], Type[EventDetector]
-]
+                               Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
+                               Type[NewObjectDetector], Type[AgentPickUpDetector], Type[MotionPickUpDetector],
+                               Type[EventDetector]]
