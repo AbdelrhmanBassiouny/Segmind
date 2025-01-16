@@ -7,10 +7,11 @@ from episode_segmenter.event_detectors import AgentPickUpDetector, PlacingDetect
 from episode_segmenter.neem_segmenter import NEEMSegmenter
 from unittest import TestCase
 
-from pycram.datastructures.enums import WorldMode
+from pycram.datastructures.enums import WorldMode, LoggerLevel
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.datastructures.world import World
 from pycram.worlds.bullet_world import BulletWorld
+from pycram.ros.logging import set_logger_level
 
 
 class TestNEEMSegmentor(TestCase):
@@ -20,8 +21,9 @@ class TestNEEMSegmentor(TestCase):
     @classmethod
     def setUpClass(cls):
         BulletWorld(WorldMode.GUI)
+        set_logger_level(LoggerLevel.DEBUG)
         pni = PyCRAMNEEMInterface(f'mysql+pymysql://{os.environ["my_maria_uri"]}')
-        cls.ns = NEEMSegmenter(pni, detectors_to_start=[AgentPickUpDetector], annotate_events=True)
+        cls.ns = NEEMSegmenter(pni, detectors_to_start=[AgentPickUpDetector, PlacingDetector], annotate_events=True)
         cls.viz_mark_publisher = VizMarkerPublisher()
 
     @classmethod

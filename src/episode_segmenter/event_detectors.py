@@ -27,7 +27,7 @@ from pycrap import PhysicalObject
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
     AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
-    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
+    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent, HasTrackedObject
 from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter
 from .object_tracker import ObjectTracker, ObjectTrackerFactory
 from .utils import get_angle_between_vectors, calculate_quaternion_difference, \
@@ -399,7 +399,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     The filtered distances during the window timeframe.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent,
+    def __init__(self, logger: EventLogger, starter_event: Union[NewObjectEvent, Object],
                  detection_method: MotionDetectionMethod = ConsistentGradient(),
                  measure_timestep: timedelta = timedelta(milliseconds=100),
                  time_between_frames: timedelta = timedelta(milliseconds=50),
@@ -417,7 +417,8 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         super().__init__(logger, measure_timestep.total_seconds(), *args, **kwargs)
 
-        self.tracked_object = starter_event.tracked_object
+        self.tracked_object = starter_event.tracked_object\
+            if isinstance(starter_event, HasTrackedObject) else starter_event
         self.time_between_frames: timedelta = time_between_frames
         self.measure_timestep: timedelta = measure_timestep
         self.window_timeframe: timedelta = window_timeframe
@@ -504,7 +505,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
 
         if not self.measure_timestep_passed:
-            time.sleep(self.measure_timestep.total_seconds() - self.time_since_last_event)
+            time.sleep(max(0.0, self.measure_timestep.total_seconds() - self.time_since_last_event))
 
         self.update_with_latest_motion_data()
 
@@ -1058,7 +1059,7 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         return False
 
     @classmethod
-    def get_object_to_track_from_starter_event(cls, starter_event: MotionEvent) -> Object:
+    def get_object_to_track_from_starter_event(cls, starter_event: ContactEvent) -> Object:
         return starter_event.tracked_object
 
     @classmethod
@@ -1068,6 +1069,7 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
+        logdebug(f"checking if {event} with object {event.tracked_object.name} is a starter event")
         if (isinstance(event, ContactEvent) and any(select_transportable_objects([event.tracked_object]))
                 and check_if_in_contact_with_support(event.tracked_object, event.links)):
             return True

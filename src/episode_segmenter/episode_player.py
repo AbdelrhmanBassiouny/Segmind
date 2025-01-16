@@ -28,7 +28,7 @@ from pycram.datastructures.world import World
 
 
 class EpisodePlayer(threading.Thread, ABC):
-    def __init__(self, time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=0)):
+    def __init__(self, time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=10)):
         super().__init__()
         self._ready = False
         self._pause: bool = False

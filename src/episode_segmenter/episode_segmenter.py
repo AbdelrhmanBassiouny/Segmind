@@ -133,11 +133,12 @@ class EpisodeSegmenter(ABC):
         :param event: The event that was triggered.
         """
         involved_objects = self.get_involved_objects(event)
-
+        logdebug(f"Involved objects: {[obj.name for obj in involved_objects]}")
         for obj in involved_objects:
             if self.avoid_object(obj):
                 continue
             if obj not in self.object_trackers.keys():
+                logdebug(f"New object {obj.name}")
                 self.object_trackers[obj] = ObjectTracker(obj)
                 self.start_tracking_threads_for_new_object_and_event(obj, event)
 
@@ -212,7 +213,7 @@ class EpisodeSegmenter(ABC):
         """
         if not self.is_detector_redundant(detector_type, starter_event):
             if detector_type == PlacingDetector:
-                print(f"new placing detector for object {starter_event.tracked_object.name}")
+                logdebug(f"new placing detector for object {starter_event.tracked_object.name}")
             self.start_and_add_detector_thread(detector_type, starter_event=starter_event)
 
     def is_detector_redundant(self, detector_type: TypeEventDetectorUnion, starter_event: EventUnion) -> bool:
@@ -271,12 +272,12 @@ class AgentBasedEpisodeSegmenter(EpisodeSegmenter):
     """
 
     def start_tracking_threads_for_new_object_and_event(self, new_object: Object, event: Optional[ContactEvent] = None):
-        if new_object not in self.tracked_object_contacts:
-            logdebug(f"Creating contact threads for object {new_object.name}")
-            self.start_contact_threads_for_object(new_object, event)
+        logdebug(f"Creating contact and motion threads for object {new_object.name}")
+        self.start_contact_threads_for_object(new_object, event)
+        self.start_motion_detection_threads_for_object(new_object, event)
 
-    def get_involved_objects(self, event: ContactEvent) -> List[Object]:
-        return event.contact_points.get_objects_that_have_points()
+    # def get_involved_objects(self, event: ContactEvent) -> List[Object]:
+    #     return event.contact_points.get_objects_that_have_points()
 
     def _process_event(self, event: Event) -> None:
         if isinstance(event, ContactEvent):

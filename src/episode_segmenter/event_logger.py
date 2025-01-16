@@ -190,7 +190,7 @@ class EventLogger:
             self.event_queue.task_done()
             return event
         except queue.Empty:
-            return None, None
+            return None
 
     def join(self):
         """

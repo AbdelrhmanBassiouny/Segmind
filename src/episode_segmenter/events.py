@@ -209,6 +209,9 @@ class AbstractContactEvent(HasTwoTrackedObjects, ABC):
                  timestamp: Optional[float] = None):
         HasTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
         self.contact_points = contact_points
+        self._involved_objects = (self._involved_objects +
+                                  [obj for obj in contact_points.get_objects_that_have_points()
+                                   if obj not in self._involved_objects])
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -372,6 +375,10 @@ class AbstractAgentObjectInteractionEvent(HasTwoTrackedObjects, ABC):
     @property
     def agent(self) -> Optional[Object]:
         return self.with_object
+
+    @agent.setter
+    def agent(self, agent: Object):
+        self.with_object = agent
 
     @property
     def agent_state(self) -> Optional[ObjectState]:
