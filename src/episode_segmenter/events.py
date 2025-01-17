@@ -4,9 +4,11 @@ from abc import abstractmethod, ABC
 import rospy
 from typing_extensions import Optional, List, Union
 
-from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation
+from episode_segmenter.object_tracker import ObjectTrackerFactory
+from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation, ObjectState
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import World
+from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object, Link
 
 
@@ -21,6 +23,7 @@ class Event(ABC):
         self.timestamp = time.time() if timestamp is None else timestamp
         self.text_id: Optional[int] = None
         self.detector_thread_id: Optional[str] = None
+        self._involved_objects: List[Object] = []
 
     @abstractmethod
     def __eq__(self, other):
@@ -63,19 +66,42 @@ class Event(ABC):
     def annotation_text(self) -> str:
         return self.__str__()
 
+    def update_object_trackers(self):
+        if len(self.involved_objects) == 0:
+            return
+        object_tracker = ObjectTrackerFactory.get_tracker(self.involved_objects[0])
+        object_tracker.add_event(self)
+
+    @property
+    def involved_objects(self) -> List[Object]:
+        """
+        The objects involved in the event.
+        """
+        return self._involved_objects
+
     @abstractmethod
     def __str__(self):
         pass
 
 
-class NewObjectEvent(Event):
+class HasTrackedObject(Event, ABC):
+    """
+    A mixin class that provides the tracked object for the event.
+    """
+    def __init__(self, tracked_object: Object, timestamp: Optional[float] = None):
+        Event.__init__(self, timestamp)
+        self.tracked_object: Object = tracked_object
+        self.tracked_object_state: ObjectState = tracked_object.current_state
+        self._involved_objects = [tracked_object]
+
+
+class NewObjectEvent(HasTrackedObject):
     """
     The NewObjectEvent class is used to represent an event that involves the addition of a new object to the world.
     """
 
     def __init__(self, new_object: Object, timestamp: Optional[float] = None):
-        super().__init__(timestamp)
-        self.tracked_object: Object = new_object
+        HasTrackedObject.__init__(self, new_object, timestamp)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -96,7 +122,7 @@ class NewObjectEvent(Event):
         return f"{self.__class__.__name__}: {self.tracked_object.name}"
 
 
-class MotionEvent(Event, ABC):
+class MotionEvent(HasTrackedObject, ABC):
     """
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
     vice versa.
@@ -104,10 +130,9 @@ class MotionEvent(Event, ABC):
 
     def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
                  timestamp: Optional[float] = None):
-        super().__init__(timestamp)
+        HasTrackedObject.__init__(self, tracked_object, timestamp)
         self.start_pose: Pose = start_pose
         self.current_pose: Pose = current_pose
-        self.tracked_object: Object = tracked_object
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -125,6 +150,9 @@ class MotionEvent(Event, ABC):
 
     def __str__(self):
         return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class TranslationEvent(MotionEvent):
@@ -153,17 +181,34 @@ class StopRotationEvent(StopMotionEvent):
     ...
 
 
-class AbstractContactEvent(Event, ABC):
+class LiftingEvent(TranslationEvent):
+    def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
+                 timestamp: Optional[float] = None, from_surface: Optional[Object] = None):
+        super().__init__(tracked_object, start_pose, current_pose, timestamp)
+        self.from_surface: Optional[Object] = from_surface
+
+
+class HasTwoTrackedObjects(HasTrackedObject, ABC):
+    """
+    A mixin class that provides the tracked object and the object with which it interacts for the event.
+    """
+    def __init__(self, tracked_object: Object, with_object: Optional[Object] = None,
+                 timestamp: Optional[float] = None):
+        HasTrackedObject.__init__(self, tracked_object, timestamp)
+        self.with_object: Optional[Object] = with_object
+        self.with_object_state: Optional[ObjectState] = with_object.current_state if with_object is not None else None
+        self._involved_objects = [tracked_object] if with_object is None else [tracked_object, with_object]
+
+
+class AbstractContactEvent(HasTwoTrackedObjects, ABC):
 
     def __init__(self,
                  contact_points: ContactPointsList,
                  of_object: Object,
                  with_object: Optional[Object] = None,
                  timestamp: Optional[float] = None):
-        super().__init__(timestamp)
+        HasTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
         self.contact_points = contact_points
-        self.tracked_object: Object = of_object
-        self.with_object: Optional[Object] = with_object
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -228,8 +273,8 @@ class ContactEvent(AbstractContactEvent):
             rospy.logwarn(f"No contact points found for {self.tracked_object.name} in {self.__class__.__name__}")
 
     @property
-    def links(self) -> List[Link]:
-        return self.contact_points.get_links_in_contact()
+    def links(self) -> List[PhysicalBody]:
+        return self.contact_points.get_bodies_in_contact()
 
 
 class LossOfContactEvent(AbstractContactEvent):
@@ -258,7 +303,7 @@ class LossOfContactEvent(AbstractContactEvent):
 
     @property
     def links(self) -> List[Link]:
-        return self.contact_points.get_links_that_got_removed(self.latest_contact_points)
+        return self.contact_points.get_bodies_that_got_removed(self.latest_contact_points)
 
     @property
     def objects(self):
@@ -308,30 +353,37 @@ class LossOfSurfaceEvent(LossOfContactEvent):
     def __init__(self, contact_points: ContactPointsList,
                  latest_contact_points: ContactPointsList,
                  of_object: Object,
-                 surface: Optional[Object] = None,
+                 surface: Optional[PhysicalBody] = None,
                  timestamp: Optional[float] = None):
         super().__init__(contact_points, latest_contact_points, of_object, surface, timestamp)
-        self.surface: Optional[Object] = surface
+        self.surface: Optional[PhysicalBody] = surface
 
 
-class AbstractAgentObjectInteractionEvent(Event, ABC):
+class AbstractAgentObjectInteractionEvent(HasTwoTrackedObjects, ABC):
 
     def __init__(self, participating_object: Object,
                  agent: Optional[Object] = None,
-                 timestamp: Optional[float] = None):
-        super().__init__(timestamp)
-        self.agent: Optional[Object] = agent
-        self.participating_object: Object = participating_object
-        self.end_timestamp: Optional[float] = None
+                 timestamp: Optional[float] = None,
+                 end_timestamp: Optional[float] = None):
+        HasTwoTrackedObjects.__init__(self, participating_object, agent, timestamp)
+        self.end_timestamp: Optional[float] = end_timestamp
         self.text_id: Optional[int] = None
+
+    @property
+    def agent(self) -> Optional[Object]:
+        return self.with_object
+
+    @property
+    def agent_state(self) -> Optional[ObjectState]:
+        return self.with_object_state
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return self.agent == other.agent and self.participating_object == other.participating_object
+        return self.agent == other.agent and self.tracked_object == other.tracked_object
 
     def __hash__(self):
-        return hash((self.agent, self.participating_object, self.__class__))
+        return hash((self.agent, self.tracked_object, self.__class__))
 
     def record_end_timestamp(self):
         self.end_timestamp = time.time()
@@ -345,10 +397,10 @@ class AbstractAgentObjectInteractionEvent(Event, ABC):
         color = color if color is not None else self.color
         if self.agent is not None:
             self.agent.set_color(color)
-        self.participating_object.set_color(color)
+        self.tracked_object.set_color(color)
 
     def __str__(self):
-        return f"{self.__class__.__name__}: Object: {self.participating_object.name}, Timestamp: {self.timestamp}" + \
+        return f"{self.__class__.__name__}: Object: {self.tracked_object.name}, Timestamp: {self.timestamp}" + \
                   (f", Agent: {self.agent.name}" if self.agent is not None else "")
 
     def __repr__(self):

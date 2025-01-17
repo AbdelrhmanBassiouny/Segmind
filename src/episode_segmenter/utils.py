@@ -1,52 +1,170 @@
-import numpy as np
-from tf.transformations import quaternion_inverse, quaternion_multiply
-from typing_extensions import List, Optional
+from __future__ import annotations
 
-from pycram.datastructures.pose import Transform
+import math
+import os
+
+import numpy as np
+import trimesh
+from tf.transformations import quaternion_inverse, quaternion_multiply
+from typing_extensions import List, Optional, TYPE_CHECKING
+
+import pycrap
+from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB,
+                                               BoxVisualShape, MeshVisualShape)
+from pycram.datastructures.pose import Transform, Pose
 from pycram.datastructures.world import World, UseProspectionWorld
-from pycram.datastructures.enums import ObjectType
+from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import logdebug
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
 
+if TYPE_CHECKING:
+    from .events import LossOfContactEvent
 
-def check_if_object_is_supported(obj: Object) -> bool:
+
+def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
     """
     Check if the object is supported by any other object.
 
     :param obj: The object to check if it is supported.
+    :param distance: The distance to check if the object is supported.
     :return: True if the object is supported, False otherwise.
     """
     supported = True
     with UseProspectionWorld():
         prospection_obj = World.current_world.get_prospection_object_for_object(obj)
-        current_position = prospection_obj.get_position_as_list()
-        World.current_world.simulate(1)
-        new_position = prospection_obj.get_position_as_list()
-        if current_position[2] - new_position[2] >= 0.2:
-            logdebug(f"Object {obj.name} is not supported")
-            supported = False
+        dt = math.sqrt(2 * distance / 9.81) + 0.01  # time to fall distance
+        World.current_world.simulate(dt)
+        cp = prospection_obj.contact_points
+        if not check_if_in_contact_with_support(prospection_obj, cp.get_bodies_in_contact()):
+            return False
     return supported
 
 
-def add_imaginary_support_for_object(obj: Object,
-                                     support_name: Optional[str] = f"imagined_support",
-                                     support_thickness: Optional[float] = 0.005) -> Object:
+def check_if_object_is_supported_using_contact_points(obj: Object, contact_points: ContactPointsList) -> bool:
     """
-    Add an imaginary support for the object.
+    Check if the object is supported by any other object using the contact points.
 
-    :param obj: The object for which the support should be added.
-    :param support_name: The name of the support object.
-    :param support_thickness: The thickness of the support.
-    :return: The support object.
+    :param obj: The object to check if it is supported.
+    :param contact_points: The contact points of the object.
+    :return: True if the object is supported, False otherwise.
     """
-    obj_base_position = obj.get_base_position_as_list()
-    support = GenericObjectDescription(support_name, [0, 0, 0], [1, 1, obj_base_position[2]*0.5])
-    support_obj = Object(support_name, ObjectType.IMAGINED_SURFACE, None, support)
-    support_position = obj_base_position.copy()
-    support_position[2] = obj_base_position[2] * 0.5
-    support_obj.set_position(support_position)
-    return support_obj
+    for body in contact_points.get_bodies_in_contact():
+        if check_if_object_is_supported_by_another_object(obj, body, contact_points.get_points_of_body(body)):
+            return True
+
+
+def check_if_in_contact_with_support(obj: Object, contact_bodies: List[PhysicalBody]) -> Optional[PhysicalBody]:
+    """
+    Check if the object is in contact with a supporting surface.
+
+    :param obj: The object to check if it is in contact with a supporting surface.
+    :param contact_bodies: The bodies in contact with the object.
+    """
+    for body in contact_bodies:
+        if issubclass(body.parent_entity.obj_type, pycrap.Supporter):
+            body_aabb = body.get_axis_aligned_bounding_box()
+            surface_z = body_aabb.max_z
+            tracked_object_base = obj.get_base_origin().position
+            if tracked_object_base.z >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
+                    body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
+                return body
+
+
+def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Object,
+                                                   contact_points: Optional[ContactPointsList] = None) -> bool:
+    """
+    Check if the object is supported by another object.
+
+    :param obj: The object to check if it is supported.
+    :param support_obj: The object that supports the object.
+    :param contact_points: The contact points between the object and the support object.
+    :return: True if the object is supported by the support object, False otherwise.
+    """
+    if contact_points is None:
+        contact_points = obj.get_contact_points_with_body(support_obj)
+    normals = [cp.normal for cp in contact_points if any(cp.normal)]
+    if len(normals) > 0:
+        average_normal = np.mean(normals, axis=0)
+        return is_vector_opposite_to_gravity(average_normal)
+    return False
+
+
+def is_vector_opposite_to_gravity(vector: List[float], gravity_vector: Optional[List[float]] = None) -> bool:
+    """
+    Check if the vector is opposite to the gravity vector.
+
+    :param vector: A list of float values that represent the vector.
+    :param gravity_vector: A list of float values that represent the gravity vector.
+    :return: True if the vector is opposite to the gravity vector, False otherwise.
+    """
+    gravity_vector = [0, 0, -1] if gravity_vector is None else gravity_vector
+    return np.dot(vector, gravity_vector) < 0
+
+
+class Imaginator:
+
+    """
+    A class that provides methods for imagining objects.
+    """
+    surfaces_created: List[Object] = []
+    latest_surface_idx: int = 0
+
+    @classmethod
+    def imagine_support_from_aabb(cls, aabb: AABB) -> Object:
+        """
+        Imagine a support with the size of the axis-aligned bounding box.
+
+        :param aabb: The axis-aligned bounding box for which the support of same size should be imagined.
+        :return: The support object.
+        """
+        return cls._imagine_support(aabb=aabb)
+
+    @classmethod
+    def imagine_support_for_object(cls, obj: Object, support_thickness: Optional[float] = 0.005) -> Object:
+        """
+        Imagine a support that supports the object and has a specified thickness.
+
+        :param obj: The object for which the support should be imagined.
+        :param support_thickness: The thickness of the support.
+        :return: The support object
+        """
+        return cls._imagine_support(obj=obj, support_thickness=support_thickness)
+
+    @classmethod
+    def _imagine_support(cls, obj: Optional[Object] = None,
+                         aabb: Optional[AABB] = None,
+                         support_thickness: Optional[float] = None) -> Object:
+        """
+        Imagine a support for the object or with the size of the axis-aligned bounding box.
+
+        :param obj: The object for which the support should be imagined.
+        :param aabb: The axis-aligned bounding box for which the support of same size should be imagined.
+        :param support_thickness: The thickness of the support.
+        :return: The support object.
+        """
+        if aabb is not None:
+            obj_aabb = aabb
+        elif obj is not None:
+            obj_aabb = obj.get_axis_aligned_bounding_box()
+        else:
+            raise ValueError("Either object or axis-aligned bounding box should be provided.")
+        support_name = f"imagined_support_{cls.latest_surface_idx}"
+        support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
+        support = GenericObjectDescription(support_name,
+                                           [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness*0.5])
+        support_obj = Object(support_name, pycrap.Supporter, None, support)
+        support_position = obj_aabb.base_origin
+        support_obj.set_position(support_position)
+        cp = support_obj.contact_points
+        contacted_objects = cp.get_objects_that_have_points()
+        contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created]
+        for obj in contacted_surfaces:
+            support_obj = support_obj.merge(obj)
+        World.current_world.get_object_by_name('floor').attach(support_obj)
+        cls.surfaces_created.append(support_obj)
+        cls.latest_surface_idx += 1
+        return support_obj
 
 
 def get_angle_between_vectors(vector_1: List[float], vector_2: List[float]) -> float:
@@ -91,7 +209,7 @@ def calculate_translation_difference_and_check(trans_1: List[float], trans_2: Li
     :return: A boolean value that represents the condition for the translation of the object to be considered as
     picked up.
     """
-    translation_diff = calculate_translation_difference(trans_1, trans_2)
+    translation_diff = calculate_abs_translation_difference(trans_1, trans_2)
     return is_translation_difference_small(translation_diff, threshold)
 
 
@@ -107,7 +225,18 @@ def is_translation_difference_small(trans_diff: List[float], threshold: float) -
     # return all([diff <= threshold for diff in trans_diff])
 
 
-def calculate_translation_difference(trans_1: List[float], trans_2: List[float]) -> List[float]:
+def calculate_translation(position_1: List[float], position_2: List[float]) -> List:
+    """
+    calculate the translation between two positions.
+
+    :param position_1: The first position.
+    :param position_2: The second position.
+    :return: A list of float values that represent the translation between the two positions.
+    """
+    return [p2 - p1 for p1, p2 in zip(position_1, position_2)]
+
+
+def calculate_abs_translation_difference(trans_1: List[float], trans_2: List[float]) -> List[float]:
     """
     Calculate the translation difference.
 

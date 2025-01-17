@@ -11,6 +11,7 @@ from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import loginfo
 
 from .events import Event, EventUnion
+from .object_tracker import ObjectTrackerFactory
 
 
 class EventLogger:
@@ -36,6 +37,7 @@ class EventLogger:
 
     def log_event(self, event: Event):
         thread_id = event.detector_thread_id
+        event.update_object_trackers()
         self.event_queue.put(event)
         if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)):
             self.annotation_queue.put(event)
@@ -44,6 +46,56 @@ class EventLogger:
                 self.timeline_per_thread[thread_id] = []
             self.timeline_per_thread[thread_id].append(event)
             self.timeline.append(event)
+
+    def plot_events(self):
+        """
+        Plot all events that have been logged in a timeline.
+        """
+        loginfo("Plotting events:")
+        # construct a dataframe with the events
+        import pandas as pd
+        import plotly.express as px
+        import plotly.graph_objects as go
+
+        data_dict = {'start': [], 'end': [], 'event': [], 'object': [], 'obj_type': []}
+        for tracker in ObjectTrackerFactory.get_all_trackers():
+            for event in tracker.get_event_history():
+                end_timestamp = event.timestamp + timedelta(seconds=0.1).total_seconds()
+                if hasattr(event, 'end_timestamp') and event.end_timestamp is not None:
+                    end_timestamp = max(event.end_timestamp, end_timestamp)
+                data_dict['end'].append(end_timestamp)
+                data_dict['start'].append(event.timestamp)
+                data_dict['event'].append(event.__class__.__name__)
+                data_dict['object'].append(tracker.obj.name)
+                data_dict['obj_type'].append(tracker.obj.obj_type.name)
+        # subtract the start time from all timestamps
+        min_start = min(data_dict['start'])
+        data_dict['start'] = [x - min_start for x in data_dict['start']]
+        data_dict['end'] = [x - min_start for x in data_dict['end']]
+        df = pd.DataFrame(data_dict)
+
+        fig = go.Figure()
+
+        fig = px.timeline(df, x_start=pd.to_datetime(df[f'start'], unit='s'),
+                          x_end=pd.to_datetime(df[f'end'], unit='s'),
+                          y=f'event',
+                          color=f'event',
+                          hover_data={'object': True, 'obj_type': True},
+                          # text=f'object',
+                          title=f"Events Timeline")
+        fig.update_xaxes(tickvals=pd.to_datetime(df[f'start'], unit='s'), tickformat='%S')
+        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='LightPink')
+        fig.update_layout(
+            font_family="Courier New",
+            font_color="black",
+            font_size=20,
+            title_font_family="Times New Roman",
+            title_font_color="black",
+            title_font_size=30,
+            legend_title_font_color="black",
+            legend_title_font_size=24,
+        )
+        fig.show()
 
     def print_events(self):
         """

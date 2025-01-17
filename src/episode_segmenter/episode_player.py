@@ -12,10 +12,10 @@ import trimesh
 from tf.transformations import (quaternion_from_matrix, euler_matrix, quaternion_matrix, quaternion_multiply,
                                 euler_from_quaternion, quaternion_inverse, quaternion_from_euler, euler_from_matrix)
 from trimesh import Geometry
-from typing_extensions import List, Tuple, Dict, Optional, Union
+from typing_extensions import List, Tuple, Dict, Optional, Union, Type
 
+import pycrap
 from episode_segmenter.utils import calculate_quaternion_difference
-from pycram.datastructures.enums import ObjectType
 from pycram.datastructures.pose import Pose, Transform
 from pycram.world_concepts.world_object import Object
 
@@ -79,7 +79,9 @@ class FileEpisodePlayer(EpisodePlayer):
     def __init__(self, json_file: str, scene_id: int = 1, world: Optional[World] = None,
                  mesh_scale: float = 0.001,
                  time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=50),
-                 objects_to_ignore: Optional[List[int]] = None):
+                 objects_to_ignore: Optional[List[int]] = None,
+                 obj_id_to_name: Optional[Dict[int, str]] = None,
+                 obj_id_to_type: Optional[Dict[int, Type[pycrap.PhysicalObject]]] = None):
         """
         Initializes the FAMEEpisodePlayer with the specified json file and scene id.
 
@@ -97,6 +99,8 @@ class FileEpisodePlayer(EpisodePlayer):
         self.data_frames = {int(frame_id): objects_data for frame_id, objects_data in self.data_frames.items()}
         if objects_to_ignore is not None:
             self._remove_ignored_objects(objects_to_ignore)
+        self.obj_id_to_name: Optional[Dict[int, str]] = obj_id_to_name
+        self.obj_id_to_type: Optional[Dict[int, Type[pycrap.PhysicalObject]]] = obj_id_to_type
         self.data_frames = dict(sorted(self.data_frames.items(), key=lambda x: x[0]))
         self.world = world if world is not None else World.current_world
         self.mesh_scale = mesh_scale
@@ -142,12 +146,13 @@ class FileEpisodePlayer(EpisodePlayer):
             pose = self.get_pose_and_transform_to_map_frame(object_poses_data[0])
 
             # Get the object and mesh names
-            obj_name = self.get_object_name(object_id)
+            obj_name = self.get_object_name(int(object_id))
+            obj_type = self.get_object_type(int(object_id))
             mesh_name = self.get_mesh_name(object_id)
 
             # Create the object if it does not exist in the world and set its pose
             if obj_name not in self.world.get_object_names():
-                obj = Object(obj_name, ObjectType.GENERIC_OBJECT, mesh_name,
+                obj = Object(obj_name, obj_type, mesh_name,
                              pose=Pose(pose.position_as_list()), scale_mesh=self.mesh_scale)
                 quat_diff = calculate_quaternion_difference(pose.orientation_as_list(), [0, 0, 0, 1])
                 euler_diff = euler_from_quaternion(quat_diff)
@@ -352,9 +357,17 @@ W
     def camera_frame_name(self) -> str:
         return "episode_camera_frame"
 
-    @staticmethod
-    def get_object_name(object_id: str) -> str:
-        return f"episode_object_{object_id}"
+    def get_object_name(self, object_id: int) -> str:
+        if self.obj_id_to_name is not None and object_id in self.obj_id_to_name:
+            return self.obj_id_to_name[object_id]
+        else:
+            return f"object_{object_id}"
+
+    def get_object_type(self, object_id: int) -> Type[pycrap.PhysicalObject]:
+        if self.obj_id_to_type is not None and object_id in self.obj_id_to_type:
+            return self.obj_id_to_type[int(object_id)]
+        else:
+            return pycrap.PhysicalObject
 
     @staticmethod
     def get_mesh_name(object_id: str) -> str:
