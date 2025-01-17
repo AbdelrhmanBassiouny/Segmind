@@ -1,6 +1,7 @@
 import datetime
 
 import pycrap
+from pycrap import Supporter
 from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion, MotionPickUpDetector, TranslationDetector, \
     RotationDetector, PlacingDetector, NewObjectDetector
 import time
@@ -18,7 +19,7 @@ from .event_detectors import ContactDetector, LossOfContactDetector, EventDetect
     AbstractContactDetector
 from .event_logger import EventLogger
 from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
-    NewObjectEvent, RotationEvent, StopRotationEvent, PlacingEvent, HasTrackedObject
+    NewObjectEvent, RotationEvent, StopRotationEvent, PlacingEvent, EventWithTrackedObjects
 from .object_tracker import ObjectTracker
 from .utils import check_if_object_is_supported, Imaginator
 
@@ -160,7 +161,7 @@ class EpisodeSegmenter(ABC):
         :param event: The event that involves the objects.
         :return: A list of Object instances that are involved in the event.
         """
-        if isinstance(event, HasTrackedObject):
+        if isinstance(event, EventWithTrackedObjects):
             return event.involved_objects
 
     def avoid_object(self, obj: Object) -> bool:
@@ -170,7 +171,8 @@ class EpisodeSegmenter(ABC):
         :param obj: The object to check.
         :return: True if the object should be avoided, False otherwise.
         """
-        return any([k in obj.name.lower() for k in self.objects_to_avoid])
+        return obj.is_an_environment or issubclass(obj.obj_type, Supporter) or\
+            any([k in obj.name.lower() for k in self.objects_to_avoid])
 
     def start_motion_detection_threads_for_object(self, obj: Object, event: Optional[NewObjectEvent] = None) -> None:
         """
@@ -326,8 +328,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         """
         set_of_objects = set()
         for obj in World.current_world.objects:
-            if (not obj.is_an_environment and not issubclass(obj.obj_type, pycrap.Supporter)
-                    and (obj.name not in self.objects_to_avoid)):
+            if not self.avoid_object(obj):
                 set_of_objects.add(obj)
                 try:
                     if not check_if_object_is_supported(obj):

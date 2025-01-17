@@ -62,13 +62,13 @@ def check_if_in_contact_with_support(obj: Object, contact_bodies: List[PhysicalB
     :param contact_bodies: The bodies in contact with the object.
     """
     for body in contact_bodies:
-        # if issubclass(body.parent_entity.obj_type, pycrap.Supporter):
-        body_aabb = body.get_axis_aligned_bounding_box()
-        surface_z = body_aabb.max_z
-        tracked_object_base = obj.get_base_origin().position
-        if tracked_object_base.z >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
-                body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
-            return body
+        if issubclass(body.parent_entity.obj_type, (pycrap.Supporter, pycrap.Location)):
+            body_aabb = body.get_axis_aligned_bounding_box()
+            surface_z = body_aabb.max_z
+            tracked_object_base = obj.get_base_origin().position
+            if tracked_object_base.z >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
+                    body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
+                return body
 
 
 def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Object,

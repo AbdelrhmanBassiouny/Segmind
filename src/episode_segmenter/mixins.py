@@ -2,14 +2,10 @@ from __future__ import annotations
 
 from abc import ABC
 
-from typing_extensions import List, TYPE_CHECKING, Optional
+from typing_extensions import List, Optional
 
-from datastructures.dataclasses import ObjectState
-from .object_tracker import ObjectTrackerFactory
-from world_concepts.world_object import Object
-
-if TYPE_CHECKING:
-    from .events import Event
+from pycram.datastructures.dataclasses import ObjectState
+from pycram.world_concepts.world_object import Object
 
 
 class HasTrackedObjects(ABC):

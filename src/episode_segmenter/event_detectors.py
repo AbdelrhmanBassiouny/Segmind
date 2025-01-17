@@ -27,7 +27,7 @@ from pycrap import PhysicalObject
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
     AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
-    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent, HasTrackedObject
+    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
 from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter
 from .object_tracker import ObjectTracker, ObjectTrackerFactory
 from .utils import get_angle_between_vectors, calculate_quaternion_difference, \

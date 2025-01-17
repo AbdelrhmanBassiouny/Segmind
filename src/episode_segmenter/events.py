@@ -1,5 +1,6 @@
 import time
 from abc import abstractmethod, ABC
+from math import isclose
 
 import rospy
 from typing_extensions import Optional, List, Union
@@ -79,26 +80,44 @@ class EventWithTrackedObjects(Event, HasTrackedObjects, ABC):
         Event.__init__(self, timestamp)
         HasTrackedObjects.__init__(self, tracked_objects)
 
-    def update_object_trackers_with_event(self, event: Event) -> None:
+    def update_object_trackers_with_event(self) -> None:
         """
         Update the object trackers of the involved objects with the event.
         """
         for obj in self.involved_objects:
             object_tracker = ObjectTrackerFactory.get_tracker(obj)
-            object_tracker.add_event(event)
+            object_tracker.add_event(self)
 
 
-class NewObjectEvent(EventWithTrackedObjects, HasOneTrackedObject):
+class EventWithOneTrackedObject(EventWithTrackedObjects, HasOneTrackedObject, ABC):
+    """
+    An abstract class that represents an event that involves one tracked object.
+    """
+    def __init__(self, tracked_object: Object, timestamp: Optional[float] = None):
+        EventWithTrackedObjects.__init__(self, [tracked_object], timestamp)
+        HasOneTrackedObject.__init__(self, tracked_object)
+
+
+class EventWithTwoTrackedObjects(EventWithTrackedObjects, HasTwoTrackedObjects, ABC):
+    """
+    An abstract class that represents an event that involves two tracked objects.
+    """
+    def __init__(self, tracked_object: Object, with_object: Optional[Object] = None, timestamp: Optional[float] = None):
+        tracked_objects = [tracked_object, with_object] if with_object is not None else [tracked_object]
+        EventWithTrackedObjects.__init__(self, tracked_objects, timestamp)
+        HasTwoTrackedObjects.__init__(self, tracked_object, with_object)
+
+
+class NewObjectEvent(EventWithOneTrackedObject):
     """
     The NewObjectEvent class is used to represent an event that involves the addition of a new object to the world.
     """
 
     def __init__(self, new_object: Object, timestamp: Optional[float] = None):
-        EventWithTrackedObjects.__init__(self, [new_object], timestamp)
-        HasOneTrackedObject.__init__(self, new_object)
+        EventWithOneTrackedObject.__init__(self, new_object, timestamp)
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
+        if not other.__class__ == self.__class__:
             return False
         return self.tracked_object == other.tracked_object
 
@@ -116,7 +135,7 @@ class NewObjectEvent(EventWithTrackedObjects, HasOneTrackedObject):
         return f"{self.__class__.__name__}: {self.tracked_object.name}"
 
 
-class MotionEvent(EventWithTrackedObjects, HasOneTrackedObject, ABC):
+class MotionEvent(EventWithOneTrackedObject, ABC):
     """
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
     vice versa.
@@ -124,17 +143,16 @@ class MotionEvent(EventWithTrackedObjects, HasOneTrackedObject, ABC):
 
     def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
                  timestamp: Optional[float] = None):
-        EventWithTrackedObjects.__init__(self, [tracked_object], timestamp)
-        HasOneTrackedObject.__init__(self, tracked_object)
+        EventWithOneTrackedObject.__init__(self, tracked_object, timestamp)
         self.start_pose: Pose = start_pose
         self.current_pose: Pose = current_pose
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
+        if not other.__class__ == self.__class__:
             return False
         return (self.tracked_object == other
                 and self.start_pose == other.start_pose
-                and self.timestamp == other.timestamp)
+                and isclose(self.timestamp, other.timestamp, abs_tol=0.1))
 
     def __hash__(self):
         return hash((self.tracked_object, self.timestamp))
@@ -183,7 +201,7 @@ class LiftingEvent(TranslationEvent):
         self.from_surface: Optional[Object] = from_surface
 
 
-class AbstractContactEvent(EventWithTrackedObjects, HasTwoTrackedObjects, ABC):
+class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
 
     def __init__(self,
                  contact_points: ContactPointsList,
@@ -191,17 +209,15 @@ class AbstractContactEvent(EventWithTrackedObjects, HasTwoTrackedObjects, ABC):
                  with_object: Optional[Object] = None,
                  timestamp: Optional[float] = None):
 
-        EventWithTrackedObjects.__init__(self, [of_object, with_object], timestamp)
-        HasTwoTrackedObjects.__init__(self, of_object, with_object)
+        EventWithTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
         self.contact_points = contact_points
-        self._involved_objects = (self._involved_objects +
-                                  [obj for obj in contact_points.get_objects_that_have_points()
-                                   if obj not in self._involved_objects])
+        self._involved_objects.extend([obj for obj in self.objects if obj not in self._involved_objects])
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
+        if not other.__class__ == self.__class__:
             return False
-        return self.tracked_object == other.tracked_object and self.with_object == other.with_object
+        return self.tracked_object == other.tracked_object and self.with_object == other.with_object and \
+            isclose(self.timestamp, other.timestamp, abs_tol=0.1)
 
     def __hash__(self):
         return hash((self.tracked_object.name, self.with_object.name if self.with_object is not None else '',
@@ -271,8 +287,8 @@ class LossOfContactEvent(AbstractContactEvent):
                  of_object: Object,
                  with_object: Optional[Object] = None,
                  timestamp: Optional[float] = None):
-        super().__init__(contact_points, of_object, with_object, timestamp)
         self.latest_contact_points = latest_contact_points
+        super().__init__(contact_points, of_object, with_object, timestamp)
 
     @property
     def latest_objects_that_got_removed(self):
@@ -347,13 +363,13 @@ class LossOfSurfaceEvent(LossOfContactEvent):
         self.surface: Optional[PhysicalBody] = surface
 
 
-class AbstractAgentObjectInteractionEvent(HasTwoTrackedObjects, ABC):
+class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
 
     def __init__(self, participating_object: Object,
                  agent: Optional[Object] = None,
                  timestamp: Optional[float] = None,
                  end_timestamp: Optional[float] = None):
-        HasTwoTrackedObjects.__init__(self, participating_object, agent, timestamp)
+        EventWithTwoTrackedObjects.__init__(self, participating_object, agent, timestamp)
         self.end_timestamp: Optional[float] = end_timestamp
         self.text_id: Optional[int] = None
 
@@ -370,9 +386,10 @@ class AbstractAgentObjectInteractionEvent(HasTwoTrackedObjects, ABC):
         return self.with_object_state
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
+        if not other.__class__ == self.__class__:
             return False
-        return self.agent == other.agent and self.tracked_object == other.tracked_object
+        return self.agent == other.agent and self.tracked_object == other.tracked_object and \
+            isclose(self.timestamp, other.timestamp, abs_tol=0.1)
 
     def __hash__(self):
         return hash((self.agent, self.tracked_object, self.__class__))

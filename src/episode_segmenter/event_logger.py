@@ -10,7 +10,7 @@ from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import loginfo
 
-from .events import Event, EventUnion
+from .events import Event, EventUnion, EventWithTrackedObjects
 from .object_tracker import ObjectTrackerFactory
 
 
@@ -36,16 +36,54 @@ class EventLogger:
             EventLogger.current_logger = self
 
     def log_event(self, event: Event):
-        thread_id = event.detector_thread_id
-        event.update_object_trackers()
+        if self.is_event_in_timeline(event):
+            loginfo(f"Event {event} already logged.")
+            return
+        self.update_object_trackers_with_event(event)
         self.event_queue.put(event)
+        self.annotate_scene_with_event(event)
+        self.add_event_to_timeline_of_thread(event)
+
+    def annotate_scene_with_event(self, event: Event) -> None:
+        """
+        Annotate the scene with the event.
+
+        :param event: The event to annotate the scene with.
+        """
         if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)):
             self.annotation_queue.put(event)
+
+    @staticmethod
+    def update_object_trackers_with_event(event: Event) -> None:
+        """
+        Update the event object trackers with the event.
+
+        :param event: The event to update the object trackers with.
+        """
+        if isinstance(event, EventWithTrackedObjects):
+            event.update_object_trackers_with_event()
+
+    def add_event_to_timeline_of_thread(self, event: Event) -> None:
+        """
+        Add an event to the timeline of the detector thread.
+        :param event: The event to add.
+        """
+        thread_id = event.detector_thread_id
         with self.lock:
             if thread_id not in self.timeline_per_thread:
                 self.timeline_per_thread[thread_id] = []
             self.timeline_per_thread[thread_id].append(event)
             self.timeline.append(event)
+
+    def is_event_in_timeline(self, event: Event) -> bool:
+        """
+        Check if an event is already in the timeline.
+
+        :param event: The event to check.
+        :return: True if the event is in the timeline, False otherwise.
+        """
+        with self.lock:
+            return event in self.timeline
 
     def plot_events(self):
         """
