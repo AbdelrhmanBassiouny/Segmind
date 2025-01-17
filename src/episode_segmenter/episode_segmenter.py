@@ -246,7 +246,7 @@ class EpisodeSegmenter(ABC):
         self.detector_threads_list.append(detector)
         logdebug(f"Created {detector_type.__name__}")
         if starter_event is not None:
-            self.starter_event_to_detector_thread_map[(starter_event, detector_type)] = detector
+            # self.starter_event_to_detector_thread_map[(starter_event, detector_type)] = detector
             logdebug(f"For starter event {starter_event}")
 
     @property

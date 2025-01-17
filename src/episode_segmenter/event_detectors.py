@@ -224,7 +224,9 @@ class NewObjectDetector(PrimitiveEventDetector):
 
 
 class AbstractContactDetector(PrimitiveEventDetector, ABC):
-    def __init__(self, logger: EventLogger, starter_event: EventUnion, with_object: Optional[Object] = None,
+    def __init__(self, logger: EventLogger, starter_event: EventUnion,
+                 tracked_object: Optional[Object] = None,
+                 with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05, wait_time: Optional[float] = 0.01,
                  *args, **kwargs):
         """
@@ -234,7 +236,7 @@ class AbstractContactDetector(PrimitiveEventDetector, ABC):
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
         super().__init__(logger, wait_time, *args, **kwargs)
-        self.tracked_object = starter_event.tracked_object
+        self.tracked_object = starter_event.tracked_object if tracked_object is None else tracked_object
         self.with_object = with_object
         self.max_closeness_distance = max_closeness_distance
         self.latest_contact_points: Optional[ContactPointsList] = ContactPointsList([])
@@ -399,7 +401,8 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     The filtered distances during the window timeframe.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: Union[NewObjectEvent, Object],
+    def __init__(self, logger: EventLogger, starter_event: Optional[NewObjectEvent] = None,
+                 tracked_object: Optional[Object] = None,
                  detection_method: MotionDetectionMethod = ConsistentGradient(),
                  measure_timestep: timedelta = timedelta(milliseconds=100),
                  time_between_frames: timedelta = timedelta(milliseconds=50),
@@ -409,6 +412,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the NewObjectEvent class that represents the event to start the event.
+        :param tracked_object: An optional Object instance that represents the object to track.
         :param detection_method: The motion detection method that is used to detect if the object is moving.
         :param measure_timestep: The time between calls to the event detector.
         :param time_between_frames: The time between frames of episode player.
@@ -417,8 +421,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         """
         super().__init__(logger, measure_timestep.total_seconds(), *args, **kwargs)
 
-        self.tracked_object = starter_event.tracked_object\
-            if isinstance(starter_event, HasTrackedObject) else starter_event
+        self.tracked_object = starter_event.tracked_object if tracked_object is None else tracked_object
         self.time_between_frames: timedelta = time_between_frames
         self.measure_timestep: timedelta = measure_timestep
         self.window_timeframe: timedelta = window_timeframe

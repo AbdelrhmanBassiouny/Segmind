@@ -4,6 +4,7 @@ from abc import abstractmethod, ABC
 import rospy
 from typing_extensions import Optional, List, Union
 
+from episode_segmenter.mixins import HasOneTrackedObject, HasTrackedObjects, HasTwoTrackedObjects
 from episode_segmenter.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation, ObjectState
 from pycram.datastructures.pose import Pose
@@ -23,7 +24,6 @@ class Event(ABC):
         self.timestamp = time.time() if timestamp is None else timestamp
         self.text_id: Optional[int] = None
         self.detector_thread_id: Optional[str] = None
-        self._involved_objects: List[Object] = []
 
     @abstractmethod
     def __eq__(self, other):
@@ -66,42 +66,36 @@ class Event(ABC):
     def annotation_text(self) -> str:
         return self.__str__()
 
-    def update_object_trackers(self):
-        if len(self.involved_objects) == 0:
-            return
-        object_tracker = ObjectTrackerFactory.get_tracker(self.involved_objects[0])
-        object_tracker.add_event(self)
-
-    @property
-    def involved_objects(self) -> List[Object]:
-        """
-        The objects involved in the event.
-        """
-        return self._involved_objects
-
     @abstractmethod
     def __str__(self):
         pass
 
 
-class HasTrackedObject(Event, ABC):
+class EventWithTrackedObjects(Event, HasTrackedObjects, ABC):
     """
-    A mixin class that provides the tracked object for the event.
+    An abstract class that represents an event that involves one or more tracked objects.
     """
-    def __init__(self, tracked_object: Object, timestamp: Optional[float] = None):
+    def __init__(self, tracked_objects: List[Object], timestamp: Optional[float] = None):
         Event.__init__(self, timestamp)
-        self.tracked_object: Object = tracked_object
-        self.tracked_object_state: ObjectState = tracked_object.current_state
-        self._involved_objects = [tracked_object]
+        HasTrackedObjects.__init__(self, tracked_objects)
+
+    def update_object_trackers_with_event(self, event: Event) -> None:
+        """
+        Update the object trackers of the involved objects with the event.
+        """
+        for obj in self.involved_objects:
+            object_tracker = ObjectTrackerFactory.get_tracker(obj)
+            object_tracker.add_event(event)
 
 
-class NewObjectEvent(HasTrackedObject):
+class NewObjectEvent(EventWithTrackedObjects, HasOneTrackedObject):
     """
     The NewObjectEvent class is used to represent an event that involves the addition of a new object to the world.
     """
 
     def __init__(self, new_object: Object, timestamp: Optional[float] = None):
-        HasTrackedObject.__init__(self, new_object, timestamp)
+        EventWithTrackedObjects.__init__(self, [new_object], timestamp)
+        HasOneTrackedObject.__init__(self, new_object)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -122,7 +116,7 @@ class NewObjectEvent(HasTrackedObject):
         return f"{self.__class__.__name__}: {self.tracked_object.name}"
 
 
-class MotionEvent(HasTrackedObject, ABC):
+class MotionEvent(EventWithTrackedObjects, HasOneTrackedObject, ABC):
     """
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
     vice versa.
@@ -130,7 +124,8 @@ class MotionEvent(HasTrackedObject, ABC):
 
     def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
                  timestamp: Optional[float] = None):
-        HasTrackedObject.__init__(self, tracked_object, timestamp)
+        EventWithTrackedObjects.__init__(self, [tracked_object], timestamp)
+        HasOneTrackedObject.__init__(self, tracked_object)
         self.start_pose: Pose = start_pose
         self.current_pose: Pose = current_pose
 
@@ -188,26 +183,16 @@ class LiftingEvent(TranslationEvent):
         self.from_surface: Optional[Object] = from_surface
 
 
-class HasTwoTrackedObjects(HasTrackedObject, ABC):
-    """
-    A mixin class that provides the tracked object and the object with which it interacts for the event.
-    """
-    def __init__(self, tracked_object: Object, with_object: Optional[Object] = None,
-                 timestamp: Optional[float] = None):
-        HasTrackedObject.__init__(self, tracked_object, timestamp)
-        self.with_object: Optional[Object] = with_object
-        self.with_object_state: Optional[ObjectState] = with_object.current_state if with_object is not None else None
-        self._involved_objects = [tracked_object] if with_object is None else [tracked_object, with_object]
-
-
-class AbstractContactEvent(HasTwoTrackedObjects, ABC):
+class AbstractContactEvent(EventWithTrackedObjects, HasTwoTrackedObjects, ABC):
 
     def __init__(self,
                  contact_points: ContactPointsList,
                  of_object: Object,
                  with_object: Optional[Object] = None,
                  timestamp: Optional[float] = None):
-        HasTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
+
+        EventWithTrackedObjects.__init__(self, [of_object, with_object], timestamp)
+        HasTwoTrackedObjects.__init__(self, of_object, with_object)
         self.contact_points = contact_points
         self._involved_objects = (self._involved_objects +
                                   [obj for obj in contact_points.get_objects_that_have_points()
