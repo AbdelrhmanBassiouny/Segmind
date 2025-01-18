@@ -1,11 +1,10 @@
 import time
 from abc import abstractmethod, ABC
-from math import isclose
 
 import rospy
 from typing_extensions import Optional, List, Union
 
-from episode_segmenter.mixins import HasOneTrackedObject, HasTrackedObjects, HasTwoTrackedObjects
+from episode_segmenter.mixins import HasOneTrackedObject, HasTwoTrackedObjects
 from episode_segmenter.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation, ObjectState
 from pycram.datastructures.pose import Pose
@@ -71,22 +70,21 @@ class Event(ABC):
     def __str__(self):
         pass
 
+    def __repr__(self):
+        return self.__str__()
 
-class EventWithTrackedObjects(Event, HasTrackedObjects, ABC):
+
+class EventWithTrackedObjects(Event, ABC):
     """
     An abstract class that represents an event that involves one or more tracked objects.
     """
-    def __init__(self, tracked_objects: List[Object], timestamp: Optional[float] = None):
-        Event.__init__(self, timestamp)
-        HasTrackedObjects.__init__(self, tracked_objects)
 
+    @abstractmethod
     def update_object_trackers_with_event(self) -> None:
         """
         Update the object trackers of the involved objects with the event.
         """
-        for obj in self.involved_objects:
-            object_tracker = ObjectTrackerFactory.get_tracker(obj)
-            object_tracker.add_event(self)
+        pass
 
 
 class EventWithOneTrackedObject(EventWithTrackedObjects, HasOneTrackedObject, ABC):
@@ -94,8 +92,22 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasOneTrackedObject, AB
     An abstract class that represents an event that involves one tracked object.
     """
     def __init__(self, tracked_object: Object, timestamp: Optional[float] = None):
-        EventWithTrackedObjects.__init__(self, [tracked_object], timestamp)
+        EventWithTrackedObjects.__init__(self, timestamp)
         HasOneTrackedObject.__init__(self, tracked_object)
+
+    def update_object_trackers_with_event(self) -> None:
+        ObjectTrackerFactory.get_tracker(self.tracked_object).add_event(self)
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
+
+    def __eq__(self, other):
+        return (other.__class__ == self.__class__
+                and self.tracked_object == other
+                and round(self.timestamp, 1) == round(other.timestamp, 1))
+
+    def __hash__(self):
+        return hash((self.__class__, self.tracked_object, round(self.timestamp, 1)))
 
 
 class EventWithTwoTrackedObjects(EventWithTrackedObjects, HasTwoTrackedObjects, ABC):
@@ -103,9 +115,29 @@ class EventWithTwoTrackedObjects(EventWithTrackedObjects, HasTwoTrackedObjects, 
     An abstract class that represents an event that involves two tracked objects.
     """
     def __init__(self, tracked_object: Object, with_object: Optional[Object] = None, timestamp: Optional[float] = None):
-        tracked_objects = [tracked_object, with_object] if with_object is not None else [tracked_object]
-        EventWithTrackedObjects.__init__(self, tracked_objects, timestamp)
+        EventWithTrackedObjects.__init__(self, timestamp)
         HasTwoTrackedObjects.__init__(self, tracked_object, with_object)
+
+    def update_object_trackers_with_event(self) -> None:
+        ObjectTrackerFactory.get_tracker(self.tracked_object).add_event(self)
+        if self.with_object is not None:
+            ObjectTrackerFactory.get_tracker(self.with_object).add_event(self)
+
+    def __str__(self):
+        with_object_name = f" - {self.with_object.name}" if self.with_object is not None else ""
+        return f"{self.__class__.__name__}: {self.tracked_object.name}{with_object_name} - {self.timestamp}"
+
+    def __eq__(self, other):
+        return (other.__class__ == self.__class__
+                and self.tracked_object == other.tracked_object
+                and self.with_object == other.with_object
+                and round(self.timestamp, 1) == round(other.timestamp, 1))
+
+    def __hash__(self):
+        hash_tuple = (self.__class__, self.tracked_object, round(self.timestamp, 1))
+        if self.with_object is not None:
+            hash_tuple += (self.with_object,)
+        return hash(hash_tuple)
 
 
 class NewObjectEvent(EventWithOneTrackedObject):
@@ -116,23 +148,12 @@ class NewObjectEvent(EventWithOneTrackedObject):
     def __init__(self, new_object: Object, timestamp: Optional[float] = None):
         EventWithOneTrackedObject.__init__(self, new_object, timestamp)
 
-    def __eq__(self, other):
-        if not other.__class__ == self.__class__:
-            return False
-        return self.tracked_object == other.tracked_object
-
-    def __hash__(self):
-        return hash((self.__class__.__name__, self.tracked_object.name))
-
     def set_color(self, color: Optional[Color] = None):
         ...
 
     @property
     def color(self) -> Color:
         return self.tracked_object.color
-
-    def __str__(self):
-        return f"{self.__class__.__name__}: {self.tracked_object.name}"
 
 
 class MotionEvent(EventWithOneTrackedObject, ABC):
@@ -147,25 +168,9 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
         self.start_pose: Pose = start_pose
         self.current_pose: Pose = current_pose
 
-    def __eq__(self, other):
-        if not other.__class__ == self.__class__:
-            return False
-        return (self.tracked_object == other
-                and self.start_pose == other.start_pose
-                and isclose(self.timestamp, other.timestamp, abs_tol=0.1))
-
-    def __hash__(self):
-        return hash((self.tracked_object, self.timestamp))
-
     def set_color(self, color: Optional[Color] = None):
         color = color if color is not None else self.color
         self.tracked_object.set_color(color)
-
-    def __str__(self):
-        return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
-
-    def __repr__(self):
-        return self.__str__()
 
 
 class TranslationEvent(MotionEvent):
@@ -194,13 +199,6 @@ class StopRotationEvent(StopMotionEvent):
     ...
 
 
-class LiftingEvent(TranslationEvent):
-    def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
-                 timestamp: Optional[float] = None, from_surface: Optional[Object] = None):
-        super().__init__(tracked_object, start_pose, current_pose, timestamp)
-        self.from_surface: Optional[Object] = from_surface
-
-
 class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
 
     def __init__(self,
@@ -213,27 +211,10 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         self.contact_points = contact_points
         self._involved_objects.extend([obj for obj in self.objects if obj not in self._involved_objects])
 
-    def __eq__(self, other):
-        if not other.__class__ == self.__class__:
-            return False
-        return self.tracked_object == other.tracked_object and self.with_object == other.with_object and \
-            isclose(self.timestamp, other.timestamp, abs_tol=0.1)
-
-    def __hash__(self):
-        return hash((self.tracked_object.name, self.with_object.name if self.with_object is not None else '',
-                     self.__class__.__name__))
-
     def set_color(self, color: Optional[Color] = None):
         color = color if color is not None else self.color
         self.main_link.color = color
         [link.set_color(color) for link in self.links]
-
-    def __str__(self):
-        return (f"{self.__class__.__name__}: {self.tracked_object.name} - "
-                f"{self.with_object.name if self.with_object else ''} - {self.timestamp}")
-
-    def __repr__(self):
-        return self.__str__()
 
     @property
     def object_names(self):
@@ -386,13 +367,14 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         return self.with_object_state
 
     def __eq__(self, other):
-        if not other.__class__ == self.__class__:
-            return False
-        return self.agent == other.agent and self.tracked_object == other.tracked_object and \
-            isclose(self.timestamp, other.timestamp, abs_tol=0.1)
+        return (super().__eq__(other)
+                and round(self.end_timestamp, 1) == round(other.end_timestamp, 1))
 
     def __hash__(self):
-        return hash((self.agent, self.tracked_object, self.__class__))
+        hash_tuple = (self.__class__, self.agent, self.tracked_object, round(self.timestamp, 1))
+        if self.end_timestamp is not None:
+            hash_tuple += (round(self.end_timestamp, 1),)
+        return hash(hash_tuple)
 
     def record_end_timestamp(self):
         self.end_timestamp = time.time()
@@ -407,13 +389,6 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         if self.agent is not None:
             self.agent.set_color(color)
         self.tracked_object.set_color(color)
-
-    def __str__(self):
-        return f"{self.__class__.__name__}: Object: {self.tracked_object.name}, Timestamp: {self.timestamp}" + \
-                  (f", Agent: {self.agent.name}" if self.agent is not None else "")
-
-    def __repr__(self):
-        return self.__str__()
 
 
 class PickUpEvent(AbstractAgentObjectInteractionEvent):

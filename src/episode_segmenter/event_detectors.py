@@ -8,6 +8,9 @@ from queue import Queue
 
 import numpy as np
 import rospy
+
+from .mixins import HasTrackedObjects, HasOneTrackedObject, HasTwoTrackedObjects
+
 try:
     from matplotlib import pyplot as plt
 except ImportError:
@@ -56,35 +59,11 @@ class PrimitiveEventDetector(threading.Thread, ABC):
 
         self.logger = logger
         self.wait_time = wait_time
-        self.objects_to_track: List[Object] = []
-        self._tracked_object: Optional[Object] = None
-        self._with_object: Optional[Object] = None
         self.kill_event = threading.Event()
+        self.queues: List[Queue] = []
 
         self.run_once = False
         self._pause: bool = False
-
-    @property
-    def tracked_object(self) -> Object:
-        return self._tracked_object
-
-    @tracked_object.setter
-    def tracked_object(self, obj: Object):
-        self._tracked_object = obj
-        self.update_tracked_objects(obj)
-
-    @property
-    def with_object(self) -> Object:
-        return self._with_object
-
-    @with_object.setter
-    def with_object(self, obj: Object):
-        self._with_object = obj
-        self.update_tracked_objects(obj)
-
-    def update_tracked_objects(self, obj: Object):
-        if obj is not None:
-            self.objects_to_track.append(obj)
 
     def stop(self):
         """
@@ -94,7 +73,7 @@ class PrimitiveEventDetector(threading.Thread, ABC):
 
     @property
     def thread_id(self) -> str:
-        return f"{self.thread_prefix}{'_'.join([obj.name for obj in self.objects_to_track])}"
+        return f"{self.thread_prefix}_{self.ident}"
 
     @abstractmethod
     def detect_events(self) -> List[Event]:
@@ -122,13 +101,29 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         exit_thread attribute to True. Additionally, there is an optional wait_time attribute that can be set to a float
         value to introduce a delay between calls to the event detector.
         """
-        while not self.kill_event.is_set():
+        while True:
+
+            if self.kill_event.is_set() and self.all_queues_empty:
+                break
+
             self._wait_if_paused()
+
             last_processing_time = time.time()
             self.detect_and_log_events()
+
             if self.run_once:
                 break
-            self._wait_to_maintain_loop_rate(last_processing_time)
+            else:
+                self._wait_to_maintain_loop_rate(last_processing_time)
+
+    @property
+    def all_queues_empty(self) -> bool:
+        """
+        Check if all the queues are empty.
+
+        :return: A boolean value that represents if all the queues are empty.
+        """
+        return all([queue.empty() for queue in self.queues])
 
     def detect_and_log_events(self):
         """
@@ -194,6 +189,7 @@ class NewObjectDetector(PrimitiveEventDetector):
         """
         super().__init__(logger, wait_time, *args, **kwargs)
         self.new_object_queue: Queue[Object] = Queue()
+        self.queues.append(self.new_object_queue)
         self.avoid_objects = avoid_objects if avoid_objects is not None else []
         World.current_world.add_callback_on_add_object(self.on_add_object)
 
@@ -214,18 +210,64 @@ class NewObjectDetector(PrimitiveEventDetector):
         self.new_object_queue.task_done()
         return [event]
 
-    def join(self, timeout=None):
+    def stop(self):
         """
         Remove the callback on the add object event and resume the thread to be able to join.
         """
         World.current_world.remove_callback_on_add_object(self.on_add_object)
-        self.new_object_queue.join()
-        # super().join(timeout)
+        super().stop()
 
 
-class AbstractContactDetector(PrimitiveEventDetector, ABC):
-    def __init__(self, logger: EventLogger, starter_event: EventUnion,
-                 tracked_object: Optional[Object] = None,
+class DetectorWithTrackedObjects(PrimitiveEventDetector, HasTrackedObjects, ABC):
+    """
+    A mixin class that provides the tracked objects for the event detector.
+    """
+    def __init__(self, logger: EventLogger, objects_to_track: List[Object], wait_time: Optional[float] = None, *args,
+                 **kwargs):
+        """
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param objects_to_track: A list of Object instances that represent the objects to track.
+        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        """
+        HasTrackedObjects.__init__(self, objects_to_track)
+        PrimitiveEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
+
+
+class DetectorWithOneTrackedObject(DetectorWithTrackedObjects, HasOneTrackedObject, ABC):
+    """
+    A mixin class that provides one tracked object for the event detector.
+    """
+    def __init__(self, logger: EventLogger, tracked_object: Object, wait_time: Optional[float] = None, *args, **kwargs):
+        """
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param tracked_object: An Object instance that represents the object to track.
+        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        """
+        HasOneTrackedObject.__init__(self, tracked_object)
+        DetectorWithTrackedObjects.__init__(self, logger, [tracked_object], wait_time,
+                                            *args, **kwargs)
+
+
+class DetectorWithTwoTrackedObjects(DetectorWithTrackedObjects, HasTwoTrackedObjects, ABC):
+    """
+    A mixin class that provides two tracked objects for the event detector.
+    """
+    def __init__(self, logger: EventLogger, tracked_object: Object, with_object: Optional[Object] = None,
+                 wait_time: Optional[float] = None, *args, **kwargs):
+        """
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param tracked_object: An Object instance that represents the object to track.
+        :param with_object: An optional Object instance that represents the object to track.
+        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        """
+        HasTwoTrackedObjects.__init__(self, tracked_object, with_object)
+        tracked_objects = [tracked_object, with_object] if with_object is not None else [tracked_object]
+        DetectorWithTrackedObjects.__init__(self, logger, tracked_objects, wait_time,
+                                            *args, **kwargs)
+
+
+class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
+    def __init__(self, logger: EventLogger, tracked_object: Object,
                  with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05, wait_time: Optional[float] = 0.01,
                  *args, **kwargs):
@@ -236,8 +278,7 @@ class AbstractContactDetector(PrimitiveEventDetector, ABC):
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
         super().__init__(logger, wait_time, *args, **kwargs)
-        self.tracked_object = starter_event.tracked_object if tracked_object is None else tracked_object
-        self.with_object = with_object
+        DetectorWithTwoTrackedObjects.__init__(self, logger, tracked_object, with_object, wait_time, *args, **kwargs)
         self.max_closeness_distance = max_closeness_distance
         self.latest_contact_points: Optional[ContactPointsList] = ContactPointsList([])
 
@@ -370,7 +411,7 @@ class LossOfSurfaceDetector(LossOfContactDetector):
                                    surface=supporting_surface)]
 
 
-class MotionDetector(PrimitiveEventDetector, ABC):
+class MotionDetector(DetectorWithOneTrackedObject, ABC):
     """
     A thread that detects if the object starts or stops moving and logs the TranslationEvent or StopTranslationEvent.
     """
@@ -401,8 +442,7 @@ class MotionDetector(PrimitiveEventDetector, ABC):
     The filtered distances during the window timeframe.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: Optional[NewObjectEvent] = None,
-                 tracked_object: Optional[Object] = None,
+    def __init__(self, logger: EventLogger, tracked_object: Object,
                  detection_method: MotionDetectionMethod = ConsistentGradient(),
                  measure_timestep: timedelta = timedelta(milliseconds=100),
                  time_between_frames: timedelta = timedelta(milliseconds=50),
@@ -419,9 +459,8 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         :param window_timeframe: The timeframe of the window that is used to calculate the distances.
         :param distance_filter_method: An optional DataFilter instance that is used to filter the distances.
         """
-        super().__init__(logger, measure_timestep.total_seconds(), *args, **kwargs)
-
-        self.tracked_object = starter_event.tracked_object if tracked_object is None else tracked_object
+        DetectorWithOneTrackedObject.__init__(self, logger, tracked_object,
+                                              wait_time=measure_timestep.total_seconds(), *args, **kwargs)
         self.time_between_frames: timedelta = time_between_frames
         self.measure_timestep: timedelta = measure_timestep
         self.window_timeframe: timedelta = window_timeframe
@@ -442,10 +481,6 @@ class MotionDetector(PrimitiveEventDetector, ABC):
         self.plot_distances: bool = False
         self.plot_distance_windows: bool = False
         self.plot_frequencies: bool = False
-
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
 
     def _init_event_data(self):
         """

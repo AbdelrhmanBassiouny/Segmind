@@ -23,20 +23,25 @@ class HasTrackedObjects(ABC):
         return self._involved_objects
 
 
-class HasOneTrackedObject(ABC):
+class HasOneTrackedObject(HasTrackedObjects, ABC):
     """
     A mixin class that provides the tracked object for the event.
     """
     def __init__(self, tracked_object: Object):
+        HasTrackedObjects.__init__(self, [tracked_object])
         self.tracked_object: Object = tracked_object
         self.tracked_object_state: ObjectState = tracked_object.current_state
 
 
-class HasTwoTrackedObjects(HasOneTrackedObject, ABC):
+class HasTwoTrackedObjects(HasTrackedObjects, ABC):
     """
     A mixin class that provides the tracked objects for the event.
     """
     def __init__(self, tracked_object: Object, with_object: Optional[Object] = None):
-        HasOneTrackedObject.__init__(self, tracked_object)
+        HasTrackedObjects.__init__(self, [tracked_object])
+        self.tracked_object: Object = tracked_object
+        self.tracked_object_state: ObjectState = tracked_object.current_state
         self.with_object: Optional[Object] = with_object
         self.with_object_state: Optional[ObjectState] = with_object.current_state if with_object is not None else None
+        if with_object is not None:
+            self._involved_objects.append(with_object)

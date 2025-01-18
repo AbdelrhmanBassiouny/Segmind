@@ -8,7 +8,7 @@ from typing_extensions import List, Optional, Dict, Type
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
-from pycram.ros.logging import loginfo
+from pycram.ros.logging import loginfo, logdebug
 
 from .events import Event, EventUnion, EventWithTrackedObjects
 from .object_tracker import ObjectTrackerFactory
@@ -37,7 +37,7 @@ class EventLogger:
 
     def log_event(self, event: Event):
         if self.is_event_in_timeline(event):
-            loginfo(f"Event {event} already logged.")
+            logdebug(f"Event {event} already logged.")
             return
         self.update_object_trackers_with_event(event)
         self.event_queue.put(event)
