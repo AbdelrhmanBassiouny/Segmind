@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC
 import rospy
 from typing_extensions import Optional, List, Union
 
-from episode_segmenter.mixins import HasOneTrackedObject, HasTwoTrackedObjects
+from episode_segmenter.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from episode_segmenter.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation, ObjectState
 from pycram.datastructures.pose import Pose
@@ -78,6 +78,21 @@ class EventWithTrackedObjects(Event, ABC):
     """
     An abstract class that represents an event that involves one or more tracked objects.
     """
+    @property
+    @abstractmethod
+    def tracked_objects(self) -> List[Object]:
+        """
+        The tracked objects involved in the event.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def involved_objects(self) -> List[Object]:
+        """
+        The objects involved in the event.
+        """
+        pass
 
     @abstractmethod
     def update_object_trackers_with_event(self) -> None:
@@ -87,13 +102,17 @@ class EventWithTrackedObjects(Event, ABC):
         pass
 
 
-class EventWithOneTrackedObject(EventWithTrackedObjects, HasOneTrackedObject, ABC):
+class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject, ABC):
     """
     An abstract class that represents an event that involves one tracked object.
     """
     def __init__(self, tracked_object: Object, timestamp: Optional[float] = None):
         EventWithTrackedObjects.__init__(self, timestamp)
-        HasOneTrackedObject.__init__(self, tracked_object)
+        HasPrimaryTrackedObject.__init__(self, tracked_object)
+
+    @property
+    def tracked_objects(self) -> List[Object]:
+        return [self.tracked_object]
 
     def update_object_trackers_with_event(self) -> None:
         ObjectTrackerFactory.get_tracker(self.tracked_object).add_event(self)
@@ -110,13 +129,17 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasOneTrackedObject, AB
         return hash((self.__class__, self.tracked_object, round(self.timestamp, 1)))
 
 
-class EventWithTwoTrackedObjects(EventWithTrackedObjects, HasTwoTrackedObjects, ABC):
+class EventWithTwoTrackedObjects(EventWithOneTrackedObject, HasSecondaryTrackedObject, ABC):
     """
     An abstract class that represents an event that involves two tracked objects.
     """
     def __init__(self, tracked_object: Object, with_object: Optional[Object] = None, timestamp: Optional[float] = None):
-        EventWithTrackedObjects.__init__(self, timestamp)
-        HasTwoTrackedObjects.__init__(self, tracked_object, with_object)
+        EventWithOneTrackedObject.__init__(self, tracked_object, timestamp)
+        HasSecondaryTrackedObject.__init__(self, with_object)
+
+    @property
+    def tracked_objects(self) -> List[Object]:
+        return [self.tracked_object, self.with_object] if self.with_object is not None else [self.tracked_object]
 
     def update_object_trackers_with_event(self) -> None:
         ObjectTrackerFactory.get_tracker(self.tracked_object).add_event(self)
@@ -148,6 +171,10 @@ class NewObjectEvent(EventWithOneTrackedObject):
     def __init__(self, new_object: Object, timestamp: Optional[float] = None):
         EventWithOneTrackedObject.__init__(self, new_object, timestamp)
 
+    @property
+    def involved_objects(self) -> List[Object]:
+        return self.tracked_objects
+
     def set_color(self, color: Optional[Color] = None):
         ...
 
@@ -167,6 +194,9 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
         EventWithOneTrackedObject.__init__(self, tracked_object, timestamp)
         self.start_pose: Pose = start_pose
         self.current_pose: Pose = current_pose
+
+    def involved_objects(self) -> List[Object]:
+        return self.tracked_objects
 
     def set_color(self, color: Optional[Color] = None):
         color = color if color is not None else self.color
@@ -209,7 +239,9 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
 
         EventWithTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
         self.contact_points = contact_points
-        self._involved_objects.extend([obj for obj in self.objects if obj not in self._involved_objects])
+
+    def involved_objects(self) -> List[Object]:
+        return list(set(self.tracked_objects + self.objects))
 
     def set_color(self, color: Optional[Color] = None):
         color = color if color is not None else self.color
@@ -217,26 +249,26 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         [link.set_color(color) for link in self.links]
 
     @property
-    def object_names(self):
+    def object_names(self) -> List[str]:
         return [obj.name for obj in self.objects]
 
     @property
-    def link_names(self):
+    def link_names(self) -> List[str]:
         return [link.name for link in self.links]
 
     @property
     @abstractmethod
-    def main_link(self) -> Link:
+    def main_link(self) -> PhysicalBody:
         pass
 
     @property
     @abstractmethod
-    def links(self) -> List[Link]:
+    def links(self) -> List[PhysicalBody]:
         pass
 
     @property
     @abstractmethod
-    def objects(self):
+    def objects(self) -> List[Object]:
         pass
 
 
@@ -251,14 +283,14 @@ class ContactEvent(AbstractContactEvent):
         return self.contact_points.get_objects_that_have_points()
 
     @property
-    def main_link(self) -> Link:
+    def main_link(self):
         if len(self.contact_points) > 0:
             return self.contact_points[0].link_a
         else:
             rospy.logwarn(f"No contact points found for {self.tracked_object.name} in {self.__class__.__name__}")
 
     @property
-    def links(self) -> List[PhysicalBody]:
+    def links(self):
         return self.contact_points.get_bodies_in_contact()
 
 
@@ -283,11 +315,11 @@ class LossOfContactEvent(AbstractContactEvent):
         return Color(1, 0, 0, 1)
 
     @property
-    def main_link(self) -> Link:
+    def main_link(self) -> PhysicalBody:
         return self.latest_contact_points[0].link_a
 
     @property
-    def links(self) -> List[Link]:
+    def links(self) -> List[PhysicalBody]:
         return self.contact_points.get_bodies_that_got_removed(self.latest_contact_points)
 
     @property
@@ -301,12 +333,12 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
         return self.tracked_object
 
     @property
-    def agent_link(self) -> Link:
+    def agent_link(self) -> PhysicalBody:
         return self.main_link
 
-    def with_object_contact_link(self) -> Link:
+    def with_object_contact_link(self) -> PhysicalBody:
         if self.with_object is not None:
-            return [link for link in self.links if link.object == self.with_object][0]
+            return [link for link in self.links if link.parent_entity == self.with_object][0]
 
     @property
     @abstractmethod
@@ -317,7 +349,7 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
 class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
     @property
-    def object_link(self) -> Link:
+    def object_link(self) -> PhysicalBody:
         if self.with_object is not None:
             return self.with_object_contact_link()
         else:
@@ -327,7 +359,7 @@ class AgentContactEvent(ContactEvent, AbstractAgentContact):
 class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
-    def object_link(self) -> Link:
+    def object_link(self) -> PhysicalBody:
         if self.with_object is not None:
             return self.with_object_contact_link()
         else:
@@ -353,6 +385,9 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         EventWithTwoTrackedObjects.__init__(self, participating_object, agent, timestamp)
         self.end_timestamp: Optional[float] = end_timestamp
         self.text_id: Optional[int] = None
+
+    def involved_objects(self) -> List[Object]:
+        return self.tracked_objects
 
     @property
     def agent(self) -> Optional[Object]:

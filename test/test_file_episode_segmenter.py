@@ -28,7 +28,7 @@ class TestFileEpisodeSegmenter(TestCase):
         # simulator = BulletWorld if Multiverse is None else Multiverse
         simulator = BulletWorld
         annotate_events = True if simulator == BulletWorld else False
-        cls.world = simulator()
+        cls.world = simulator(WorldMode.GUI)
         cls.viz_marker_publisher = VizMarkerPublisher()
         obj_id_to_name = {1: "chips", 3: "bowl", 4: "cup"}
         obj_id_to_type = {1: pycrap.Container, 3: pycrap.Bowl, 4: pycrap.Cup}

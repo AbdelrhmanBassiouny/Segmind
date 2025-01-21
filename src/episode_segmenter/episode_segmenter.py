@@ -3,7 +3,7 @@ import datetime
 import pycrap
 from pycrap import Supporter
 from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion, MotionPickUpDetector, TranslationDetector, \
-    RotationDetector, PlacingDetector, NewObjectDetector
+    RotationDetector, PlacingDetector, NewObjectDetector, DetectorWithTrackedObject, DetectorWithTwoTrackedObjects
 import time
 from abc import ABC, abstractmethod
 
@@ -19,7 +19,8 @@ from .event_detectors import ContactDetector, LossOfContactDetector, DetectorWit
     AbstractContactDetector
 from .event_logger import EventLogger
 from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
-    NewObjectEvent, RotationEvent, StopRotationEvent, PlacingEvent, EventWithTrackedObjects
+    NewObjectEvent, RotationEvent, StopRotationEvent, PlacingEvent, EventWithTrackedObjects, EventWithOneTrackedObject, \
+    EventWithTwoTrackedObjects
 from .object_tracker import ObjectTracker
 from .utils import check_if_object_is_supported, Imaginator
 
@@ -243,7 +244,15 @@ class EpisodeSegmenter(ABC):
         :param detector_args: The positional arguments to be passed to the detector constructor.
         :param detector_kwargs: The keyword arguments to be passed to the detector constructor.
         """
-        detector = detector_type(self.logger, starter_event=starter_event, *detector_args, **detector_kwargs)
+        tracked_object = None
+        if starter_event is not None and isinstance(starter_event, (EventWithOneTrackedObject,
+                                                                    EventWithTwoTrackedObjects)):
+            tracked_object = starter_event.tracked_object
+        if issubclass(detector_type, (DetectorWithTrackedObject, DetectorWithTwoTrackedObjects)):
+            detector_args = [tracked_object] + list(detector_args)
+        if issubclass(detector_type, DetectorWithStarterEvent):
+            detector_args = [starter_event] + list(detector_args)
+        detector = detector_type(self.logger, *detector_args, **detector_kwargs)
         detector.start()
         self.detector_threads_list.append(detector)
         logdebug(f"Created {detector_type.__name__}")

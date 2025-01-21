@@ -2,21 +2,20 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from functools import cached_property
 from math import ceil
 from queue import Queue
 
 import numpy as np
 import rospy
 
-from .mixins import HasTrackedObjects, HasOneTrackedObject, HasTwoTrackedObjects
+from .mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 
 try:
     from matplotlib import pyplot as plt
 except ImportError:
     plt = None
 from tf.transformations import euler_from_quaternion
-from typing_extensions import Optional, List, Union, Type, Tuple
+from typing_extensions import Optional, List, Union, Type, Tuple, Dict
 
 import pycrap
 from pycram import World
@@ -24,15 +23,14 @@ from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
-from pycram.ros.logging import logdebug
+from pycram.ros.logging import logdebug, loginfo
 from pycram.world_concepts.world_object import Object
 from pycrap import PhysicalObject
 from .event_logger import EventLogger
 from .events import Event, ContactEvent, LossOfContactEvent, PickUpEvent, AgentContactEvent, \
     AgentLossOfContactEvent, EventUnion, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
-    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent
+    RotationEvent, StopRotationEvent, PlacingEvent, MotionEvent, StopMotionEvent, EventWithOneTrackedObject
 from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter
-from .object_tracker import ObjectTracker, ObjectTrackerFactory
 from .utils import get_angle_between_vectors, calculate_quaternion_difference, \
     check_if_in_contact_with_support, calculate_translation
 
@@ -218,7 +216,7 @@ class NewObjectDetector(PrimitiveEventDetector):
         return self.thread_id
 
 
-class DetectorWithOneTrackedObject(PrimitiveEventDetector, HasOneTrackedObject, ABC):
+class DetectorWithTrackedObject(PrimitiveEventDetector, HasPrimaryTrackedObject, ABC):
     """
     A mixin class that provides one tracked object for the event detector.
     """
@@ -228,14 +226,14 @@ class DetectorWithOneTrackedObject(PrimitiveEventDetector, HasOneTrackedObject, 
         :param tracked_object: An Object instance that represents the object to track.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
-        HasOneTrackedObject.__init__(self, tracked_object)
+        HasPrimaryTrackedObject.__init__(self, tracked_object)
         PrimitiveEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
 
     def __str__(self):
         return f"{self.thread_id} - {self.tracked_object.name}"
 
 
-class DetectorWithTwoTrackedObjects(PrimitiveEventDetector, HasTwoTrackedObjects, ABC):
+class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrackedObject, ABC):
     """
     A mixin class that provides two tracked objects for the event detector.
     """
@@ -247,11 +245,12 @@ class DetectorWithTwoTrackedObjects(PrimitiveEventDetector, HasTwoTrackedObjects
         :param with_object: An optional Object instance that represents the object to track.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
-        HasTwoTrackedObjects.__init__(self, tracked_object, with_object)
-        PrimitiveEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
+        DetectorWithTrackedObject.__init__(self, logger, tracked_object, wait_time, *args, **kwargs)
+        HasSecondaryTrackedObject.__init__(self, with_object)
 
     def __str__(self):
-        return f"{self.thread_id} - {self.tracked_object.name} - {self.with_object.name}"
+        with_object_name = f" - {self.with_object.name}" if self.with_object is not None else ""
+        return super().__str__() + with_object_name
 
 
 class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
@@ -265,8 +264,8 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         :param max_closeness_distance: An optional float value that represents the maximum distance between the object
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
-        super().__init__(logger, wait_time, *args, **kwargs)
-        DetectorWithTwoTrackedObjects.__init__(self, logger, tracked_object, with_object, wait_time, *args, **kwargs)
+        DetectorWithTwoTrackedObjects.__init__(self, logger, tracked_object, with_object, wait_time,
+                                               *args, **kwargs)
         self.max_closeness_distance = max_closeness_distance
         self.latest_contact_points: Optional[ContactPointsList] = ContactPointsList([])
 
@@ -389,7 +388,7 @@ class LossOfSurfaceDetector(LossOfContactDetector):
                                    surface=supporting_surface)]
 
 
-class MotionDetector(DetectorWithOneTrackedObject, ABC):
+class MotionDetector(DetectorWithTrackedObject, ABC):
     """
     A thread that detects if the object starts or stops moving and logs the TranslationEvent or StopTranslationEvent.
     """
@@ -432,8 +431,8 @@ class MotionDetector(DetectorWithOneTrackedObject, ABC):
         :param window_timeframe: The timeframe of the window that is used to calculate the distances.
         :param distance_filter_method: An optional DataFilter instance that is used to filter the distances.
         """
-        DetectorWithOneTrackedObject.__init__(self, logger, tracked_object,
-                                              wait_time=measure_timestep.total_seconds(), *args, **kwargs)
+        DetectorWithTrackedObject.__init__(self, logger, tracked_object,
+                                           wait_time=measure_timestep.total_seconds(), *args, **kwargs)
         self.time_between_frames: timedelta = time_between_frames
         self.measure_timestep: timedelta = measure_timestep
         self.window_timeframe: timedelta = window_timeframe
@@ -793,6 +792,30 @@ class DetectorWithStarterEvent(PrimitiveEventDetector, ABC):
     def start_timestamp(self, timestamp: float):
         self._start_timestamp = timestamp
 
+    def _no_event_found_log(self, event_type: Type[Event]):
+        logdebug(f"{self} with starter event: {self.starter_event} found no event of type: {event_type}")
+
+
+class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrimaryTrackedObject, ABC):
+    """
+    A type of event detector that requires an event to occur as a start condition and has one tracked object.
+    """
+
+    currently_tracked_objects: Dict[str, Object]
+    """
+    All the objects that are currently tracked by a detector with a starter event.
+    """
+
+    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[float] = None,
+                 *args, **kwargs):
+        """
+        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param starter_event: An instance of the Event class that represents the event to start the event detector.
+        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        """
+        DetectorWithStarterEvent.__init__(self, logger, starter_event, wait_time, *args, **kwargs)
+        HasPrimaryTrackedObject.__init__(self, self.get_object_to_track_from_starter_event(starter_event))
+
     def check_for_event_pre_starter_event(self, event_type: Type[Event],
                                           time_tolerance: timedelta) -> Optional[EventUnion]:
         """
@@ -801,8 +824,7 @@ class DetectorWithStarterEvent(PrimitiveEventDetector, ABC):
         :param event_type: The event type to check for.
         :param time_tolerance: The time tolerance to consider the event as before the starter event.
         """
-        event = self.object_tracker.get_first_event_of_type_before_event(event_type,
-                                                                         self.starter_event)
+        event = self.object_tracker.get_first_event_of_type_before_event(event_type, self.starter_event)
         if event is not None and self.start_timestamp - event.timestamp <= time_tolerance.total_seconds():
             return event
         else:
@@ -836,23 +858,23 @@ class DetectorWithStarterEvent(PrimitiveEventDetector, ABC):
             self._no_event_found_log(event_type)
         return event
 
-    def _no_event_found_log(self, event_type: Type[Event]):
-        logdebug(f"{self} with starter event: {self.starter_event} found no event of type: {event_type}")
+    @classmethod
+    @abstractmethod
+    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
+        """
+        Get the object to track from the starter event.
+
+        :param starter_event: The starter event that can be used to get the object to track.
+        """
+        pass
+
+    def __str__(self):
+        return f"{self.thread_id} - {self.tracked_object.name}"
 
 
-class AbstractAgentObjectInteractionDetector(DetectorWithStarterEvent, ABC):
+class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC):
     """
     An abstract detector that detects an interaction between the agent and an object.
-    """
-
-    thread_prefix = "agent_object_interaction_"
-    """
-    A string that is used as a prefix for the thread ID.
-    """
-
-    currently_tracked_objects: List[Object] = []
-    """
-    A list of Object instances that represent the objects that are currently being tracked.
     """
 
     def __init__(self, logger: EventLogger, starter_event: EventUnion, *args, **kwargs):
@@ -861,9 +883,7 @@ class AbstractAgentObjectInteractionDetector(DetectorWithStarterEvent, ABC):
         :param starter_event: An instance of a type of Event that represents the event to
          start the event detector.
         """
-        super().__init__(logger, starter_event, *args, **kwargs)
-        self.tracked_object = self.get_object_to_track_from_starter_event(starter_event)
-        self.currently_tracked_objects.append(self.tracked_object)
+        DetectorWithTrackedObjectAndStarterEvent.__init__(self, logger, starter_event, *args, **kwargs)
         self.interaction_event: EventUnion = self._init_interaction_event()
         self.end_timestamp: Optional[float] = None
         self.run_once = True
@@ -894,7 +914,7 @@ class AbstractAgentObjectInteractionDetector(DetectorWithStarterEvent, ABC):
             break
 
         if event:
-            rospy.loginfo(f"{self.__class__.__name__} detected an interaction with: {self.tracked_object.name}")
+            loginfo(f"{self.__class__.__name__} detected an interaction with: {self.tracked_object.name}")
             return [event]
 
         return []
@@ -918,15 +938,13 @@ class AbstractAgentObjectInteractionDetector(DetectorWithStarterEvent, ABC):
         """
         pass
 
+    def __str__(self):
+        return f"{self.thread_id} - {self.tracked_object.name}"
 
-class AbstractPickUpDetector(AbstractAgentObjectInteractionDetector, ABC):
+
+class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
     """
     An abstract detector that detects if the tracked_object was picked up.
-    """
-
-    thread_prefix = "pick_up_"
-    """
-    A string that is used as a prefix for the thread ID.
     """
 
     def _init_interaction_event(self) -> EventUnion:
@@ -945,7 +963,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         event detector, this is a contact between the agent and the tracked_object.
         """
         super().__init__(logger, starter_event, *args, **kwargs)
-        self.surface_detector = LossOfSurfaceDetector(logger, NewObjectEvent(self.tracked_object))
+        self.surface_detector = LossOfSurfaceDetector(logger, self.tracked_object)
         self.surface_detector.start()
         self.agent = starter_event.agent
         self.interaction_event.agent = self.agent
@@ -992,6 +1010,9 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         self.surface_detector.join(timeout)
         super().stop()
 
+    def __str__(self):
+        return f"{self.thread_id} - {self.tracked_object.name} - {self.agent.name}"
+
 
 class MotionPickUpDetector(AbstractPickUpDetector):
 
@@ -1022,11 +1043,11 @@ class MotionPickUpDetector(AbstractPickUpDetector):
         """
         Check for upward motion after the object lost contact with the surface.
         """
-        print(f"checking if {self.tracked_object.name} was picked up")
+        logdebug(f"checking if {self.tracked_object.name} was picked up")
         # wait for the object to be lifted TODO: Should be replaced with a wait on a lifting event
         dt = timedelta(milliseconds=1000)
         time.sleep(dt.total_seconds())
-        print(f"checking for translation event for {self.tracked_object.name}")
+        logdebug(f"checking for translation event for {self.tracked_object.name}")
         latest_event = self.check_for_event_near_starter_event(TranslationEvent, dt)
 
         if latest_event:
@@ -1038,7 +1059,7 @@ class MotionPickUpDetector(AbstractPickUpDetector):
         return False
 
 
-class PlacingDetector(AbstractAgentObjectInteractionDetector):
+class PlacingDetector(AbstractInteractionDetector):
     """
     An abstract detector that detects if the tracked_object was placed by the agent.
     """
@@ -1066,7 +1087,7 @@ class PlacingDetector(AbstractAgentObjectInteractionDetector):
         return starter_event.tracked_object
 
     @classmethod
-    def start_condition_checker(cls, event: Event) -> bool:
+    def start_condition_checker(cls, event: EventWithOneTrackedObject) -> bool:
         """
         Check if an agent is in contact with the tracked_object.
 
@@ -1115,45 +1136,6 @@ def check_for_supporting_surface(tracked_object: Object,
     if supporting_surface is not None:
         print("found surface ", supporting_surface.name)
     return supporting_surface
-
-
-def get_latest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDetector], obj: Object,
-                                            after_timestamp: Optional[float] = None) -> Optional[EventUnion]:
-    """
-    Get the latest event for the detector for the object from the logger.
-
-    :param obj: An instance of the Object class that represents the object to get the event for.
-    :param detector_type: The type of the event detector.
-    :param after_timestamp: A float value that represents the timestamp to get the event after.
-    :return: The latest event of the detector for the object.
-    """
-    logger = EventLogger.current_logger
-    latest_event = logger.get_latest_event_of_detector_for_object(detector_type.thread_prefix, obj)
-    if latest_event is not None and after_timestamp is not None:
-        latest_event = None if latest_event.timestamp < after_timestamp else latest_event
-    if latest_event is None:
-        time.sleep(0.01)
-    return latest_event
-
-
-def get_nearest_event_of_detector_for_object(detector_type: Type[PrimitiveEventDetector],
-                                             obj: Object,
-                                             timestamp: float,
-                                             time_tolerance: timedelta = timedelta(milliseconds=200)) -> Optional[
-                                                                                                         EventUnion]:
-    """
-    Get the event of the detector for the object near the timestamp.
-
-    :param obj: An instance of the Object class that represents the object to get the event for.
-    :param detector_type: The type of the event detector.
-    :param timestamp: A float value that represents the timestamp to get the event near.
-    :param time_tolerance: A float value that represents the time tolerance.
-    :return: The event of the detector for the object near the timestamp.
-    """
-    logger = EventLogger.current_logger
-    event = logger.get_nearest_event_of_detector_for_object(detector_type.thread_prefix, obj, timestamp)
-    if (event is not None) and (abs(event.timestamp - timestamp) <= time_tolerance.total_seconds()):
-        return event
 
 
 def select_transportable_objects_from_contact_event(event: Union[ContactEvent, AgentContactEvent]) -> List[Object]:

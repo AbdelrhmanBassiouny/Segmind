@@ -5,8 +5,8 @@ from functools import cached_property
 
 from typing_extensions import List, Optional
 
-from episode_segmenter.object_tracker import ObjectTracker, ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ObjectState
+from .object_tracker import ObjectTrackerFactory, ObjectTracker
 from pycram.world_concepts.world_object import Object
 
 
@@ -25,12 +25,11 @@ class HasTrackedObjects(ABC):
         return self._involved_objects
 
 
-class HasOneTrackedObject(HasTrackedObjects, ABC):
+class HasPrimaryTrackedObject(ABC):
     """
     A mixin class that provides the tracked object for the event.
     """
     def __init__(self, tracked_object: Object):
-        HasTrackedObjects.__init__(self, [tracked_object])
         self.tracked_object: Object = tracked_object
         self.tracked_object_state: ObjectState = tracked_object.current_state
 
@@ -39,22 +38,13 @@ class HasOneTrackedObject(HasTrackedObjects, ABC):
         return ObjectTrackerFactory.get_tracker(self.tracked_object)
 
 
-class HasTwoTrackedObjects(HasTrackedObjects, ABC):
+class HasSecondaryTrackedObject(ABC):
     """
     A mixin class that provides the tracked objects for the event.
     """
-    def __init__(self, tracked_object: Object, with_object: Optional[Object] = None):
-        HasTrackedObjects.__init__(self, [tracked_object])
-        self.tracked_object: Object = tracked_object
-        self.tracked_object_state: ObjectState = tracked_object.current_state
+    def __init__(self, with_object: Optional[Object] = None):
         self.with_object: Optional[Object] = with_object
         self.with_object_state: Optional[ObjectState] = with_object.current_state if with_object is not None else None
-        if with_object is not None:
-            self._involved_objects.append(with_object)
-
-    @cached_property
-    def object_tracker(self) -> ObjectTracker:
-        return ObjectTrackerFactory.get_tracker(self.tracked_object)
 
     @cached_property
     def with_object_tracker(self) -> Optional[ObjectTracker]:
