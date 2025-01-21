@@ -3,7 +3,7 @@ from typing_extensions import Optional, List, Type
 
 from neem_pycram_interface import PyCRAMNEEMInterface
 
-from .event_detectors import EventDetector
+from .event_detectors import DetectorWithStarterEvent
 from .episode_segmenter import AgentBasedEpisodeSegmenter
 from .episode_player import EpisodePlayer
 
@@ -33,7 +33,7 @@ class NEEMSegmenter(AgentBasedEpisodeSegmenter):
     """
 
     def __init__(self, pycram_neem_interface: PyCRAMNEEMInterface,
-                 detectors_to_start: Optional[List[Type[EventDetector]]] = None,
+                 detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
                  annotate_events: bool = False):
         """
         Initializes the NEEMSegmenter class.

@@ -15,7 +15,7 @@ from pycram.object_descriptors.generic import ObjectDescription as GenericObject
 from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import logdebug, logwarn
 from .episode_player import EpisodePlayer
-from .event_detectors import ContactDetector, LossOfContactDetector, EventDetector, MotionDetector, \
+from .event_detectors import ContactDetector, LossOfContactDetector, DetectorWithStarterEvent, MotionDetector, \
     AbstractContactDetector
 from .event_logger import EventLogger
 from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
@@ -27,7 +27,7 @@ from .utils import check_if_object_is_supported, Imaginator
 class EpisodeSegmenter(ABC):
 
     def __init__(self, episode_player: EpisodePlayer,
-                 detectors_to_start: Optional[List[Type[EventDetector]]] = None,
+                 detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
                  annotate_events: bool = False):
         """
         Initializes the EpisodeSegmenter class.
@@ -37,11 +37,11 @@ class EpisodeSegmenter(ABC):
         :param annotate_events: A boolean value that indicates if the events should be annotated.
         """
         self.episode_player: EpisodePlayer = episode_player
-        self.detectors_to_start: List[Type[EventDetector]] = detectors_to_start
+        self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start
         self.logger = EventLogger(annotate_events, [PickUpEvent, PlacingEvent])
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']  # TODO: Make it a function, to be more general
         self.tracked_object_contacts: Dict[Object, List[Type[AbstractContactDetector]]] = {}
-        self.starter_event_to_detector_thread_map: [Event, Type[EventDetector]] = {}
+        self.starter_event_to_detector_thread_map: [Event, Type[DetectorWithStarterEvent]] = {}
         self.detector_threads_list: List[EventDetectorUnion] = []
         self.object_trackers: Dict[Object, ObjectTracker] = {}
 
@@ -307,7 +307,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
      events that are relevant to the objects in the world with the lack of an agent in the episode.
     """
 
-    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: Optional[List[Type[EventDetector]]] = None,
+    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
                  annotate_events: bool = False):
         if detectors_to_start is None:
             detectors_to_start = [MotionPickUpDetector, PlacingDetector]

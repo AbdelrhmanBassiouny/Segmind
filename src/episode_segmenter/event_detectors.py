@@ -44,11 +44,6 @@ class PrimitiveEventDetector(threading.Thread, ABC):
     by setting the exit_thread attribute to True.
     """
 
-    thread_prefix: str = ""
-    """
-    A string that is used as a prefix for the thread ID.
-    """
-
     def __init__(self, logger: EventLogger, wait_time: Optional[float] = None, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -73,7 +68,7 @@ class PrimitiveEventDetector(threading.Thread, ABC):
 
     @property
     def thread_id(self) -> str:
-        return f"{self.thread_prefix}_{self.ident}"
+        return f"{self.__class__.__name__}_{self.ident}"
 
     @abstractmethod
     def detect_events(self) -> List[Event]:
@@ -169,15 +164,17 @@ class PrimitiveEventDetector(threading.Thread, ABC):
         """
         return self.thread_id in self.logger.get_events_per_thread().keys()
 
+    @abstractmethod
+    def __str__(self):
+        ...
+
+    def __repr__(self):
+        return self.__str__()
+
 
 class NewObjectDetector(PrimitiveEventDetector):
     """
     A thread that detects if a new object is added to the scene and logs the NewObjectEvent.
-    """
-
-    thread_prefix = "new_object_"
-    """
-    A string that is used as a prefix for the thread ID.
     """
 
     def __init__(self, logger: EventLogger, wait_time: Optional[float] = 0.1,
@@ -217,23 +214,11 @@ class NewObjectDetector(PrimitiveEventDetector):
         World.current_world.remove_callback_on_add_object(self.on_add_object)
         super().stop()
 
-
-class DetectorWithTrackedObjects(PrimitiveEventDetector, HasTrackedObjects, ABC):
-    """
-    A mixin class that provides the tracked objects for the event detector.
-    """
-    def __init__(self, logger: EventLogger, objects_to_track: List[Object], wait_time: Optional[float] = None, *args,
-                 **kwargs):
-        """
-        :param logger: An instance of the EventLogger class that is used to log the events.
-        :param objects_to_track: A list of Object instances that represent the objects to track.
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
-        """
-        HasTrackedObjects.__init__(self, objects_to_track)
-        PrimitiveEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
+    def __str__(self):
+        return self.thread_id
 
 
-class DetectorWithOneTrackedObject(DetectorWithTrackedObjects, HasOneTrackedObject, ABC):
+class DetectorWithOneTrackedObject(PrimitiveEventDetector, HasOneTrackedObject, ABC):
     """
     A mixin class that provides one tracked object for the event detector.
     """
@@ -244,11 +229,13 @@ class DetectorWithOneTrackedObject(DetectorWithTrackedObjects, HasOneTrackedObje
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
         HasOneTrackedObject.__init__(self, tracked_object)
-        DetectorWithTrackedObjects.__init__(self, logger, [tracked_object], wait_time,
-                                            *args, **kwargs)
+        PrimitiveEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
+
+    def __str__(self):
+        return f"{self.thread_id} - {self.tracked_object.name}"
 
 
-class DetectorWithTwoTrackedObjects(DetectorWithTrackedObjects, HasTwoTrackedObjects, ABC):
+class DetectorWithTwoTrackedObjects(PrimitiveEventDetector, HasTwoTrackedObjects, ABC):
     """
     A mixin class that provides two tracked objects for the event detector.
     """
@@ -261,9 +248,10 @@ class DetectorWithTwoTrackedObjects(DetectorWithTrackedObjects, HasTwoTrackedObj
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
         """
         HasTwoTrackedObjects.__init__(self, tracked_object, with_object)
-        tracked_objects = [tracked_object, with_object] if with_object is not None else [tracked_object]
-        DetectorWithTrackedObjects.__init__(self, logger, tracked_objects, wait_time,
-                                            *args, **kwargs)
+        PrimitiveEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
+
+    def __str__(self):
+        return f"{self.thread_id} - {self.tracked_object.name} - {self.with_object.name}"
 
 
 class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
@@ -325,11 +313,6 @@ class ContactDetector(AbstractContactDetector):
     A thread that detects if the object got into contact with another object.
     """
 
-    thread_prefix = "contact_"
-    """
-    A string that is used as a prefix for the thread ID.
-    """
-
     def trigger_events(self, contact_points: ContactPointsList) -> Union[List[ContactEvent], List[AgentContactEvent]]:
         """
         Check if the object got into contact with another object.
@@ -352,11 +335,6 @@ class ContactDetector(AbstractContactDetector):
 class LossOfContactDetector(AbstractContactDetector):
     """
     A thread that detects if the object lost contact with another object.
-    """
-
-    thread_prefix = "loss_contact_"
-    """
-    A string that is used as a prefix for the thread ID.
     """
 
     def trigger_events(self, contact_points: ContactPointsList) -> Union[List[LossOfContactEvent],
@@ -414,11 +392,6 @@ class LossOfSurfaceDetector(LossOfContactDetector):
 class MotionDetector(DetectorWithOneTrackedObject, ABC):
     """
     A thread that detects if the object starts or stops moving and logs the TranslationEvent or StopTranslationEvent.
-    """
-
-    thread_prefix = "motion_"
-    """
-    A string that is used as a prefix for the thread ID.
     """
 
     latest_pose: Optional[Pose]
@@ -745,7 +718,6 @@ class MotionDetector(DetectorWithOneTrackedObject, ABC):
 
 
 class TranslationDetector(MotionDetector):
-    thread_prefix = "translation_"
 
     def update_object_motion_state(self, is_moving: bool) -> None:
         """
@@ -765,10 +737,6 @@ class TranslationDetector(MotionDetector):
 
 
 class RotationDetector(MotionDetector):
-    thread_prefix = "rotation_"
-
-    def __init__(self, logger: EventLogger, starter_event: NewObjectEvent, *args, **kwargs):
-        super().__init__(logger, starter_event, *args, **kwargs)
 
     def update_object_motion_state(self, moving: bool) -> None:
         """
@@ -791,7 +759,10 @@ class RotationDetector(MotionDetector):
         return RotationEvent if self.was_moving else StopRotationEvent
 
 
-class EventDetector(PrimitiveEventDetector, ABC):
+class DetectorWithStarterEvent(PrimitiveEventDetector, ABC):
+    """
+    A type of event detector that requires an event to occur as a start condition.
+    """
 
     def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[float] = None,
                  *args, **kwargs):
@@ -814,6 +785,14 @@ class EventDetector(PrimitiveEventDetector, ABC):
         """
         pass
 
+    @property
+    def start_timestamp(self) -> float:
+        return self._start_timestamp
+
+    @start_timestamp.setter
+    def start_timestamp(self, timestamp: float):
+        self._start_timestamp = timestamp
+
     def check_for_event_pre_starter_event(self, event_type: Type[Event],
                                           time_tolerance: timedelta) -> Optional[EventUnion]:
         """
@@ -824,11 +803,10 @@ class EventDetector(PrimitiveEventDetector, ABC):
         """
         event = self.object_tracker.get_first_event_of_type_before_event(event_type,
                                                                          self.starter_event)
-        if event is not None and event.timestamp < self.start_timestamp - time_tolerance.total_seconds():
-            event = None
-        if event is None:
+        if event is not None and self.start_timestamp - event.timestamp <= time_tolerance.total_seconds():
+            return event
+        else:
             self._no_event_found_log(event_type)
-        return event
 
     def check_for_event_post_starter_event(self, event_type: Type[Event]) -> Optional[EventUnion]:
         """
@@ -841,10 +819,6 @@ class EventDetector(PrimitiveEventDetector, ABC):
         if event is None:
             self._no_event_found_log(event_type)
         return event
-
-    @cached_property
-    def object_tracker(self) -> ObjectTracker:
-        return ObjectTrackerFactory.get_tracker(self.tracked_object)
 
     def check_for_event_near_starter_event(self, event_type: Type[Event],
                                            time_tolerance: timedelta) -> Optional[EventUnion]:
@@ -863,19 +837,10 @@ class EventDetector(PrimitiveEventDetector, ABC):
         return event
 
     def _no_event_found_log(self, event_type: Type[Event]):
-        logdebug(f"{self.__class__.__name__} found no event of type: {event_type} after {self.start_timestamp}"
-                 f" with object : {self.tracked_object.name}")
-
-    @property
-    def start_timestamp(self) -> float:
-        return self._start_timestamp
-
-    @start_timestamp.setter
-    def start_timestamp(self, timestamp: float):
-        self._start_timestamp = timestamp
+        logdebug(f"{self} with starter event: {self.starter_event} found no event of type: {event_type}")
 
 
-class AbstractAgentObjectInteractionDetector(EventDetector, ABC):
+class AbstractAgentObjectInteractionDetector(DetectorWithStarterEvent, ABC):
     """
     An abstract detector that detects an interaction between the agent and an object.
     """
@@ -1223,8 +1188,8 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
 
 EventDetectorUnion = Union[ContactDetector, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector,
                            TranslationDetector, RotationDetector, NewObjectDetector, AgentPickUpDetector,
-                           MotionPickUpDetector, EventDetector]
+                           MotionPickUpDetector, DetectorWithStarterEvent]
 TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
                                Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
                                Type[NewObjectDetector], Type[AgentPickUpDetector], Type[MotionPickUpDetector],
-                               Type[EventDetector]]
+                               Type[DetectorWithStarterEvent]]
