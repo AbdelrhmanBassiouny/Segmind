@@ -1,26 +1,13 @@
 import datetime
 
-import pycrap
+from typing_extensions import List, Optional, Dict
+
+from pycram.ros.logging import logwarn
 from pycrap import Supporter
-from .event_detectors import EventDetectorUnion, TypeEventDetectorUnion, MotionPickUpDetector, TranslationDetector, \
-    RotationDetector, PlacingDetector, NewObjectDetector, DetectorWithTrackedObject, DetectorWithTwoTrackedObjects
-import time
-from abc import ABC, abstractmethod
-
-from typing_extensions import List, Type, Optional, Dict
-
-from pycram.datastructures.dataclasses import ContactPointsList
-from pycram.datastructures.world import World, UseProspectionWorld
-from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
-from pycram.world_concepts.world_object import Object
-from pycram.ros.logging import logdebug, logwarn
 from .episode_player import EpisodePlayer
-from .event_detectors import ContactDetector, LossOfContactDetector, DetectorWithStarterEvent, MotionDetector, \
-    AbstractContactDetector
+from .event_detectors import *
 from .event_logger import EventLogger
-from .events import ContactEvent, Event, AgentContactEvent, PickUpEvent, EventUnion, StopMotionEvent, MotionEvent, \
-    NewObjectEvent, RotationEvent, StopRotationEvent, PlacingEvent, EventWithTrackedObjects, EventWithOneTrackedObject, \
-    EventWithTwoTrackedObjects
+from .events import *
 from .object_tracker import ObjectTracker
 from .utils import check_if_object_is_supported, Imaginator
 
@@ -172,7 +159,7 @@ class EpisodeSegmenter(ABC):
         :param obj: The object to check.
         :return: True if the object should be avoided, False otherwise.
         """
-        return obj.is_an_environment or issubclass(obj.obj_type, Supporter) or\
+        return obj.is_an_environment or issubclass(obj.obj_type, Supporter) or \
             any([k in obj.name.lower() for k in self.objects_to_avoid])
 
     def start_motion_detection_threads_for_object(self, obj: Object, event: Optional[NewObjectEvent] = None) -> None:
@@ -316,7 +303,8 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
      events that are relevant to the objects in the world with the lack of an agent in the episode.
     """
 
-    def __init__(self, episode_player: EpisodePlayer, detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
+    def __init__(self, episode_player: EpisodePlayer,
+                 detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
                  annotate_events: bool = False):
         if detectors_to_start is None:
             detectors_to_start = [MotionPickUpDetector, PlacingDetector]
@@ -341,7 +329,9 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
                 set_of_objects.add(obj)
                 try:
                     if not check_if_object_is_supported(obj):
+                        print(f"Object {obj.name} is not supported.")
                         Imaginator.imagine_support_for_object(obj)
+                        print(f"Imagined support for object {obj.name}.")
                 except NotImplementedError:
                     logwarn("Support detection is not implemented for this simulator.")
         for obj in set_of_objects:

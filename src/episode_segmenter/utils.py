@@ -1,25 +1,21 @@
 from __future__ import annotations
 
 import math
-import os
 
 import numpy as np
-import trimesh
 from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional, TYPE_CHECKING
 
 import pycrap
-from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB,
-                                               BoxVisualShape, MeshVisualShape)
-from pycram.datastructures.pose import Transform, Pose
+from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB)
+from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
-from pycram.world_concepts.world_object import Object
-from pycram.ros.logging import logdebug
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
+from pycram.world_concepts.world_object import Object
 
 if TYPE_CHECKING:
-    from .events import LossOfContactEvent
+    pass
 
 
 def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
@@ -103,7 +99,6 @@ def is_vector_opposite_to_gravity(vector: List[float], gravity_vector: Optional[
 
 
 class Imaginator:
-
     """
     A class that provides methods for imagining objects.
     """
@@ -149,10 +144,11 @@ class Imaginator:
             obj_aabb = obj.get_axis_aligned_bounding_box()
         else:
             raise ValueError("Either object or axis-aligned bounding box should be provided.")
+        print(f"support index: {cls.latest_surface_idx}")
         support_name = f"imagined_support_{cls.latest_surface_idx}"
         support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
         support = GenericObjectDescription(support_name,
-                                           [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness*0.5])
+                                           [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness * 0.5])
         support_obj = Object(support_name, pycrap.Supporter, None, support)
         support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
@@ -161,7 +157,8 @@ class Imaginator:
         contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created]
         for obj in contacted_surfaces:
             support_obj = support_obj.merge(obj)
-        World.current_world.get_object_by_name('floor').attach(support_obj)
+            cls.surfaces_created.remove(obj)
+        World.current_world.get_object_by_type(pycrap.Floor)[0].attach(support_obj)
         cls.surfaces_created.append(support_obj)
         cls.latest_surface_idx += 1
         return support_obj

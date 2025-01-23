@@ -3,7 +3,7 @@ from typing_extensions import Optional, List, Type
 
 from neem_pycram_interface import PyCRAMNEEMInterface
 
-from .event_detectors import DetectorWithStarterEvent
+from .atomic_event_detectors import DetectorWithStarterEvent
 from .episode_segmenter import AgentBasedEpisodeSegmenter
 from .episode_player import EpisodePlayer
 

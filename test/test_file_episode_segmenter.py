@@ -1,6 +1,7 @@
 import datetime
 from unittest import TestCase
 
+import pycram.ros.logging
 import pycrap
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
@@ -16,6 +17,9 @@ except ImportError:
     pass
 
 
+pycram.ros.logging.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
+
+
 class TestFileEpisodeSegmenter(TestCase):
     world: World
     file_player: FileEpisodePlayer
@@ -28,7 +32,7 @@ class TestFileEpisodeSegmenter(TestCase):
         # simulator = BulletWorld if Multiverse is None else Multiverse
         simulator = BulletWorld
         annotate_events = True if simulator == BulletWorld else False
-        cls.world = simulator(WorldMode.GUI)
+        cls.world = simulator(WorldMode.DIRECT)
         cls.viz_marker_publisher = VizMarkerPublisher()
         obj_id_to_name = {1: "chips", 3: "bowl", 4: "cup"}
         obj_id_to_type = {1: pycrap.Container, 3: pycrap.Bowl, 4: pycrap.Cup}

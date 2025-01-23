@@ -3,6 +3,7 @@ from unittest import TestCase
 import numpy as np
 
 from episode_segmenter.motion_detection_helpers import ConsistentGradient, Displacement
+from episode_segmenter.event_detectors import *
 
 
 class TestEventDetectors(TestCase):
@@ -48,4 +49,3 @@ class TestEventDetectors(TestCase):
             a[:, i] = -1
             a[1, i] = 1
             self.assertFalse(disp.is_moving(a.tolist()))
-
