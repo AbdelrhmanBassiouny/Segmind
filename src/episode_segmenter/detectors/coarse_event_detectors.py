@@ -7,9 +7,9 @@ from typing_extensions import Optional, List, Union, Dict
 
 from pycram.datastructures.world import UseProspectionWorld
 from pycram.ros.logging import logdebug, loginfo
-from .utils import get_angle_between_vectors
 from .atomic_event_detectors import *
-from .events import *
+from ..datastructures.events import *
+from ..utils import get_angle_between_vectors, check_if_in_contact_with_support
 
 
 class DetectorWithStarterEvent(AtomicEventDetector, ABC):
@@ -421,9 +421,9 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
 
 
 EventDetectorUnion = Union[NewObjectDetector, ContactDetector, LossOfContactDetector, LossOfSurfaceDetector,
-                            MotionDetector, TranslationDetector, RotationDetector, AgentPickUpDetector,
-                            MotionPickUpDetector, PlacingDetector]
+MotionDetector, TranslationDetector, RotationDetector, AgentPickUpDetector,
+MotionPickUpDetector, PlacingDetector]
 TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
-                               Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
-                               Type[NewObjectDetector], Type[AgentPickUpDetector], Type[MotionPickUpDetector],
-                               Type[PlacingDetector]]
+Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
+Type[NewObjectDetector], Type[AgentPickUpDetector], Type[MotionPickUpDetector],
+Type[PlacingDetector]]

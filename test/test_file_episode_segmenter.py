@@ -5,7 +5,7 @@ import pycram.ros.logging
 import pycrap
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
-from episode_segmenter.episode_player import FileEpisodePlayer
+from episode_segmenter.players.json_player import FileEpisodePlayer
 from episode_segmenter.episode_segmenter import NoAgentEpisodeSegmenter
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.worlds.bullet_world import BulletWorld

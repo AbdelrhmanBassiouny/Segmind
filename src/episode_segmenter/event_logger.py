@@ -10,8 +10,8 @@ from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
 from pycram.ros.logging import loginfo, logdebug
 
-from .events import Event, EventUnion, EventWithTrackedObjects
-from .object_tracker import ObjectTrackerFactory
+from .datastructures.events import Event, EventUnion, EventWithTrackedObjects
+from .datastructures.object_tracker import ObjectTrackerFactory
 
 
 class EventLogger:

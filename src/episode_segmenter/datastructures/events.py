@@ -4,8 +4,8 @@ from abc import abstractmethod, ABC
 import rospy
 from typing_extensions import Optional, List, Union
 
-from episode_segmenter.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
-from episode_segmenter.object_tracker import ObjectTrackerFactory
+from episode_segmenter.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
+from episode_segmenter.datastructures.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, Color, TextAnnotation, ObjectState
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import World

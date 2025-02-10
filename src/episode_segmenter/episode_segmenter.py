@@ -5,10 +5,10 @@ from typing_extensions import List, Optional, Dict
 from pycram.ros.logging import logwarn
 from pycrap import Supporter
 from .episode_player import EpisodePlayer
-from .event_detectors import *
+from .detectors.coarse_event_detectors import *
 from .event_logger import EventLogger
-from .events import *
-from .object_tracker import ObjectTracker
+from .datastructures.events import *
+from .datastructures.object_tracker import ObjectTracker
 from .utils import check_if_object_is_supported, Imaginator
 
 

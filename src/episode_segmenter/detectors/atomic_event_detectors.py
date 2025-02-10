@@ -8,8 +8,7 @@ from queue import Queue
 
 import numpy as np
 
-from pycram.ros.logging import logdebug
-from .mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
+from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 
 try:
     from matplotlib import pyplot as plt
@@ -25,12 +24,12 @@ from pycram.datastructures.pose import Pose
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object
 from pycrap import PhysicalObject
-from .event_logger import EventLogger
-from .events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
+from ..event_logger import EventLogger
+from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
     AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, MotionEvent
 from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter
-from .utils import calculate_quaternion_difference, \
+from ..utils import calculate_quaternion_difference, \
     check_if_in_contact_with_support, calculate_translation
 
 

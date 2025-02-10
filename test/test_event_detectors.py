@@ -2,8 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from episode_segmenter.motion_detection_helpers import ConsistentGradient, Displacement
-from episode_segmenter.event_detectors import *
+from episode_segmenter.detectors.motion_detection_helpers import ConsistentGradient, Displacement
 
 
 class TestEventDetectors(TestCase):

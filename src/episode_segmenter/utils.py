@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
-from typing_extensions import List, Optional, TYPE_CHECKING
+from typing_extensions import List, Optional
 
 import pycrap
 from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB)
@@ -13,9 +13,6 @@ from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
 from pycram.world_concepts.world_object import Object
-
-if TYPE_CHECKING:
-    pass
 
 
 def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:

@@ -1,10 +1,9 @@
 from abc import abstractmethod, ABC
 from datetime import timedelta
-from math import ceil, floor
 
 import numpy as np
-from typing_extensions import List, Tuple
-from scipy.signal import butter, lfilter, sosfilt
+from scipy.signal import butter, sosfilt
+from typing_extensions import List
 
 
 class MotionDetectionMethod(ABC):

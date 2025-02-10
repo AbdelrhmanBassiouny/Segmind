@@ -1,10 +1,9 @@
 import os
-import threading
 
 from neem_pycram_interface import PyCRAMNEEMInterface
 
-from episode_segmenter.atomic_event_detectors import AgentPickUpDetector, PlacingDetector
-from episode_segmenter.neem_segmenter import NEEMSegmenter
+from episode_segmenter.detectors.coarse_event_detectors import AgentPickUpDetector, PlacingDetector
+from episode_segmenter.segmenters.neem_segmenter import NEEMSegmenter
 from unittest import TestCase
 
 from pycram.datastructures.enums import WorldMode, LoggerLevel
