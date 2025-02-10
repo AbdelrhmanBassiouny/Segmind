@@ -195,6 +195,7 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
         self.start_pose: Pose = start_pose
         self.current_pose: Pose = current_pose
 
+    @property
     def involved_objects(self) -> List[Object]:
         return self.tracked_objects
 
@@ -240,6 +241,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         EventWithTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
         self.contact_points = contact_points
 
+    @property
     def involved_objects(self) -> List[Object]:
         return list(set(self.tracked_objects + self.objects))
 
@@ -386,6 +388,7 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         self.end_timestamp: Optional[float] = end_timestamp
         self.text_id: Optional[int] = None
 
+    @property
     def involved_objects(self) -> List[Object]:
         return self.tracked_objects
 

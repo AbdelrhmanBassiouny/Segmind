@@ -7,7 +7,7 @@ from typing_extensions import List, Optional, Dict, Type
 
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.world import World
-from pycram.world_concepts.world_object import Object
+from pycram.world_concepts.world_object import Object, Link
 from pycram.ros.logging import loginfo, logdebug
 
 from .datastructures.events import Event, EventUnion, EventWithTrackedObjects
@@ -105,7 +105,10 @@ class EventLogger:
                 data_dict['start'].append(event.timestamp)
                 data_dict['event'].append(event.__class__.__name__)
                 data_dict['object'].append(tracker.obj.name)
-                data_dict['obj_type'].append(tracker.obj.obj_type.name)
+                if isinstance(tracker.obj, Object):
+                    data_dict['obj_type'].append(tracker.obj.obj_type.name)
+                elif isinstance(tracker.obj, Link):
+                    data_dict['obj_type'].append(f'Link of {tracker.obj.parent_entity.obj_type}')
         # subtract the start time from all timestamps
         min_start = min(data_dict['start'])
         data_dict['start'] = [x - min_start for x in data_dict['start']]

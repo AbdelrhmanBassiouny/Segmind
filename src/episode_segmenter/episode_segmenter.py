@@ -122,6 +122,8 @@ class EpisodeSegmenter(ABC):
         :param event: The event that was triggered.
         """
         involved_objects = self.get_involved_objects(event)
+        if not involved_objects:
+            return
         logdebug(f"Involved objects: {[obj.name for obj in involved_objects]}")
         for obj in involved_objects:
             if self.avoid_object(obj):

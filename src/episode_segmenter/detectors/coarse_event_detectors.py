@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 try:
     from matplotlib import pyplot as plt
 except ImportError:
@@ -209,6 +211,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
     """
     A detector that detects if the tracked_object was picked up by an agent, such as a human or a robot.
     """
+    currently_tracked_objects: Dict[Object, AgentPickUpDetector] = {}
 
     def __init__(self, logger: EventLogger, starter_event: AgentContactEvent, *args, **kwargs):
         """
@@ -221,6 +224,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         self.surface_detector.start()
         self.agent = starter_event.agent
         self.interaction_event.agent = self.agent
+        self.currently_tracked_objects[self.tracked_object] = self
 
     @classmethod
     def get_object_to_track_from_starter_event(cls, event: AgentContactEvent) -> Object:
@@ -257,6 +261,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
 
         self.end_timestamp = loss_of_surface_event.timestamp
 
+        self.currently_tracked_objects.pop(self.tracked_object, None)
         return True
 
     def stop(self, timeout: Optional[float] = None):
