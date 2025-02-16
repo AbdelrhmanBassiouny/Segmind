@@ -3,7 +3,7 @@ import datetime
 from typing_extensions import List, Optional, Dict
 
 from pycram.ros.logging import logwarn
-from pycrap import Supporter
+from pycrap.ontologies import Supporter, Agent
 from .episode_player import EpisodePlayer
 from .detectors.coarse_event_detectors import *
 from .event_logger import EventLogger
@@ -187,7 +187,7 @@ class EpisodeSegmenter(ABC):
         :param event: The ContactEvent instance that represents the contact event with the object.
         """
         if event is None:
-            if issubclass(obj.obj_type, pycrap.Agent):
+            if issubclass(obj.obj_type, Agent):
                 event = AgentContactEvent(ContactPointsList([]), obj)
             else:
                 event = ContactEvent(ContactPointsList([]), obj)
@@ -296,7 +296,7 @@ class AgentBasedEpisodeSegmenter(EpisodeSegmenter):
         """
         :return: A list of Object instances that represent the available agents in the world.
         """
-        return [obj for obj in World.current_world.objects if issubclass(obj.obj_type, pycrap.Agent)]
+        return [obj for obj in World.current_world.objects if issubclass(obj.obj_type, Agent)]
 
 
 class NoAgentEpisodeSegmenter(EpisodeSegmenter):

@@ -9,13 +9,13 @@ import scipy
 import trimesh
 from tf.transformations import euler_matrix, quaternion_from_matrix, quaternion_matrix, quaternion_from_euler, \
     euler_from_quaternion
-from trimesh import Geometry
+from trimesh import Geometry, Trimesh
 from typing_extensions import Type, List, Tuple, Union, Dict, Optional
 
-import pycrap
 from pycram import World
 from pycram.datastructures.pose import Pose, Transform
 from pycram.world_concepts.world_object import Object
+from pycrap.ontologies import PhysicalObject
 from ..episode_player import EpisodePlayer
 from ..utils import calculate_quaternion_difference
 
@@ -26,7 +26,7 @@ class FileEpisodePlayer(EpisodePlayer):
                  time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=50),
                  objects_to_ignore: Optional[List[int]] = None,
                  obj_id_to_name: Optional[Dict[int, str]] = None,
-                 obj_id_to_type: Optional[Dict[int, Type[pycrap.PhysicalObject]]] = None):
+                 obj_id_to_type: Optional[Dict[int, Type[PhysicalObject]]] = None):
         """
         Initializes the FAMEEpisodePlayer with the specified json file and scene id.
 
@@ -45,7 +45,7 @@ class FileEpisodePlayer(EpisodePlayer):
         if objects_to_ignore is not None:
             self._remove_ignored_objects(objects_to_ignore)
         self.obj_id_to_name: Optional[Dict[int, str]] = obj_id_to_name
-        self.obj_id_to_type: Optional[Dict[int, Type[pycrap.PhysicalObject]]] = obj_id_to_type
+        self.obj_id_to_type: Optional[Dict[int, Type[PhysicalObject]]] = obj_id_to_type
         self.data_frames = dict(sorted(self.data_frames.items(), key=lambda x: x[0]))
         self.world = world if world is not None else World.current_world
         self.mesh_scale = mesh_scale
@@ -176,7 +176,7 @@ class FileEpisodePlayer(EpisodePlayer):
         return base_origin
 
     def get_mesh_of_object(self, obj: Object, apply_scale: bool = True,
-                           apply_transform: bool = True) -> Geometry:
+                           apply_transform: bool = True) -> Trimesh:
         """
         Get the mesh of an object.
 W
@@ -208,7 +208,7 @@ W
         return mesh
 
     @staticmethod
-    def get_base_points_from_mesh(mesh: Geometry, threshold: float = 0.001,
+    def get_base_points_from_mesh(mesh: Trimesh, threshold: float = 0.001,
                                   return_min_z: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, float]]:
         """
         Get the base points of an object from its mesh.
@@ -308,11 +308,11 @@ W
         else:
             return f"object_{object_id}"
 
-    def get_object_type(self, object_id: int) -> Type[pycrap.PhysicalObject]:
+    def get_object_type(self, object_id: int) -> Type[PhysicalObject]:
         if self.obj_id_to_type is not None and object_id in self.obj_id_to_type:
             return self.obj_id_to_type[int(object_id)]
         else:
-            return pycrap.PhysicalObject
+            return PhysicalObject
 
     @staticmethod
     def get_mesh_name(object_id: str) -> str:

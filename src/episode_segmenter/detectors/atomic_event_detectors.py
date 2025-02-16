@@ -17,13 +17,12 @@ except ImportError:
 from tf.transformations import euler_from_quaternion
 from typing_extensions import Optional, List, Union, Type, Tuple
 
-import pycrap
 from pycram import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object
-from pycrap import PhysicalObject
+from pycrap.ontologies import PhysicalObject, Agent
 from ..event_logger import EventLogger
 from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
     AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
@@ -328,7 +327,7 @@ class ContactDetector(AbstractContactDetector):
             new_objects_in_contact = [obj for obj in new_objects_in_contact if obj == self.with_object]
         if len(new_objects_in_contact) == 0:
             return []
-        event_type = AgentContactEvent if issubclass(self.obj_type, pycrap.Agent) else ContactEvent
+        event_type = AgentContactEvent if issubclass(self.obj_type, Agent) else ContactEvent
         return [event_type(contact_points.get_points_of_object(new_obj),
                            of_object=self.tracked_object, with_object=new_obj)
                 for new_obj in new_objects_in_contact]
@@ -350,7 +349,7 @@ class LossOfContactDetector(AbstractContactDetector):
         bodies_that_lost_contact = self.get_bodies_that_lost_contact(contact_points)
         if len(bodies_that_lost_contact) == 0:
             return []
-        event_type = AgentLossOfContactEvent if issubclass(self.obj_type, pycrap.Agent) else LossOfContactEvent
+        event_type = AgentLossOfContactEvent if issubclass(self.obj_type, Agent) else LossOfContactEvent
         return [event_type(contact_points, self.latest_contact_points, of_object=self.tracked_object,
                            with_object=body.parent_entity)
                 for body in bodies_that_lost_contact]
