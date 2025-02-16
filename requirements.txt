@@ -1,5 +1,7 @@
-neem_pycram_interface==1.0.170
+neem_pycram_interface==1.0.174
 trimesh
+manifold3d
+pyglet==1.5.31
 dm_control
 pydub
 gtts
