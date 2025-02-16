@@ -149,7 +149,7 @@ class Imaginator:
         support_obj = Object(support_name, Supporter, None, support)
         support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
-        cp = support_obj.contact_points
+        cp = support_obj.closest_points(0.05)
         contacted_objects = cp.get_objects_that_have_points()
         contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created and obj != support_obj]
         for obj in contacted_surfaces:
