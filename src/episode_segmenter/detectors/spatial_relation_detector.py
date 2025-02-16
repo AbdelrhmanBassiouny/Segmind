@@ -41,6 +41,24 @@ class SpatialRelationDetector(DetectorWithStarterEvent):
                     near_objects.append(other_obj)
         return near_objects
 
+    def get_container_objects(self, obj: Object) -> List[Object]:
+        """
+        Get the objects that are containers of the given object.
+
+        :param obj: The object.
+        :return: The objects that are containers of the given object.
+        """
+        container_objects = []
+        obj_bbox = obj.get_axis_aligned_bounding_box()
+        for possible_container in World.current_world.objects:
+            if obj is not possible_container:
+                pc_bbox = possible_container.get_axis_aligned_bounding_box()
+                if obj_bbox in pc_bbox:
+                    container_objects.append(possible_container)
+        return container_objects
+
+
+
     def __str__(self):
         pass
 
