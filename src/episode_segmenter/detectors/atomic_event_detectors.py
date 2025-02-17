@@ -39,16 +39,20 @@ class AtomicEventDetector(threading.Thread, ABC):
     by setting the exit_thread attribute to True.
     """
 
-    def __init__(self, logger: EventLogger, wait_time: Optional[float] = None, *args, **kwargs):
+    def __init__(self, logger: Optional[EventLogger] = None, wait_time: Optional[float] = None,
+                 world: Optional[World] = None, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param world: An optional World instance that represents the world.
         """
 
         super().__init__()
 
-        self.logger = logger
-        self.wait_time = wait_time
+        self.logger = logger if logger else EventLogger.current_logger
+        self.world = world if world else World.current_world
+        self.wait_time = wait_time if wait_time is not None else 0.1
+
         self.kill_event = threading.Event()
         self.queues: List[Queue] = []
 
@@ -113,7 +117,7 @@ class AtomicEventDetector(threading.Thread, ABC):
 
         :return: A boolean value that represents if all the queues are empty.
         """
-        return all([queue.empty() for queue in self.queues])
+        return all([q.empty() for q in self.queues])
 
     def detect_and_log_events(self):
         """
@@ -183,7 +187,7 @@ class NewObjectDetector(AtomicEventDetector):
         self.new_object_queue: Queue[Object] = Queue()
         self.queues.append(self.new_object_queue)
         self.avoid_objects = avoid_objects if avoid_objects else lambda obj: False
-        World.current_world.add_callback_on_add_object(self.on_add_object)
+        self.world.add_callback_on_add_object(self.on_add_object)
 
     def on_add_object(self, obj: Object):
         """
@@ -198,12 +202,14 @@ class NewObjectDetector(AtomicEventDetector):
 
         :return: A NewObjectEvent that represents the addition of a new object to the scene.
         """
+        events = []
         try:
-            event = NewObjectEvent(self.new_object_queue.get(False))
-            self.new_object_queue.task_done()
-            return [event]
+            while True:
+                event = NewObjectEvent(self.new_object_queue.get_nowait())
+                self.new_object_queue.task_done()
+                events.append(event)
         except queue.Empty:
-            return
+            return events
 
     def stop(self):
         """

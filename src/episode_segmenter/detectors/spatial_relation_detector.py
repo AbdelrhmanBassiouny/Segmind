@@ -1,66 +1,47 @@
-from typing_extensions import Optional, List
+from queue import Queue, Empty
 
-from coarse_event_detectors import DetectorWithStarterEvent
-from episode_segmenter.event_logger import EventLogger
-from pycram import World
-from pycram.world_concepts.world_object import Object
-from ..datastructures.events import Event, ContactEvent, StopMotionEvent, MotionEvent, NewObjectEvent
-from ..utils import calculate_translation_difference_and_check
+from typing_extensions import List
+
+from pycram.datastructures.world_entity import PhysicalBody
+from .atomic_event_detectors import AtomicEventDetector
+from ..datastructures.events import MotionEvent, TranslationEvent
 
 
-class SpatialRelationDetector(DetectorWithStarterEvent):
+class SpatialRelationDetector(AtomicEventDetector):
     """
     A class that detects spatial relations between objects.
     """
-    near_distance: float = 1.0
-    """
-    The distance threshold for nearness in meters.
-    """
 
-    @classmethod
-    def start_condition_checker(cls, event: Event) -> bool:
-        if isinstance(event, (NewObjectEvent, ContactEvent, MotionEvent)):
-            return True
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.event_queue: Queue[MotionEvent] = Queue()
+        self.queues.append(self.event_queue)
+        self.logger.add_callback(TranslationEvent, self.on_motion_event)
 
-    def detect_events(self) -> List[Event]:
-        involved_objects = self.starter_event.involved_objects
-
-    def get_near_objects(self, obj: Object) -> List[Object]:
+    def on_motion_event(self, event: MotionEvent):
         """
-        Get the objects that are near the given object.
+        A callback that is called when a MotionEvent occurs, and adds the event to the event queue.
 
-        :param obj: The object.
-        :return: The objects that are near the given object.
+        :param event: The MotionEvent that occurred.
         """
-        near_objects = []
-        for other_obj in World.current_world.objects:
-            if obj is not other_obj:
-                near = calculate_translation_difference_and_check(obj.pose_as_list, other_obj.pose_as_list,
-                                                                  self.near_distance)
-                if near:
-                    near_objects.append(other_obj)
-        return near_objects
+        self.event_queue.put(event)
 
-    def get_container_objects(self, obj: Object) -> List[Object]:
+    def detect_events(self) -> None:
         """
-        Get the objects that are containers of the given object.
-
-        :param obj: The object.
-        :return: The objects that are containers of the given object.
+        Detect spatial relations between objects.
         """
-        container_objects = []
-        obj_bbox = obj.get_axis_aligned_bounding_box()
-        for possible_container in World.current_world.objects:
-            if obj is not possible_container:
-                pc_bbox = possible_container.get_axis_aligned_bounding_box()
-                if obj_bbox in pc_bbox:
-                    container_objects.append(possible_container)
-        return container_objects
-
-
+        try:
+            checked_bodies: List[PhysicalBody] = []
+            while True:
+                event = self.event_queue.get_nowait()
+                self.event_queue.task_done()
+                print(f"Checking event {event}")
+                involved_bodies = event.involved_bodies
+                bodies_to_check = list(filter(lambda body: body not in checked_bodies, involved_bodies))
+                checked_bodies.extend(self.world.update_containment_for(bodies_to_check))
+                print(f"Checked bodies: {[body.name for body in checked_bodies]}")
+        except Empty:
+            pass
 
     def __str__(self):
-        pass
-
-    def detect(self) -> Optional[Event]:
-        pass
+        return self.__class__.__name__
