@@ -335,17 +335,15 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         """
         Start the motion detection threads for the objects in the world.
         """
+        self.episode_player.pause()
         set_of_objects = set()
         for obj in World.current_world.objects:
             if not self.avoid_object(obj):
                 set_of_objects.add(obj)
-                try:
-                    if not check_if_object_is_supported(obj):
-                        print(f"Object {obj.name} is not supported.")
-                        Imaginator.imagine_support_for_object(obj)
-                        print(f"Imagined support for object {obj.name}.")
-                except NotImplementedError:
-                    logwarn("Support detection is not implemented for this simulator.")
+                if not check_if_object_is_supported(obj):
+                    print(f"Object {obj.name} is not supported.")
+                    Imaginator.imagine_support_for_object(obj)
+                    print(f"Imagined support for object {obj.name}.")
         for obj in set_of_objects:
             self.start_motion_threads_for_object(obj)
             self.start_contact_threads_for_object(obj)

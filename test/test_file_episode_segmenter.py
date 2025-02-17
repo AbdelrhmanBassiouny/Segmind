@@ -6,6 +6,9 @@ from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from episode_segmenter.players.json_player import FileEpisodePlayer
 from episode_segmenter.episode_segmenter import NoAgentEpisodeSegmenter
+from episode_segmenter.players.json_player import FileEpisodePlayer
+from pycram.datastructures.enums import WorldMode
+from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Container, Bowl, Cup
@@ -15,7 +18,6 @@ try:
     from pycram.worlds.multiverse import Multiverse
 except ImportError:
     pass
-
 
 pycram.ros.logging.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
 
