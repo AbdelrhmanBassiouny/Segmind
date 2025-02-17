@@ -15,7 +15,7 @@ try:
 except ImportError:
     plt = None
 from tf.transformations import euler_from_quaternion
-from typing_extensions import Optional, List, Union, Type, Tuple
+from typing_extensions import Optional, List, Union, Type, Tuple, Callable
 
 from pycram import World
 from pycram.datastructures.dataclasses import ContactPointsList
@@ -173,7 +173,7 @@ class NewObjectDetector(AtomicEventDetector):
     """
 
     def __init__(self, logger: EventLogger, wait_time: Optional[float] = 0.1,
-                 avoid_objects: Optional[List[str]] = None, *args, **kwargs):
+                 avoid_objects: Optional[Callable[[Object], bool]] = None, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional float value that introduces a delay between calls to the event detector.
@@ -182,14 +182,14 @@ class NewObjectDetector(AtomicEventDetector):
         super().__init__(logger, wait_time, *args, **kwargs)
         self.new_object_queue: Queue[Object] = Queue()
         self.queues.append(self.new_object_queue)
-        self.avoid_objects = avoid_objects if avoid_objects is not None else []
+        self.avoid_objects = avoid_objects if avoid_objects else lambda obj: False
         World.current_world.add_callback_on_add_object(self.on_add_object)
 
     def on_add_object(self, obj: Object):
         """
         Callback function that is called when a new object is added to the scene.
         """
-        if not any([obj.name.lower() in name.lower() for name in self.avoid_objects]):
+        if not self.avoid_objects(obj):
             self.new_object_queue.put(obj)
 
     def detect_events(self) -> List[Event]:
