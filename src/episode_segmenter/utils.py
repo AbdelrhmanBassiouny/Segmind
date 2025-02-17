@@ -6,13 +6,13 @@ import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional
 
-import pycrap
 from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB)
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
 from pycram.world_concepts.world_object import Object
+from pycrap.ontologies import Supporter, Floor, Location
 
 
 def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
@@ -55,7 +55,7 @@ def check_if_in_contact_with_support(obj: Object, contact_bodies: List[PhysicalB
     :param contact_bodies: The bodies in contact with the object.
     """
     for body in contact_bodies:
-        if issubclass(body.parent_entity.obj_type, (pycrap.Supporter, pycrap.Location)):
+        if issubclass(body.parent_entity.obj_type, (Supporter, Location)):
             body_aabb = body.get_axis_aligned_bounding_box()
             surface_z = body_aabb.max_z
             tracked_object_base = obj.get_base_origin().position
@@ -146,16 +146,16 @@ class Imaginator:
         support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
         support = GenericObjectDescription(support_name,
                                            [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness * 0.5])
-        support_obj = Object(support_name, pycrap.Supporter, None, support)
+        support_obj = Object(support_name, Supporter, None, support)
         support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
-        cp = support_obj.contact_points
+        cp = support_obj.closest_points(0.05)
         contacted_objects = cp.get_objects_that_have_points()
-        contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created]
+        contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created and obj != support_obj]
         for obj in contacted_surfaces:
             support_obj = support_obj.merge(obj)
             cls.surfaces_created.remove(obj)
-        World.current_world.get_object_by_type(pycrap.Floor)[0].attach(support_obj)
+        World.current_world.get_object_by_type(Floor)[0].attach(support_obj)
         cls.surfaces_created.append(support_obj)
         cls.latest_surface_idx += 1
         return support_obj

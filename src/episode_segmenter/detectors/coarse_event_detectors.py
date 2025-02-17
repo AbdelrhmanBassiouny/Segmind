@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pycrap.ontologies import Location, Supporter
+
 try:
     from matplotlib import pyplot as plt
 except ImportError:
@@ -421,7 +423,7 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
     :param objects: A list of Object instances.
     """
     transportable_objects = [obj for obj in objects
-                             if not issubclass(obj.obj_type, (pycrap.Agent, pycrap.Location, pycrap.Supporter))]
+                             if not issubclass(obj.obj_type, (Agent, Location, Supporter))]
     return transportable_objects
 
 

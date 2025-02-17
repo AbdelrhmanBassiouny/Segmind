@@ -20,6 +20,10 @@ class EpisodePlayer(threading.Thread, ABC):
     def ready(self):
         return self._ready
 
+    @ready.setter
+    def ready(self, value: bool):
+        self._ready = value
+
     @abstractmethod
     def run(self):
         """
