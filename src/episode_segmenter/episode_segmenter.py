@@ -2,8 +2,6 @@ import datetime
 
 from typing_extensions import List, Optional, Dict
 
-from pycram.ros.logging import logwarn
-from pycrap.ontologies import Agent, Location, Supporter
 from .episode_player import EpisodePlayer
 from .detectors.coarse_event_detectors import *
 from .event_logger import EventLogger
