@@ -39,11 +39,11 @@ class AtomicEventDetector(threading.Thread, ABC):
     by setting the exit_thread attribute to True.
     """
 
-    def __init__(self, logger: Optional[EventLogger] = None, wait_time: Optional[float] = None,
+    def __init__(self, logger: Optional[EventLogger] = None, wait_time: Optional[timedelta] = None,
                  world: Optional[World] = None, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         :param world: An optional World instance that represents the world.
         """
 
@@ -51,7 +51,7 @@ class AtomicEventDetector(threading.Thread, ABC):
 
         self.logger = logger if logger else EventLogger.current_logger
         self.world = world if world else World.current_world
-        self.wait_time = wait_time if wait_time is not None else 0.1
+        self.wait_time = wait_time if wait_time is not None else timedelta(seconds=0.1)
 
         self.kill_event = threading.Event()
         self.queues: List[Queue] = []
@@ -140,10 +140,9 @@ class AtomicEventDetector(threading.Thread, ABC):
 
         :param last_processing_time: The time of the last processing.
         """
-        if self.wait_time is not None:
-            time_diff = time.time() - last_processing_time
-            if time_diff < self.wait_time:
-                time.sleep(self.wait_time - time_diff)
+        time_diff = time.time() - last_processing_time
+        if time_diff < self.wait_time.total_seconds():
+            time.sleep(self.wait_time.total_seconds() - time_diff)
 
     def log_event(self, event: Event) -> None:
         """
@@ -176,11 +175,11 @@ class NewObjectDetector(AtomicEventDetector):
     A thread that detects if a new object is added to the scene and logs the NewObjectEvent.
     """
 
-    def __init__(self, logger: EventLogger, wait_time: Optional[float] = 0.1,
+    def __init__(self, logger: EventLogger, wait_time: Optional[timedelta] = None,
                  avoid_objects: Optional[Callable[[Object], bool]] = None, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         :param avoid_objects: An optional list of strings that represent the names of the objects to avoid.
         """
         super().__init__(logger, wait_time, *args, **kwargs)
@@ -227,11 +226,12 @@ class DetectorWithTrackedObject(AtomicEventDetector, HasPrimaryTrackedObject, AB
     A mixin class that provides one tracked object for the event detector.
     """
 
-    def __init__(self, logger: EventLogger, tracked_object: Object, wait_time: Optional[float] = None, *args, **kwargs):
+    def __init__(self, logger: EventLogger, tracked_object: Object, wait_time: Optional[timedelta] = None,
+                 *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param tracked_object: An Object instance that represents the object to track.
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         HasPrimaryTrackedObject.__init__(self, tracked_object)
         AtomicEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
@@ -246,12 +246,12 @@ class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrack
     """
 
     def __init__(self, logger: EventLogger, tracked_object: Object, with_object: Optional[Object] = None,
-                 wait_time: Optional[float] = None, *args, **kwargs):
+                 wait_time: Optional[timedelta] = None, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param tracked_object: An Object instance that represents the object to track.
         :param with_object: An optional Object instance that represents the object to track.
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         DetectorWithTrackedObject.__init__(self, logger, tracked_object, wait_time, *args, **kwargs)
         HasSecondaryTrackedObject.__init__(self, with_object)
@@ -264,13 +264,14 @@ class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrack
 class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  with_object: Optional[Object] = None,
-                 max_closeness_distance: Optional[float] = 0.05, wait_time: Optional[float] = 0.01,
+                 max_closeness_distance: Optional[float] = 0.05,
+                 wait_time: Optional[timedelta] = timedelta(seconds=0.01),
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
         :param max_closeness_distance: An optional float value that represents the maximum distance between the object
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         DetectorWithTwoTrackedObjects.__init__(self, logger, tracked_object, with_object, wait_time,
                                                *args, **kwargs)
@@ -423,9 +424,8 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  detection_method: MotionDetectionMethod = ConsistentGradient(),
-                 measure_timestep: timedelta = timedelta(milliseconds=100),
                  time_between_frames: timedelta = timedelta(milliseconds=50),
-                 window_timeframe: timedelta = timedelta(milliseconds=700),
+                 window_size: int = 7,
                  distance_filter_method: Optional[DataFilter] = None,
                  *args, **kwargs):
         """
@@ -433,25 +433,18 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :param starter_event: An instance of the NewObjectEvent class that represents the event to start the event.
         :param tracked_object: An optional Object instance that represents the object to track.
         :param detection_method: The motion detection method that is used to detect if the object is moving.
-        :param measure_timestep: The time between calls to the event detector.
         :param time_between_frames: The time between frames of episode player.
-        :param window_timeframe: The timeframe of the window that is used to calculate the distances.
+        :param window_size: The size of the window that is used to calculate the distances (must be > 1).
         :param distance_filter_method: An optional DataFilter instance that is used to filter the distances.
         """
-        DetectorWithTrackedObject.__init__(self, logger, tracked_object,
-                                           wait_time=measure_timestep.total_seconds(), *args, **kwargs)
+        DetectorWithTrackedObject.__init__(self, logger, tracked_object, *args, **kwargs)
         self.time_between_frames: timedelta = time_between_frames
-        self.measure_timestep: timedelta = measure_timestep
-        self.window_timeframe: timedelta = window_timeframe
+        self.measure_timestep: timedelta = 2 * time_between_frames
+        self.window_size: int = window_size
         self.filter: Optional[DataFilter] = distance_filter_method
         self.detection_method: MotionDetectionMethod = detection_method
 
         self._init_event_data()
-
-        self._update_measure_timestep_and_wait_time()
-
-        self.window_size: int = ceil(self.window_timeframe.total_seconds()
-                                     / self.measure_timestep.total_seconds())
 
         self._init_data_holders()
 
@@ -461,6 +454,23 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.plot_distance_windows: bool = False
         self.plot_frequencies: bool = False
 
+    @property
+    def window_size(self) -> int:
+        return self._window_size
+
+    @window_size.setter
+    def window_size(self, window_size: int):
+        if window_size < 2:
+            raise ValueError("The window size must be greater than 1.")
+        self._window_size = window_size
+
+    def get_n_changes_wait_time(self, n: int) -> float:
+        """
+        :param n: The number of successive changes in motion state.
+        :return: The minimum wait time for detecting n successive changes in motion state.
+        """
+        return self.window_timeframe.total_seconds() * n + self.wait_time.total_seconds()
+
     def _init_event_data(self):
         """
         Initialize the event time and start pose of the object/event.
@@ -469,15 +479,24 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.event_time: float = self.latest_time
         self.start_pose: Pose = self.latest_pose
 
-    def _update_measure_timestep_and_wait_time(self):
+    @property
+    def window_timeframe(self) -> timedelta:
+        return self.measure_timestep * self.window_size
+
+    @property
+    def measure_timestep(self) -> timedelta:
+        return self._measure_timestep
+
+    @measure_timestep.setter
+    def measure_timestep(self, measure_timestep: timedelta):
         """
         Update the measure timestep and the wait time between calls to the event detector.
         """
         # frames per measure timestep
-        self.measure_frame_rate: float = ceil(self.measure_timestep.total_seconds() /
+        self.measure_frame_rate: float = ceil(measure_timestep.total_seconds() /
                                               self.time_between_frames.total_seconds())
-        self.measure_timestep = self.time_between_frames * self.measure_frame_rate
-        self.wait_time = self.measure_timestep.total_seconds()
+        self._measure_timestep = self.time_between_frames * self.measure_frame_rate
+        self.wait_time = self._measure_timestep
 
     def _init_data_holders(self):
         """

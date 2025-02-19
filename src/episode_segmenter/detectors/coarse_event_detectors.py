@@ -10,7 +10,7 @@ except ImportError:
 from typing_extensions import Optional, List, Union, Dict
 
 from pycram.datastructures.world import UseProspectionWorld
-from pycram.ros.logging import logdebug, loginfo
+from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import *
 from ..datastructures.events import *
 from ..utils import get_angle_between_vectors, check_if_in_contact_with_support
@@ -21,12 +21,12 @@ class DetectorWithStarterEvent(AtomicEventDetector, ABC):
     A type of event detector that requires an event to occur as a start condition.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[float] = None,
+    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[timedelta] = None,
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         super().__init__(logger, wait_time, *args, **kwargs)
         self.starter_event: EventUnion = starter_event
@@ -64,12 +64,12 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
     All the objects that are currently tracked by a detector with a starter event.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[float] = None,
+    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[timedelta] = None,
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
-        :param wait_time: An optional float value that introduces a delay between calls to the event detector.
+        :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         DetectorWithStarterEvent.__init__(self, logger, starter_event, wait_time, *args, **kwargs)
         HasPrimaryTrackedObject.__init__(self, self.get_object_to_track_from_starter_event(starter_event))
