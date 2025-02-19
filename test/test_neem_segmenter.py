@@ -10,7 +10,7 @@ from pycram.datastructures.enums import WorldMode, LoggerLevel
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.datastructures.world import World
 from pycram.worlds.bullet_world import BulletWorld
-from pycram.ros.logging import set_logger_level
+from pycram.ros import set_logger_level
 
 
 class TestNEEMSegmentor(TestCase):

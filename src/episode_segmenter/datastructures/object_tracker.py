@@ -8,7 +8,7 @@ import numpy as np
 
 from pycram.datastructures.dataclasses import ObjectState
 from pycram.world_concepts.world_object import Object
-from pycram.ros.logging import logwarn
+from pycram.ros import logwarn
 
 if TYPE_CHECKING:
     from .events import Event, EventUnion

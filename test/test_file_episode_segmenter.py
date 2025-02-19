@@ -1,7 +1,7 @@
 import datetime
 from unittest import TestCase
 
-import pycram.ros.logging
+import pycram.ros
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from episode_segmenter.players.json_player import FileEpisodePlayer
@@ -19,7 +19,7 @@ try:
 except ImportError:
     pass
 
-pycram.ros.logging.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
+pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
 
 
 class TestFileEpisodeSegmenter(TestCase):

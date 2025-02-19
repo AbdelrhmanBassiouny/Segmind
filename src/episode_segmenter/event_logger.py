@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import queue
 import threading
+from collections import UserDict
 from threading import RLock
 import time
 from datetime import timedelta
@@ -10,13 +11,28 @@ from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callabl
 
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.world import World
-from pycram.ros.logging import loginfo, logdebug
+from pycram.ros import loginfo, logdebug
 from pycram.world_concepts.world_object import Object, Link
 from .datastructures.events import Event, EventUnion, EventWithTrackedObjects
 from .datastructures.object_tracker import ObjectTrackerFactory
 
 if TYPE_CHECKING:
     from .detectors.coarse_event_detectors import DetectorWithStarterEvent
+
+
+class EventCallbacks(UserDict):
+    """
+    A dictionary that maps event types to a list of callbacks that should be called when the event occurs.
+    This modifies the setitem such that if a class or its subclass is added, the callback is also added to the subclass.
+    """
+
+    def __setitem__(self, key: Type[Event], value: List[Callable[[Event], None]]):
+        if key not in self:
+            super().__setitem__(key, value)
+        else:
+            self[key].extend(value)
+        for subclass in key.__subclasses__():
+            self.__setitem__(subclass, value)
 
 
 class EventLogger:
@@ -28,7 +44,7 @@ class EventLogger:
     """
     A singleton instance of the event logger.
     """
-    event_callbacks: Dict[Type[Event], List[Callable[[Event], None]]] = {}
+    event_callbacks: EventCallbacks = EventCallbacks()
     """
     A dictionary that maps event types to a list of callbacks that should be called when the event occurs.
     """
@@ -56,9 +72,7 @@ class EventLogger:
         :param callback: The callback to add.
         """
         with self.event_callbacks_lock:
-            if event_type not in self.event_callbacks:
-                self.event_callbacks[event_type] = []
-            self.event_callbacks[event_type].append(callback)
+            self.event_callbacks[event_type] = [callback]
 
     def log_event(self, event: Event):
         if self.is_event_in_timeline(event):
