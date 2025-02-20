@@ -6,12 +6,12 @@ from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict
 
 import numpy as np
 
-from pycram.datastructures.dataclasses import ObjectState
 from pycram.world_concepts.world_object import Object
 from pycram.ros import logwarn
 
 if TYPE_CHECKING:
     from .events import Event, EventUnion
+    from pycram.datastructures.dataclasses import ObjectState
 
 
 class ObjectTracker:
