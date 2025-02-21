@@ -293,7 +293,7 @@ class ContactEvent(AbstractContactEvent):
 
     @property
     def links(self):
-        return self.contact_points.get_bodies_in_contact()
+        return self.contact_points.get_all_bodies()
 
 
 class LossOfContactEvent(AbstractContactEvent):

@@ -73,7 +73,7 @@ class FileEpisodePlayer(EpisodePlayer):
         parent_dir_of_json_file = os.path.abspath(os.path.dirname(self.json_file))
         models_path = os.path.join(parent_dir_of_json_file, "custom", "models")
         # Copy the entire folder and its contents
-        shutil.copytree(models_path, self.world.cache_manager.data_directories[0], dirs_exist_ok=True)
+        shutil.copytree(models_path, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
 
     def run(self):
         for frame_id, objects_data in self.data_frames.items():

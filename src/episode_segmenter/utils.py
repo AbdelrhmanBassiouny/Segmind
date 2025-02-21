@@ -6,7 +6,7 @@ import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional
 
-from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB)
+from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, Color)
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
@@ -29,7 +29,7 @@ def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) 
         dt = math.sqrt(2 * distance / 9.81) + 0.01  # time to fall distance
         World.current_world.simulate(dt)
         cp = prospection_obj.contact_points
-        if not check_if_in_contact_with_support(prospection_obj, cp.get_bodies_in_contact()):
+        if not check_if_in_contact_with_support(prospection_obj, cp.get_all_bodies()):
             return False
     return supported
 
@@ -146,7 +146,7 @@ class Imaginator:
         support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
         support = GenericObjectDescription(support_name,
                                            [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness * 0.5])
-        support_obj = Object(support_name, Supporter, None, support)
+        support_obj = Object(support_name, Supporter, None, support, color=Color(1, 1, 0, 1))
         support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
         cp = support_obj.closest_points(0.05)
