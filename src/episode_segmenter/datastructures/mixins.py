@@ -3,11 +3,13 @@ from __future__ import annotations
 from abc import ABC
 from functools import cached_property
 
-from typing_extensions import List, Optional
+from typing_extensions import List, Optional, TYPE_CHECKING
 
-from pycram.datastructures.dataclasses import ObjectState
 from .object_tracker import ObjectTrackerFactory, ObjectTracker
 from pycram.world_concepts.world_object import Object
+
+if TYPE_CHECKING:
+    from pycram.datastructures.dataclasses import ObjectState
 
 
 class HasTrackedObjects(ABC):

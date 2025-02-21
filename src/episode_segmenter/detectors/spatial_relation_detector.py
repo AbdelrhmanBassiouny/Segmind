@@ -2,11 +2,10 @@ from queue import Queue, Empty
 
 from typing_extensions import List, Optional
 
-from pycram.datastructures.enums import AdjacentBodyMethod as ABM
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import AtomicEventDetector
-from ..datastructures.events import MotionEvent, TranslationEvent, EventUnion, StopMotionEvent
+from ..datastructures.events import MotionEvent, EventUnion, StopMotionEvent
 
 
 class SpatialRelationDetector(AtomicEventDetector):
