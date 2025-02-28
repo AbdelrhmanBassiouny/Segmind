@@ -71,7 +71,7 @@ class FileEpisodePlayer(EpisodePlayer):
         Copy the model files to the world data directory.
         """
         parent_dir_of_json_file = os.path.abspath(os.path.dirname(self.json_file))
-        models_path = os.path.join(parent_dir_of_json_file, "custom", "models")
+        models_path = os.path.join(parent_dir_of_json_file, "models")
         # Copy the entire folder and its contents
         shutil.copytree(models_path, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
 

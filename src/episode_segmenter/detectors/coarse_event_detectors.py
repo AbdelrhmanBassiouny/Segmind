@@ -13,7 +13,7 @@ from pycram.datastructures.world import UseProspectionWorld
 from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import *
 from ..datastructures.events import *
-from ..utils import get_angle_between_vectors, check_if_in_contact_with_support
+from ..utils import get_angle_between_vectors, get_support
 
 
 class DetectorWithStarterEvent(AtomicEventDetector, ABC):
@@ -296,9 +296,12 @@ class MotionPickUpDetector(AbstractPickUpDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        return (isinstance(event, LossOfContactEvent)
-                and any(select_transportable_objects_from_loss_of_contact_event(event))
-                and check_if_in_contact_with_support(event.tracked_object, event.links))
+        if (isinstance(event, LossOfContactEvent)
+                and any(select_transportable_objects_from_loss_of_contact_event(event))):
+            logdebug(f"{event} with object {event.tracked_object.name} IS A starter event")
+            return True
+        logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
+        return False
 
     def interaction_checks(self) -> bool:
         """
@@ -354,10 +357,12 @@ class PlacingDetector(AbstractInteractionDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        logdebug(f"checking if {event} with object {event.tracked_object.name} is a starter event")
-        if (isinstance(event, ContactEvent) and any(select_transportable_objects([event.tracked_object]))
-                and check_if_in_contact_with_support(event.tracked_object, event.links)):
+        if (isinstance(event, StopMotionEvent)
+                and any(select_transportable_objects([event.tracked_object]))
+                and get_support(event.tracked_object)):
+            logdebug(f"{event} with object {event.tracked_object.name} IS A starter event")
             return True
+        logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
         return False
 
 

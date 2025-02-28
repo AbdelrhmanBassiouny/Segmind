@@ -29,7 +29,7 @@ from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, Age
     RotationEvent, StopRotationEvent, MotionEvent
 from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter
 from ..utils import calculate_quaternion_difference, \
-    check_if_in_contact_with_support, calculate_translation
+    get_support, calculate_translation
 
 
 class AtomicEventDetector(threading.Thread, ABC):
@@ -388,8 +388,8 @@ class LossOfSurfaceDetector(LossOfContactDetector):
         bodies_that_lost_contact = self.get_bodies_that_lost_contact(contact_points)
         if len(bodies_that_lost_contact) == 0:
             return []
-        supporting_surface = check_if_in_contact_with_support(self.tracked_object,
-                                                              bodies_that_lost_contact)
+        supporting_surface = get_support(self.tracked_object,
+                                         bodies_that_lost_contact)
         if supporting_surface is None:
             return []
         return [LossOfSurfaceEvent(contact_points, self.latest_contact_points, of_object=self.tracked_object,
