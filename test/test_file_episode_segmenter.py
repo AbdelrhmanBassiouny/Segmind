@@ -31,7 +31,7 @@ class TestFileEpisodeSegmenter(TestCase):
     @classmethod
     def setUpClass(cls):
         json_file = "../resources/fame_episodes/alessandro_with_ycp_objects_in_max_room_2/refined_poses.json"
-        json_file = "../resources/fame_episodes/alessandro_sliding_bueno/refined_poses.json"
+        # json_file = "../resources/fame_episodes/alessandro_sliding_bueno/refined_poses.json"
         # simulator = BulletWorld if Multiverse is None else Multiverse
         simulator = BulletWorld
         annotate_events = True if simulator == BulletWorld else False

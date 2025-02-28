@@ -297,7 +297,8 @@ class MotionPickUpDetector(AbstractPickUpDetector):
         :param event: The ContactEvent instance that represents the contact event.
         """
         if (isinstance(event, LossOfContactEvent)
-                and any(select_transportable_objects_from_loss_of_contact_event(event))):
+                and any(select_transportable_objects_from_loss_of_contact_event(event))
+                and not get_support(event.tracked_object, event.links)):
             logdebug(f"{event} with object {event.tracked_object.name} IS A starter event")
             return True
         logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
@@ -357,9 +358,9 @@ class PlacingDetector(AbstractInteractionDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        if (isinstance(event, StopMotionEvent)
+        if (isinstance(event, ContactEvent)
                 and any(select_transportable_objects([event.tracked_object]))
-                and get_support(event.tracked_object)):
+                and get_support(event.tracked_object, event.links)):
             logdebug(f"{event} with object {event.tracked_object.name} IS A starter event")
             return True
         logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
