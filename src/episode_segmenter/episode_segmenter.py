@@ -118,7 +118,7 @@ class EpisodeSegmenter(ABC):
 
         :param event: The event that was triggered.
         """
-        involved_objects = self.get_involved_objects(event)
+        involved_objects = self.get_involved_bodies(event)
         if not involved_objects:
             return
         logdebug(f"Involved objects: {[obj.name for obj in involved_objects]}")
@@ -141,15 +141,15 @@ class EpisodeSegmenter(ABC):
         """
         pass
 
-    def get_involved_objects(self, event: EventUnion) -> List[Object]:
+    def get_involved_bodies(self, event: EventUnion) -> List[PhysicalBody]:
         """
-        Get the objects involved in the event.
+        Get the bodies involved in the event.
 
         :param event: The event that involves the objects.
         :return: A list of Object instances that are involved in the event.
         """
         if isinstance(event, EventWithTrackedObjects):
-            return event.involved_objects
+            return event.involved_bodies
 
     def avoid_object(self, obj: Object) -> bool:
         """
@@ -323,7 +323,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
     def start_tracking_threads_for_new_object_and_event(self, new_object: Object, event: EventUnion):
         pass
 
-    def get_involved_objects(self, event: EventUnion) -> List[Object]:
+    def get_involved_bodies(self, event: EventUnion) -> List[Object]:
         return []
 
     def _process_event(self, event: EventUnion) -> None:

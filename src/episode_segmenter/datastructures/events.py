@@ -88,9 +88,9 @@ class EventWithTrackedObjects(Event, ABC):
 
     @property
     @abstractmethod
-    def involved_objects(self) -> List[Object]:
+    def involved_bodies(self) -> List[PhysicalBody]:
         """
-        The objects involved in the event.
+        The bodies involved in the event.
         """
         pass
 
@@ -172,7 +172,7 @@ class NewObjectEvent(EventWithOneTrackedObject):
         EventWithOneTrackedObject.__init__(self, new_object, timestamp)
 
     @property
-    def involved_objects(self) -> List[Object]:
+    def involved_bodies(self) -> List[Object]:
         return self.tracked_objects
 
     def set_color(self, color: Optional[Color] = None):
@@ -196,7 +196,7 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
         self.current_pose: Pose = current_pose
 
     @property
-    def involved_objects(self) -> List[Object]:
+    def involved_bodies(self) -> List[PhysicalBody]:
         return self.tracked_objects
 
     def set_color(self, color: Optional[Color] = None):
@@ -242,8 +242,8 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         self.contact_points = contact_points
 
     @property
-    def involved_objects(self) -> List[Object]:
-        return list(set(self.tracked_objects + self.objects))
+    def involved_bodies(self) -> List[PhysicalBody]:
+        return list(set(self.tracked_objects + self.links))
 
     def set_color(self, color: Optional[Color] = None):
         color = color if color is not None else self.color
@@ -293,7 +293,7 @@ class ContactEvent(AbstractContactEvent):
 
     @property
     def links(self):
-        return self.contact_points.get_bodies_in_contact()
+        return self.contact_points.get_all_bodies()
 
 
 class LossOfContactEvent(AbstractContactEvent):
@@ -389,7 +389,7 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         self.text_id: Optional[int] = None
 
     @property
-    def involved_objects(self) -> List[Object]:
+    def involved_bodies(self) -> List[PhysicalBody]:
         return self.tracked_objects
 
     @property

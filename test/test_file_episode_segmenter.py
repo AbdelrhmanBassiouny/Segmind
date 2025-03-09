@@ -1,7 +1,7 @@
 import datetime
 from unittest import TestCase
 
-import pycram.ros.logging
+import pycram.ros
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from episode_segmenter.players.json_player import FileEpisodePlayer
@@ -19,7 +19,7 @@ try:
 except ImportError:
     pass
 
-pycram.ros.logging.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
+pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
 
 
 class TestFileEpisodeSegmenter(TestCase):
@@ -31,13 +31,14 @@ class TestFileEpisodeSegmenter(TestCase):
     @classmethod
     def setUpClass(cls):
         json_file = "../resources/fame_episodes/alessandro_with_ycp_objects_in_max_room_2/refined_poses.json"
+        # json_file = "../resources/fame_episodes/alessandro_sliding_bueno/refined_poses.json"
         # simulator = BulletWorld if Multiverse is None else Multiverse
         simulator = BulletWorld
         annotate_events = True if simulator == BulletWorld else False
         cls.world = simulator(WorldMode.GUI)
         cls.viz_marker_publisher = VizMarkerPublisher()
-        obj_id_to_name = {1: "chips", 3: "bowl", 4: "cup"}
-        obj_id_to_type = {1: Container, 3: Bowl, 4: Cup}
+        obj_id_to_name = {1: "chips", 3: "bowl", 4: "cup", 6: "bueno"}
+        obj_id_to_type = {1: Container, 3: Bowl, 4: Cup, 6: Container}
         cls.file_player = FileEpisodePlayer(json_file, world=cls.world,
                                             time_between_frames=datetime.timedelta(milliseconds=50),
                                             objects_to_ignore=[5],

@@ -1,17 +1,38 @@
+from __future__ import annotations
+
 import queue
 import threading
+from collections import UserDict
+from threading import RLock
 import time
 from datetime import timedelta
 
-from typing_extensions import List, Optional, Dict, Type
+from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable
 
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.world import World
+from pycram.ros import loginfo, logdebug
 from pycram.world_concepts.world_object import Object, Link
-from pycram.ros.logging import loginfo, logdebug
-
 from .datastructures.events import Event, EventUnion, EventWithTrackedObjects
 from .datastructures.object_tracker import ObjectTrackerFactory
+
+if TYPE_CHECKING:
+    from .detectors.coarse_event_detectors import DetectorWithStarterEvent
+
+
+class EventCallbacks(UserDict):
+    """
+    A dictionary that maps event types to a list of callbacks that should be called when the event occurs.
+    This modifies the setitem such that if a class or its subclass is added, the callback is also added to the subclass.
+    """
+
+    def __setitem__(self, key: Type[Event], value: List[Callable[[Event], None]]):
+        if key not in self:
+            super().__setitem__(key, value)
+        else:
+            self[key].extend(value)
+        for subclass in key.__subclasses__():
+            self.__setitem__(subclass, value)
 
 
 class EventLogger:
@@ -20,12 +41,20 @@ class EventLogger:
     """
 
     current_logger: Optional['EventLogger'] = None
+    """
+    A singleton instance of the event logger.
+    """
+    event_callbacks: EventCallbacks = EventCallbacks()
+    """
+    A dictionary that maps event types to a list of callbacks that should be called when the event occurs.
+    """
 
     def __init__(self, annotate_events: bool = False, events_to_annotate: List[Type[Event]] = None):
         self.timeline_per_thread = {}
         self.timeline = []
         self.event_queue = queue.Queue()
-        self.lock = threading.RLock()
+        self.timeline_lock: RLock = RLock()
+        self.event_callbacks_lock: RLock = RLock()
         self.annotate_events = annotate_events
         self.events_to_annotate = events_to_annotate
         if annotate_events:
@@ -35,6 +64,16 @@ class EventLogger:
         if EventLogger.current_logger is None:
             EventLogger.current_logger = self
 
+    def add_callback(self, event_type: Type[Event], callback: Callable[[Event], None]) -> None:
+        """
+        Add a callback for an event type.
+
+        :param event_type: The type of the event.
+        :param callback: The callback to add.
+        """
+        with self.event_callbacks_lock:
+            self.event_callbacks[event_type] = [callback]
+
     def log_event(self, event: Event):
         if self.is_event_in_timeline(event):
             logdebug(f"Event {event} already logged.")
@@ -43,6 +82,18 @@ class EventLogger:
         self.event_queue.put(event)
         self.annotate_scene_with_event(event)
         self.add_event_to_timeline_of_thread(event)
+        self.call_event_callbacks(event)
+
+    def call_event_callbacks(self, event: Event) -> None:
+        """
+        Call the callbacks that are registered for the event type.
+
+        :param event: The event to call the callbacks for.
+        """
+        with self.event_callbacks_lock:
+            if type(event) in self.event_callbacks:
+                for callback in self.event_callbacks[type(event)]:
+                    callback(event)
 
     def annotate_scene_with_event(self, event: Event) -> None:
         """
@@ -69,7 +120,7 @@ class EventLogger:
         :param event: The event to add.
         """
         thread_id = event.detector_thread_id
-        with self.lock:
+        with self.timeline_lock:
             if thread_id not in self.timeline_per_thread:
                 self.timeline_per_thread[thread_id] = []
             self.timeline_per_thread[thread_id].append(event)
@@ -82,7 +133,7 @@ class EventLogger:
         :param event: The event to check.
         :return: True if the event is in the timeline, False otherwise.
         """
-        with self.lock:
+        with self.timeline_lock:
             return event in self.timeline
 
     def plot_events(self):
@@ -149,7 +200,7 @@ class EventLogger:
         """
         Get all events that have been logged.
         """
-        with self.lock:
+        with self.timeline_lock:
             events = self.timeline_per_thread.copy()
         return events
 
@@ -157,7 +208,7 @@ class EventLogger:
         """
         Get all events that have been logged.
         """
-        with self.lock:
+        with self.timeline_lock:
             events = self.timeline.copy()
         return events
 
@@ -191,7 +242,7 @@ class EventLogger:
         :param object_name: The object name that should be in the thread id.
         :return: The id of the thread or None if no such thread
         """
-        with self.lock:
+        with self.timeline_lock:
             thread_id = [thread_id for thread_id in self.timeline_per_thread.keys() if thread_id.startswith(prefix) and
                          object_name in thread_id]
         return None if len(thread_id) == 0 else thread_id[0]
@@ -204,7 +255,7 @@ class EventLogger:
         :param timestamp: The timestamp of the event.
         :return: The nearest event of the thread or None if no such thread.
         """
-        with self.lock:
+        with self.timeline_lock:
             if thread_id not in self.timeline_per_thread:
                 return None
             all_event_timestamps = [(event, event.timestamp) for event in self.timeline_per_thread[thread_id]]
@@ -217,7 +268,7 @@ class EventLogger:
         :param thread_id: The id of the thread.
         :return: The latest event of the thread or None if no such thread.
         """
-        with self.lock:
+        with self.timeline_lock:
             if thread_id not in self.timeline_per_thread:
                 return None
             return self.timeline_per_thread[thread_id][-1]

@@ -6,13 +6,14 @@ import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional
 
-from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB)
+from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, Color)
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
 from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import Supporter, Floor, Location
+from pycram.ros import logdebug
 
 
 def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
@@ -29,7 +30,7 @@ def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) 
         dt = math.sqrt(2 * distance / 9.81) + 0.01  # time to fall distance
         World.current_world.simulate(dt)
         cp = prospection_obj.contact_points
-        if not check_if_in_contact_with_support(prospection_obj, cp.get_bodies_in_contact()):
+        if not get_support(prospection_obj, cp.get_all_bodies()):
             return False
     return supported
 
@@ -47,21 +48,26 @@ def check_if_object_is_supported_using_contact_points(obj: Object, contact_point
             return True
 
 
-def check_if_in_contact_with_support(obj: Object, contact_bodies: List[PhysicalBody]) -> Optional[PhysicalBody]:
+def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None) -> Optional[PhysicalBody]:
     """
-    Check if the object is in contact with a supporting surface.
+    Check if the object is in contact with a supporting surface and returns it.
 
     :param obj: The object to check if it is in contact with a supporting surface.
     :param contact_bodies: The bodies in contact with the object.
+    :return: The supporting surface if it exists, None otherwise.
     """
+    if not contact_bodies:
+        contact_bodies = obj.contact_points.get_all_bodies()
     for body in contact_bodies:
         if issubclass(body.parent_entity.obj_type, (Supporter, Location)):
             body_aabb = body.get_axis_aligned_bounding_box()
             surface_z = body_aabb.max_z
-            tracked_object_base = obj.get_base_origin().position
+            tracked_object_base = obj.position
             if tracked_object_base.z >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
                     body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
+                logdebug(f"Object {obj.name} IS supported by {body.name}")
                 return body
+    logdebug(f"Object {obj.name} IS NOT supported")
 
 
 def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Object,
@@ -146,7 +152,7 @@ class Imaginator:
         support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
         support = GenericObjectDescription(support_name,
                                            [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness * 0.5])
-        support_obj = Object(support_name, Supporter, None, support)
+        support_obj = Object(support_name, Supporter, None, support, color=Color(1, 1, 0, 1))
         support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
         cp = support_obj.closest_points(0.05)

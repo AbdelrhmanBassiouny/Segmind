@@ -1,25 +1,83 @@
-from unittest import TestCase
+import time
+from datetime import timedelta
 
 import numpy as np
 
+from episode_segmenter.datastructures.events import TranslationEvent, StopMotionEvent, StopTranslationEvent
+from episode_segmenter.datastructures.object_tracker import ObjectTrackerFactory
+from episode_segmenter.detectors.atomic_event_detectors import TranslationDetector
 from episode_segmenter.detectors.motion_detection_helpers import ConsistentGradient, Displacement
+from episode_segmenter.detectors.spatial_relation_detector import SpatialRelationDetector
+from episode_segmenter.event_logger import EventLogger
+from pycram.testing import BulletWorldTestCase
+from pycram.datastructures.enums import LoggerLevel
+from pycram.ros import set_logger_level
+from pycram.world_concepts.world_object import Object
+
+set_logger_level(LoggerLevel.DEBUG)
 
 
-class TestEventDetectors(TestCase):
+class TestEventDetectors(BulletWorldTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        pass
+    def test_translation_detector(self):
+        milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
+        translation_detector = self.run_and_get_translation_detector(self.milk)
 
-    @classmethod
-    def tearDownClass(cls):
-        pass
+        try:
+            fridge_position = self.kitchen.links["iai_fridge_main"].position_as_list
+            self.milk.set_position(fridge_position)
 
-    def setUp(self):
-        pass
+            # wait one timestep to detect that it is moving
+            time.sleep(translation_detector.get_n_changes_wait_time(1))
+            translation_event = milk_tracker.get_latest_event_of_type(TranslationEvent)
+            self.assertTrue(translation_event is not None)
 
-    def tearDown(self):
-        pass
+            # wait one timestep to detect that it is not moving
+            time.sleep(translation_detector.get_n_changes_wait_time(1))
+            self.assertTrue(milk_tracker.get_first_event_of_type_after_event(StopTranslationEvent, translation_event)
+                            is not None)
+        except Exception as e:
+            raise e
+        finally:
+            translation_detector.stop()
+            translation_detector.join()
+
+    def test_spatial_relation_detector(self):
+        milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
+        time_between_frames = timedelta(seconds=0.01)
+        translation_detector = self.run_and_get_translation_detector(self.milk, time_between_frames)
+
+        sr_detector = SpatialRelationDetector(wait_time=time_between_frames)
+        sr_detector.start()
+
+        try:
+            self.assertFalse(self.kitchen.links["iai_fridge_main"].contains_body(self.milk))
+            fridge_position = self.kitchen.links["iai_fridge_main"].position_as_list
+            self.milk.set_position(fridge_position)
+            # because milk goes to moving state then to stop state thus we need to wait for 2 changes
+            time.sleep(translation_detector.get_n_changes_wait_time(2))
+            self.assertTrue(milk_tracker.get_latest_event_of_type(StopMotionEvent) is not None)
+            self.assertTrue(self.kitchen.links["iai_fridge_main"].contains_body(self.milk))
+        except Exception as e:
+            raise e
+        finally:
+            translation_detector.stop()
+            sr_detector.stop()
+            translation_detector.join()
+            sr_detector.join()
+
+    @staticmethod
+    def run_and_get_translation_detector(obj: Object, time_between_frames: timedelta = timedelta(seconds=0.01))\
+            -> TranslationDetector:
+        logger = EventLogger()
+        translation_detector = TranslationDetector(logger, obj,
+                                                   detection_method=Displacement(0.01),
+                                                   time_between_frames=time_between_frames,
+                                                   window_size=2)
+        translation_detector.start()
+        # wait one timestep to detect the initial state
+        time.sleep(translation_detector.get_n_changes_wait_time(1))
+        return translation_detector
 
     def test_consistent_gradient_motion_detection_method(self):
         for i in range(3):
