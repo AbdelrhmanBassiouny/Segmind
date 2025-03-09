@@ -1,23 +1,19 @@
-import datetime
 import time
 import unittest
-
-from anytree.exporter import DotExporter
+from datetime import timedelta
 
 from episode_segmenter.players.cram_player import CRAMPlayer
-from pycram.datastructures.dataclasses import Color
 from pycram.datastructures.enums import Arms, Grasp, TorsoState, WorldMode
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import UseProspectionWorld
 from pycram.designator import ObjectDesignatorDescription
-from pycram.designators.action_designator import PickUpActionPerformable, PickUpAction, MoveTorsoAction
+from pycram.designators.action_designator import PickUpAction, MoveTorsoAction
 from pycram.process_module import simulated_robot, ProcessModule
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.tasktree import task_tree
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Milk, Kitchen
-from ripple_down_rules.utils import render_tree
 
 
 class TestCRAMPlayer(unittest.TestCase):
@@ -32,7 +28,6 @@ class TestCRAMPlayer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.world = BulletWorld(mode=cls.render_mode)
-        ProcessModule.execution_delay = False
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.cram_player = CRAMPlayer()
         cls.kitchen = Object("kitchen", Kitchen, "kitchen.urdf")
@@ -58,3 +53,9 @@ class TestCRAMPlayer(unittest.TestCase):
             MoveTorsoAction([TorsoState.HIGH]).resolve().perform()
             description.resolve().perform()
         task_tree.render("results/pick_up_tree")
+
+    @staticmethod
+    def pick_up_plan():
+        object_description = ObjectDesignatorDescription(names=["milk"])
+        description = PickUpAction(object_description, [Arms.LEFT], [Grasp.FRONT])
+        return [MoveTorsoAction([TorsoState.HIGH]), description]
