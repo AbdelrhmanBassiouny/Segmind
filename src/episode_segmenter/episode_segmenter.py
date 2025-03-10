@@ -111,6 +111,25 @@ class EpisodeSegmenter(ABC):
         """
         pass
 
+    def run_objects_initial_event_detectors(self) -> None:
+        """
+        Start the motion detection threads for the objects in the world, and imagine supports for objects
+        that seem to be supported but have no actual support detected.
+        """
+        self.episode_player.pause()
+        set_of_objects = set()
+        for obj in World.current_world.objects:
+            if not self.avoid_object(obj):
+                set_of_objects.add(obj)
+                if not check_if_object_is_supported(obj):
+                    logdebug(f"Object {obj.name} is not supported.")
+                    Imaginator.imagine_support_for_object(obj)
+                    logdebug(f"Imagined support for object {obj.name}.")
+        for obj in set_of_objects:
+            self.start_motion_threads_for_object(obj)
+            self.start_contact_threads_for_object(obj)
+        self.episode_player.resume()
+
     def update_tracked_objects(self, event: EventUnion) -> None:
         """
         Update the tracked objects based on the event, for example a contact event would reveal new objects that should
@@ -276,7 +295,7 @@ class EpisodeSegmenter(ABC):
         logdebug("All threads joined.")
 
 
-class AgentBasedEpisodeSegmenter(EpisodeSegmenter):
+class AgentEpisodeSegmenter(EpisodeSegmenter):
     """
     The AgentBasedEpisodeSegmenter class is used to segment motions into activities (e.g. PickUp) by tracking the
      events that are relevant to the agent for example contact events of the hands or robot.
@@ -333,16 +352,4 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
         """
         Start the motion detection threads for the objects in the world.
         """
-        self.episode_player.pause()
-        set_of_objects = set()
-        for obj in World.current_world.objects:
-            if not self.avoid_object(obj):
-                set_of_objects.add(obj)
-                if not check_if_object_is_supported(obj):
-                    print(f"Object {obj.name} is not supported.")
-                    Imaginator.imagine_support_for_object(obj)
-                    print(f"Imagined support for object {obj.name}.")
-        for obj in set_of_objects:
-            self.start_motion_threads_for_object(obj)
-            self.start_contact_threads_for_object(obj)
-        self.episode_player.resume()
+        self.run_objects_initial_event_detectors()

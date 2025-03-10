@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from datastructures import CaseQuery
 from pycram.designators.action_designator import PickUpAction, PlaceAction
 from pycram.orm.action_designator import Action
 from pycrap.ontologies import Location, Supporter
+from rdr import SingleClassRDR
 
 try:
     from matplotlib import pyplot as plt
@@ -233,6 +235,17 @@ class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
     @classmethod
     def event_type(cls):
         return PickUpEvent
+
+
+class GeneralPickUpDetector(AbstractPickUpDetector):
+    """
+    A detector that detects pick up events based on incremental learning using Ripple Down Rules.
+    """
+
+    @classmethod
+    def start_condition_fitter(cls, event: Event) -> bool:
+        scrdr = SingleClassRDR()
+        return scrdr.fit_case(CaseQuery(event.tracked_object))
 
 
 class AgentPickUpDetector(AbstractPickUpDetector):

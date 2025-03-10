@@ -1,13 +1,13 @@
 from typing_extensions import Type, List
 from queue import Queue
 
-from pycram.orm.action_designator import Action
+from pycram.designators.action_designator import ActionAbstract as Action
 from pycram.tasktree import TaskTreeNode, task_tree
-from ..episode_segmenter import AgentBasedEpisodeSegmenter
+from ..episode_segmenter import AgentEpisodeSegmenter
 from ..players.cram_player import CRAMPlayer
 
 
-class CRAMSegmenter(AgentBasedEpisodeSegmenter):
+class CRAMSegmenter(AgentEpisodeSegmenter):
     """
     The CRAMSegmenter class is used to segment the CRAMs motion replay data by using event detectors, such as contact,
     loss of contact, and pick up events.
@@ -26,13 +26,11 @@ class CRAMSegmenter(AgentBasedEpisodeSegmenter):
                          detectors_to_start=detectors_to_start,
                          annotate_events=annotate_events)
         self.action_types: List[Type[Action]] = [detector.action_type for detector in self.detectors_to_start]
+        self.action_types.append(None)
         self.start_action_queue: Queue = Queue()
         self.end_action_queue: Queue = Queue()
-        if self.action_types:
-            for action_type in self.action_types:
-                self.add_callback(action_type)
-        else:
-            self.add_callback(Action)
+        for action_type in self.action_types:
+            self.add_callback(action_type)
 
     def add_callback(self, action_type: Type[Action]):
         """
@@ -40,8 +38,8 @@ class CRAMSegmenter(AgentBasedEpisodeSegmenter):
 
         :param action_type: The action type to add the callback for.
         """
-        task_tree.add_callback(action_type, self.start_action_callback)
-        task_tree.add_callback(action_type, self.end_action_callback, on_start=False)
+        task_tree.add_callback(self.start_action_callback, action_type=action_type)
+        task_tree.add_callback(self.end_action_callback, action_type=action_type, on_start=False)
 
     def start_action_callback(self, action_node: TaskTreeNode):
         """
