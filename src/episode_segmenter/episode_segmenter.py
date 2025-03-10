@@ -23,8 +23,8 @@ class EpisodeSegmenter(ABC):
         :param annotate_events: A boolean value that indicates if the events should be annotated.
         """
         self.episode_player: EpisodePlayer = episode_player
-        self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start
-        self.logger = EventLogger(annotate_events, [PickUpEvent, PlacingEvent])
+        self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start if detectors_to_start else []
+        self.logger = EventLogger(annotate_events, [detector.event_type for detector in detectors_to_start])
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']
         self.starter_event_to_detector_thread_map: [Event, Type[DetectorWithStarterEvent]] = {}
         self.detector_threads_list: List[EventDetectorUnion] = []

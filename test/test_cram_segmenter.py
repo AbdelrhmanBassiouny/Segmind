@@ -1,8 +1,8 @@
 import time
 import unittest
-from datetime import timedelta
 
-from episode_segmenter.players.cram_player import CRAMPlayer
+from episode_segmenter.segmenters.cram_segmenter import CRAMSegmenter
+from episode_segmenter.detectors.coarse_event_detectors import MotionPickUpDetector
 from pycram.datastructures.enums import Arms, Grasp, TorsoState, WorldMode
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import UseProspectionWorld
@@ -17,7 +17,7 @@ from pycrap.ontologies import Robot, Milk, Kitchen
 
 
 class TestCRAMPlayer(unittest.TestCase):
-    cram_player: CRAMPlayer
+    cram_segmenter: CRAMSegmenter
     robot: Object
     milk: Object
     kitchen: Object
@@ -29,7 +29,7 @@ class TestCRAMPlayer(unittest.TestCase):
     def setUpClass(cls):
         cls.world = BulletWorld(mode=cls.render_mode)
         cls.viz_marker_publisher = VizMarkerPublisher()
-        cls.cram_player = CRAMPlayer()
+        cls.cram_segmenter = CRAMSegmenter(cls.world, [MotionPickUpDetector])
         cls.kitchen = Object("kitchen", Kitchen, "kitchen.urdf")
         cls.robot = Object("pr2", Robot, "pr2.urdf", pose=Pose([0.6, 0.4, 0]))
         cls.milk = Object("milk", Milk, "milk.stl", pose=Pose([1.3, 1, 0.9]))
@@ -47,15 +47,13 @@ class TestCRAMPlayer(unittest.TestCase):
         cls.world.exit()
 
     def test_pick_up(self):
+        self.execute_pick_up_plan()
+        task_tree.render("results/pick_up_tree")
+
+    @staticmethod
+    def execute_pick_up_plan():
         object_description = ObjectDesignatorDescription(names=["milk"])
         description = PickUpAction(object_description, [Arms.LEFT], [Grasp.FRONT])
         with simulated_robot:
             MoveTorsoAction([TorsoState.HIGH]).resolve().perform()
             description.resolve().perform()
-        task_tree.render("results/pick_up_tree")
-
-    @staticmethod
-    def pick_up_plan():
-        object_description = ObjectDesignatorDescription(names=["milk"])
-        description = PickUpAction(object_description, [Arms.LEFT], [Grasp.FRONT])
-        return [MoveTorsoAction([TorsoState.HIGH]), description]

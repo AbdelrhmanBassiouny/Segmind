@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pycram.designators.action_designator import PickUpAction, PlaceAction
+from pycram.orm.action_designator import Action
 from pycrap.ontologies import Location, Supporter
 
 try:
@@ -31,6 +33,22 @@ class DetectorWithStarterEvent(AtomicEventDetector, ABC):
         super().__init__(logger, wait_time, *args, **kwargs)
         self.starter_event: EventUnion = starter_event
         self._start_timestamp = self.starter_event.timestamp
+
+    @classmethod
+    @abstractmethod
+    def action_type(cls):
+        """
+        The action type that this detector detects.
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def event_type(cls):
+        """
+        The event type that this detector invokes.
+        """
+        pass
 
     @classmethod
     @abstractmethod
@@ -208,6 +226,14 @@ class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
     def _init_interaction_event(self) -> EventUnion:
         return PickUpEvent(self.tracked_object, timestamp=self.start_timestamp)
 
+    @classmethod
+    def action_type(cls):
+        return PickUpAction
+
+    @classmethod
+    def event_type(cls):
+        return PickUpEvent
+
 
 class AgentPickUpDetector(AbstractPickUpDetector):
     """
@@ -330,6 +356,14 @@ class PlacingDetector(AbstractInteractionDetector):
     """
 
     thread_prefix = "placing_"
+
+    @classmethod
+    def action_type(cls):
+        return PlaceAction
+
+    @classmethod
+    def event_type(cls):
+        return PlacingEvent
 
     def _init_interaction_event(self) -> EventUnion:
         return PlacingEvent(self.tracked_object, timestamp=self.start_timestamp)
