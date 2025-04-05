@@ -5,6 +5,7 @@ from pycram.designators.action_designator import PickUpAction, PlaceAction
 from pycram.orm.action_designator import Action
 from pycrap.ontologies import Location, Supporter
 from rdr import SingleClassRDR
+from rdr_decorators import single_class_rdr
 
 try:
     from matplotlib import pyplot as plt
@@ -242,10 +243,17 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     A detector that detects pick up events based on incremental learning using Ripple Down Rules.
     """
 
+    def interaction_checks(self) -> bool:
+        pass
+
     @classmethod
-    def start_condition_fitter(cls, event: Event) -> bool:
-        scrdr = SingleClassRDR()
-        return scrdr.fit_case(CaseQuery(event.tracked_object))
+    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
+        pass
+
+    @classmethod
+    @single_class_rdr(model_dir="./models/")
+    def start_condition_checker(cls, event: Event, target: Optional[bool] = None) -> bool:
+        return None
 
 
 class AgentPickUpDetector(AbstractPickUpDetector):
@@ -340,7 +348,8 @@ class MotionPickUpDetector(AbstractPickUpDetector):
                 and not get_support(event.tracked_object, event.links)):
             logdebug(f"{event} with object {event.tracked_object.name} IS A starter event")
             return True
-        logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
+        if isinstance(event, LossOfContactEvent):
+            logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
         return False
 
     def interaction_checks(self) -> bool:
