@@ -1,3 +1,4 @@
+import logging
 import queue
 import threading
 import time
@@ -8,7 +9,9 @@ from queue import Queue
 
 import numpy as np
 
+from pycram.ros import logdebug
 from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
+from ..episode_player import EpisodePlayer
 
 try:
     from matplotlib import pyplot as plt
@@ -40,15 +43,20 @@ class AtomicEventDetector(threading.Thread, ABC):
     """
 
     def __init__(self, logger: Optional[EventLogger] = None, wait_time: Optional[timedelta] = None,
-                 world: Optional[World] = None, *args, **kwargs):
+                 world: Optional[World] = None, episode_player: Optional[EpisodePlayer] = None,
+                 fit_mode: bool = False, *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         :param world: An optional World instance that represents the world.
+        :param episode_player: An optional EpisodePlayer instance that represents the thread that steps the world.
+        :param fit_mode: A boolean value that indicates if the event detector is in fit mode, if true, then the detector
+        will pause the episode player when it is fitting a case.
         """
 
         super().__init__()
-
+        self.episode_player = episode_player
+        self.fit_mode = fit_mode
         self.logger = logger if logger else EventLogger.current_logger
         self.world = world if world else World.current_world
         self.wait_time = wait_time if wait_time is not None else timedelta(seconds=0.1)
@@ -101,9 +109,14 @@ class AtomicEventDetector(threading.Thread, ABC):
                 break
 
             self._wait_if_paused()
+            if self.fit_mode and self.episode_player:
+                self.episode_player.pause()
 
             last_processing_time = time.time()
             self.detect_and_log_events()
+
+            if self.fit_mode and self.episode_player:
+                self.episode_player.resume()
 
             if self.run_once:
                 break
@@ -283,7 +296,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         """
         The object type of the object to track.
         """
-        return self.tracked_object.obj_type
+        return self.tracked_object.ontology_concept
 
     def detect_events(self) -> List[Event]:
         """

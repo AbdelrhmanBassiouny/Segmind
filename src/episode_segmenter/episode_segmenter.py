@@ -2,11 +2,11 @@ import datetime
 
 from typing_extensions import List, Optional, Dict
 
-from .episode_player import EpisodePlayer
-from .detectors.coarse_event_detectors import *
-from .event_logger import EventLogger
 from .datastructures.events import *
 from .datastructures.object_tracker import ObjectTracker
+from .detectors.coarse_event_detectors import *
+from .episode_player import EpisodePlayer
+from .event_logger import EventLogger
 from .utils import check_if_object_is_supported, Imaginator
 
 
@@ -144,6 +144,8 @@ class EpisodeSegmenter(ABC):
         for obj in involved_objects:
             if self.avoid_object(obj):
                 continue
+            if isinstance(obj, Link) and obj.parent_entity in self.object_trackers.keys():
+                continue
             if obj not in self.object_trackers.keys():
                 logdebug(f"New object {obj.name}")
                 self.object_trackers[obj] = ObjectTracker(obj)
@@ -177,8 +179,9 @@ class EpisodeSegmenter(ABC):
         :param obj: The object to check.
         :return: True if the object should be avoided, False otherwise.
         """
-        return obj.is_an_environment or issubclass(obj.obj_type, (Supporter, Location)) or \
-            any([k in obj.name.lower() for k in self.objects_to_avoid])
+        return ((obj.is_an_environment or issubclass(obj.ontology_concept, (Supporter, Location)) or
+                 any([k in obj.name.lower() for k in self.objects_to_avoid])) or
+                (isinstance(obj, Link) and self.avoid_object(obj.parent_entity)))
 
     def start_motion_threads_for_object(self, obj: Object, event: Optional[NewObjectEvent] = None) -> None:
         """
@@ -244,6 +247,7 @@ class EpisodeSegmenter(ABC):
         """
         detector_args = self.get_detector_args(detector_type, tracked_object=tracked_object,
                                                starter_event=starter_event, *detector_args)
+        detector_kwargs['episode_player'] = self.episode_player
         detector = detector_type(self.logger, *detector_args, **detector_kwargs)
         self.start_and_add_detector(detector)
 
@@ -316,6 +320,7 @@ class AgentEpisodeSegmenter(EpisodeSegmenter):
         """
         agents = self.get_agents()
         for agent in agents:
+            self.object_trackers[agent] = ObjectTracker(agent)
             self.start_contact_threads_for_object(agent)
 
     @staticmethod

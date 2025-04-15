@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-from datastructures import CaseQuery
 from pycram.designators.action_designator import PickUpAction, PlaceAction
-from pycram.orm.action_designator import Action
 from pycrap.ontologies import Location, Supporter
-from rdr import SingleClassRDR
 from rdr_decorators import single_class_rdr
 
 try:
@@ -242,7 +239,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A detector that detects pick up events based on incremental learning using Ripple Down Rules.
     """
-
+    @single_class_rdr(model_dir="./models/")
     def interaction_checks(self) -> bool:
         pass
 
@@ -253,7 +250,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     @classmethod
     @single_class_rdr(model_dir="./models/")
     def start_condition_checker(cls, event: Event, target: Optional[bool] = None) -> bool:
-        return None
+        pass
 
 
 class AgentPickUpDetector(AbstractPickUpDetector):
@@ -485,7 +482,7 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
     :param objects: A list of Object instances.
     """
     transportable_objects = [obj for obj in objects
-                             if not issubclass(obj.obj_type, (Agent, Location, Supporter))]
+                             if not issubclass(obj.ontology_concept, (Agent, Location, Supporter))]
     return transportable_objects
 
 

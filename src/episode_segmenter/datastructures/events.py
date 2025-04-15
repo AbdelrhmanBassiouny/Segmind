@@ -243,7 +243,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
-        return list(set(self.tracked_objects + self.links))
+        return list(set(self.links))
 
     def set_color(self, color: Optional[Color] = None):
         color = color if color is not None else self.color

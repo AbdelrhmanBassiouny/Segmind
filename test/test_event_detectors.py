@@ -2,10 +2,13 @@ import time
 from datetime import timedelta
 
 import numpy as np
+from typing_extensions import List, Type
 
-from episode_segmenter.datastructures.events import TranslationEvent, StopMotionEvent, StopTranslationEvent
+from episode_segmenter.datastructures.events import TranslationEvent, StopMotionEvent, StopTranslationEvent, \
+    ContactEvent, Event, EventUnion
 from episode_segmenter.datastructures.object_tracker import ObjectTrackerFactory
-from episode_segmenter.detectors.atomic_event_detectors import TranslationDetector
+from episode_segmenter.detectors.atomic_event_detectors import TranslationDetector, AtomicEventDetector
+from episode_segmenter.detectors.coarse_event_detectors import GeneralPickUpDetector
 from episode_segmenter.detectors.motion_detection_helpers import ConsistentGradient, Displacement
 from episode_segmenter.detectors.spatial_relation_detector import SpatialRelationDetector
 from episode_segmenter.event_logger import EventLogger
@@ -18,6 +21,10 @@ set_logger_level(LoggerLevel.DEBUG)
 
 
 class TestEventDetectors(BulletWorldTestCase):
+
+    def test_general_pick_up_start_condition_checker(self):
+        event = ContactEvent(self.milk, self.robot, 0.1)
+        GeneralPickUpDetector.start_condition_checker(event)
 
     def test_translation_detector(self):
         milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
