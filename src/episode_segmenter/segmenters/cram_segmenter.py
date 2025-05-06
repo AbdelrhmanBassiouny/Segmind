@@ -1,8 +1,8 @@
 from typing_extensions import Type, List
 from queue import Queue
 
-from pycram.designators.action_designator import ActionAbstract as Action
-from pycram.tasktree import TaskTreeNode, task_tree
+from pycram.designator import ActionDescription
+from pycram.plan import Plan, ResolvedActionNode
 from ..episode_segmenter import AgentEpisodeSegmenter
 from ..players.cram_player import CRAMPlayer
 
@@ -25,23 +25,23 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
         super().__init__(self.cram_player_thread,
                          detectors_to_start=detectors_to_start,
                          annotate_events=annotate_events)
-        self.action_types: List[Type[Action]] = [detector.action_type for detector in self.detectors_to_start]
-        self.action_types.append(None)
+        self.action_types: List[Type[ActionDescription]] = [detector.action_type() for detector in self.detectors_to_start]
+        self.action_types.append(ActionDescription)
         self.start_action_queue: Queue = Queue()
         self.end_action_queue: Queue = Queue()
         for action_type in self.action_types:
             self.add_callback(action_type)
 
-    def add_callback(self, action_type: Type[Action]):
+    def add_callback(self, action_type: Type[ActionDescription]):
         """
         Add a callback for the given action type.
 
         :param action_type: The action type to add the callback for.
         """
-        task_tree.add_callback(self.start_action_callback, action_type=action_type)
-        task_tree.add_callback(self.end_action_callback, action_type=action_type, on_start=False)
+        # Plan.current_plan.add_on_start_callback(self.start_action_callback, action_type=action_type)
+        # Plan.current_plan.add_on_end_callback(self.end_action_callback, action_type=action_type)
 
-    def start_action_callback(self, action_node: TaskTreeNode):
+    def start_action_callback(self, action_node: ResolvedActionNode):
         """
         The action callback method that is called when an action is performed.
 
@@ -53,7 +53,7 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
         print(f"Action Started: {action_node}")
         self.start_action_queue.put(action_node)
 
-    def end_action_callback(self, action_node: TaskTreeNode):
+    def end_action_callback(self, action_node: ResolvedActionNode):
         """
         The action callback method that is called when an action is performed.
 

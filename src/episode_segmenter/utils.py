@@ -6,7 +6,8 @@ import numpy as np
 from tf.transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional
 
-from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, Color)
+from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB)
+from pycram.datastructures.enums import Color
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pycram.designators.action_designator import PickUpAction, PlaceAction
 from pycrap.ontologies import Location, Supporter
-from rdr_decorators import single_class_rdr
+from ripple_down_rules.rdr_decorators import RDRDecorator
 
 try:
     from matplotlib import pyplot as plt
@@ -237,9 +237,19 @@ class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
 
 class GeneralPickUpDetector(AbstractPickUpDetector):
     """
-    A detector that detects pick up events based on incremental learning using Ripple Down Rules.
+    A detector that detects pick-up events based on incremental learning using Ripple Down Rules.
     """
-    @single_class_rdr(model_dir="./models/")
+    interaction_checks_rdr: RDRDecorator = RDRDecorator("./models/general_pickup_interaction_checks", bool,
+                                                        True)
+    """
+    A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up.
+    """
+    start_condition_rdr: RDRDecorator = RDRDecorator("./models/general_pickup_start_condition", bool, True)
+    """
+    A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
+    """
+
+    @interaction_checks_rdr.decorator
     def interaction_checks(self) -> bool:
         pass
 
@@ -248,7 +258,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
         pass
 
     @classmethod
-    @single_class_rdr(model_dir="./models/")
+    @start_condition_rdr.decorator
     def start_condition_checker(cls, event: Event, target: Optional[bool] = None) -> bool:
         pass
 
