@@ -1,4 +1,4 @@
-from typing_extensions import Type, List
+from typing_extensions import Type, List, Optional
 from queue import Queue
 
 from pycram.designator import ActionDescription
@@ -25,21 +25,22 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
         super().__init__(self.cram_player_thread,
                          detectors_to_start=detectors_to_start,
                          annotate_events=annotate_events)
-        self.action_types: List[Type[ActionDescription]] = [detector.action_type() for detector in self.detectors_to_start]
-        self.action_types.append(ActionDescription)
+        self.action_types: List[Optional[Type[ActionDescription]]] = [detector.action_type()
+                                                                      for detector in self.detectors_to_start]
+        self.action_types.append(None)
         self.start_action_queue: Queue = Queue()
         self.end_action_queue: Queue = Queue()
         for action_type in self.action_types:
             self.add_callback(action_type)
 
-    def add_callback(self, action_type: Type[ActionDescription]):
+    def add_callback(self, action_type: Optional[Type[ActionDescription]] = None):
         """
         Add a callback for the given action type.
 
         :param action_type: The action type to add the callback for.
         """
-        # Plan.current_plan.add_on_start_callback(self.start_action_callback, action_type=action_type)
-        # Plan.current_plan.add_on_end_callback(self.end_action_callback, action_type=action_type)
+        Plan.add_on_start_callback(self.start_action_callback, action_type=action_type)
+        Plan.add_on_end_callback(self.end_action_callback, action_type=action_type)
 
     def start_action_callback(self, action_node: ResolvedActionNode):
         """

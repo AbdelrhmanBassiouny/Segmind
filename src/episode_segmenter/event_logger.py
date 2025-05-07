@@ -160,6 +160,9 @@ class EventLogger:
                     data_dict['obj_type'].append(tracker.obj.obj_type.name)
                 elif isinstance(tracker.obj, Link):
                     data_dict['obj_type'].append(f'Link of {tracker.obj.parent_entity.obj_type}')
+        if len(data_dict['start']) == 0:
+            loginfo("No events to plot.")
+            return
         # subtract the start time from all timestamps
         min_start = min(data_dict['start'])
         data_dict['start'] = [x - min_start for x in data_dict['start']]

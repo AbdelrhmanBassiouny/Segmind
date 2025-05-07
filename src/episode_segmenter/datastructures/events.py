@@ -7,7 +7,7 @@ from typing_extensions import Optional, List, Union
 from episode_segmenter.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from episode_segmenter.datastructures.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState
-from pycram.datastructures.enums import Color
+from pycram.datastructures.dataclasses import Color
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import World
 from pycram.datastructures.world_entity import PhysicalBody

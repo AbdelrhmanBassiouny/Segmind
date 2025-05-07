@@ -4,6 +4,7 @@ from pycram.designators.action_designator import PickUpAction, PlaceAction
 from pycrap.ontologies import Location, Supporter
 from ripple_down_rules.rdr_decorators import RDRDecorator
 
+
 try:
     from matplotlib import pyplot as plt
 except ImportError:
@@ -44,7 +45,7 @@ class DetectorWithStarterEvent(AtomicEventDetector, ABC):
 
     @classmethod
     @abstractmethod
-    def event_type(cls):
+    def event_type(cls) -> Type[Event]:
         """
         The event type that this detector invokes.
         """
@@ -239,12 +240,12 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A detector that detects pick-up events based on incremental learning using Ripple Down Rules.
     """
-    interaction_checks_rdr: RDRDecorator = RDRDecorator("./models/general_pickup_interaction_checks", bool,
+    interaction_checks_rdr: RDRDecorator = RDRDecorator("./models/general_pickup_interaction_checks", (bool,),
                                                         True)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up.
     """
-    start_condition_rdr: RDRDecorator = RDRDecorator("./models/general_pickup_start_condition", bool, True)
+    start_condition_rdr: RDRDecorator = RDRDecorator("./models/general_pickup_start_condition", (bool,), True)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """

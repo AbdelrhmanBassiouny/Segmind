@@ -54,7 +54,8 @@ class TestCRAMPlayer(unittest.TestCase):
         cls.world.exit()
 
     def test_pick_up(self):
-        self.execute_pick_up_plan()
+        # self.execute_pick_up_plan()
+        self.cram_segmenter.start()
 
     @staticmethod
     def execute_pick_up_plan():
