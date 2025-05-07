@@ -1,0 +1,54 @@
+{
+    "_type": "ripple_down_rules.rdr.GeneralRDR",
+    "start_rules": {
+        "output": {
+            "_type": "ripple_down_rules.rdr.SingleClassRDR",
+            "start_rule": {
+                "_type": "ripple_down_rules.rules.SingleClassRule",
+                "conditions": {
+                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                    "user_input": "def _get_value(case):\n    def conditions_for__general_pick_up_detector_start_condition_checker_output(case: dict) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output of type(s) bool\"\"\"\n        return True\n    return conditions_for__general_pick_up_detector_start_condition_checker_output(case)\n    ",
+                    "conclusion_type": [
+                        "builtins.bool"
+                    ],
+                    "scope": {},
+                    "conclusion": {
+                        "_type": "builtins.NoneType",
+                        "value": null
+                    }
+                },
+                "conclusion": {
+                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker_output(case: dict) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output of type(s) bool\"\"\"\n        from pycrap.ontologies.crax.classes import Floor\n        if not isinstance(case.event, AgentContactEvent):\n            return False\n        if issubclass(case.event.with_object.obj_type, (Location, Floor)):\n            return False\n        if case.event.with_object.is_a_robot:\n            return False\n        if issubclass(case.event.with_object.obj_type, Supporter):\n            return False\n        return True\n    return general_pick_up_detector_start_condition_checker_output(case)\n    ",
+                    "conclusion_type": [
+                        "builtins.bool"
+                    ],
+                    "scope": {
+                        "Supporter": "pycrap.ontologies.crax.classes.Supporter",
+                        "AgentContactEvent": "episode_segmenter.datastructures.events.AgentContactEvent",
+                        "Location": "pycrap.ontologies.crax.classes.Location"
+                    },
+                    "conclusion": {
+                        "_type": "builtins.NoneType",
+                        "value": null
+                    }
+                },
+                "parent": null,
+                "corner_case": {
+                    "_type": "ripple_down_rules.datastructures.case.Case",
+                    "cls": null,
+                    "event": null,
+                    "target_output": false,
+                    "_id": 140472717120896,
+                    "_obj_type": "builtins.dict",
+                    "_name": "GeneralPickUpDetector_start_condition_checker"
+                },
+                "conclusion_name": "output",
+                "weight": null,
+                "uid": "111526142284633543887924262571877894925",
+                "refinement": null,
+                "alternative": null
+            }
+        }
+    }
+}

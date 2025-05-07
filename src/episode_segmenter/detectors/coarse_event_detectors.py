@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os.path
+
 from pycram.designators.action_designator import PickUpAction, PlaceAction
 from pycrap.ontologies import Location, Supporter
 from ripple_down_rules.rdr_decorators import RDRDecorator
@@ -240,12 +242,19 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A detector that detects pick-up events based on incremental learning using Ripple Down Rules.
     """
-    interaction_checks_rdr: RDRDecorator = RDRDecorator("./models/general_pickup_interaction_checks", (bool,),
-                                                        True)
+    models_path: str = os.path.join(os.path.dirname(__file__), "models")
+    """
+    The path to the directory where the Ripple Down Rules models are stored.
+    """
+    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up.
     """
-    start_condition_rdr: RDRDecorator = RDRDecorator("./models/general_pickup_start_condition", (bool,), True)
+    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object,), True)
+    """
+    A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
+    """
+    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
@@ -254,7 +263,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     def interaction_checks(self) -> bool:
         pass
 
-    @classmethod
+    @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
         pass
 

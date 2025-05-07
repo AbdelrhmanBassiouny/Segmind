@@ -1,4 +1,4 @@
-neem_pycram_interface==1.0.174
+neem_pycram_interface
 trimesh
 manifold3d
 pyglet==1.5.31

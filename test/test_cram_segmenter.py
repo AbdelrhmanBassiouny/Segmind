@@ -50,6 +50,7 @@ class TestCRAMPlayer(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        GeneralPickUpDetector.start_condition_rdr.save()
         cls.viz_marker_publisher._stop_publishing()
         cls.world.exit()
 
