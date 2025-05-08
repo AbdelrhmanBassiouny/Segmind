@@ -263,6 +263,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     def interaction_checks(self) -> bool:
         pass
 
+    @classmethod
     @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
         pass
