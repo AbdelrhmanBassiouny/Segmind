@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os.path
 
+from pycram.plan import Plan, pause_resume
 from pycram.designators.action_designator import PickUpAction, PlaceAction
 from pycrap.ontologies import Location, Supporter
 from ripple_down_rules.rdr_decorators import RDRDecorator
@@ -80,7 +81,7 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
     A type of event detector that requires an event to occur as a start condition and has one tracked object.
     """
 
-    currently_tracked_objects: Dict[str, Object]
+    currently_tracked_objects: Optional[Dict[str, Object]] = None
     """
     All the objects that are currently tracked by a detector with a starter event.
     """
@@ -94,6 +95,9 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
         """
         DetectorWithStarterEvent.__init__(self, logger, starter_event, wait_time, *args, **kwargs)
         HasPrimaryTrackedObject.__init__(self, self.get_object_to_track_from_starter_event(starter_event))
+        if self.currently_tracked_objects is None:
+            self.currently_tracked_objects = {}
+        self.currently_tracked_objects[self.tracked_object] = self
 
     def check_for_event_pre_starter_event(self, event_type: Type[Event],
                                           time_tolerance: timedelta) -> Optional[EventUnion]:
@@ -163,7 +167,7 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
          start the event detector.
         """
         DetectorWithTrackedObjectAndStarterEvent.__init__(self, logger, starter_event, *args, **kwargs)
-        self.interaction_event: EventUnion = self._init_interaction_event()
+        self.interaction_event: Optional[EventUnion] = self._init_interaction_event()
         self.end_timestamp: Optional[float] = None
         self.run_once = True
 
@@ -183,13 +187,13 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
         event = None
         while not self.kill_event.is_set():
 
-            if not self.interaction_checks():
+            interaction_event = self.get_interaction_event()
+            if not interaction_event:
                 time.sleep(0.01)
                 continue
 
-            self.interaction_event.timestamp = self.start_timestamp
-            self.interaction_event.end_timestamp = self.end_timestamp
-            event = self.interaction_event
+            self.currently_tracked_objects.pop(self.tracked_object, None)
+            event = interaction_event
             break
 
         if event:
@@ -199,9 +203,9 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
         return []
 
     @abstractmethod
-    def interaction_checks(self) -> bool:
+    def get_interaction_event(self) -> Optional[EventUnion]:
         """
-        Perform checks to determine if the object was interacted with.
+        Perform checks to determine if the object was interacted with, and return the interaction event.
 
         :return: A boolean value that represents if all the checks passed and the object was interacted with.
         """
@@ -225,6 +229,7 @@ class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
     """
     An abstract detector that detects if the tracked_object was picked up.
     """
+    currently_tracked_objects: Dict[Object, AbstractPickUpDetector] = {}
 
     def _init_interaction_event(self) -> EventUnion:
         return PickUpEvent(self.tracked_object, timestamp=self.start_timestamp)
@@ -258,17 +263,19 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
-
+    @pause_resume
     @interaction_checks_rdr.decorator
-    def interaction_checks(self) -> bool:
+    def get_interaction_event(self) -> bool:
         pass
 
     @classmethod
+    @pause_resume
     @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
         pass
 
     @classmethod
+    @pause_resume
     @start_condition_rdr.decorator
     def start_condition_checker(cls, event: Event, target: Optional[bool] = None) -> bool:
         pass
@@ -278,7 +285,6 @@ class AgentPickUpDetector(AbstractPickUpDetector):
     """
     A detector that detects if the tracked_object was picked up by an agent, such as a human or a robot.
     """
-    currently_tracked_objects: Dict[Object, AgentPickUpDetector] = {}
 
     def __init__(self, logger: EventLogger, starter_event: AgentContactEvent, *args, **kwargs):
         """
@@ -291,7 +297,6 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         self.surface_detector.start()
         self.agent = starter_event.agent
         self.interaction_event.agent = self.agent
-        self.currently_tracked_objects[self.tracked_object] = self
 
     @classmethod
     def get_object_to_track_from_starter_event(cls, event: AgentContactEvent) -> Object:
@@ -312,7 +317,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
         """
         return isinstance(event, AgentContactEvent) and any(cls.get_new_transportable_objects(event))
 
-    def interaction_checks(self) -> bool:
+    def get_interaction_event(self) -> bool:
         """
         Perform extra checks to determine if the object was picked up.
         """
@@ -327,8 +332,6 @@ class AgentPickUpDetector(AbstractPickUpDetector):
             return False
 
         self.end_timestamp = loss_of_surface_event.timestamp
-
-        self.currently_tracked_objects.pop(self.tracked_object, None)
         return True
 
     def stop(self, timeout: Optional[float] = None):
@@ -370,7 +373,7 @@ class MotionPickUpDetector(AbstractPickUpDetector):
             logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
         return False
 
-    def interaction_checks(self) -> bool:
+    def get_interaction_event(self) -> bool:
         """
         Check for upward motion after the object lost contact with the surface.
         """
@@ -408,7 +411,7 @@ class PlacingDetector(AbstractInteractionDetector):
     def _init_interaction_event(self) -> EventUnion:
         return PlacingEvent(self.tracked_object, timestamp=self.start_timestamp)
 
-    def interaction_checks(self) -> bool:
+    def get_interaction_event(self) -> bool:
         dt = timedelta(milliseconds=1000)
         event = self.check_for_event_near_starter_event(StopMotionEvent, dt)
         if event is not None:

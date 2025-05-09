@@ -51,7 +51,7 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
         # Maybe create an Event for the given action.
         # One could use that for supervising the RDRs of action detection.
         # Maybe fit_rdr_case here :D.
-        print(f"Action Started: {action_node}")
+        # print(f"Action Started: {action_node}")
         self.start_action_queue.put(action_node)
 
     def end_action_callback(self, action_node: ResolvedActionNode):
@@ -60,7 +60,7 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
 
         :param action_node: The node in the task tree representing the action that was performed.
         """
-        print(f"Action Ended: {action_node}")
+        # print(f"Action Ended: {action_node}")
         self.end_action_queue.put(action_node)
 
     def start(self) -> None:

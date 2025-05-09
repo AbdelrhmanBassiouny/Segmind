@@ -66,4 +66,4 @@ class TestCRAMPlayer(unittest.TestCase):
             plan = SequentialPlan(MoveTorsoActionDescription(TorsoState.HIGH),
             description)
             plan.perform()
-        plan.plot()
+        # plan.plot()
