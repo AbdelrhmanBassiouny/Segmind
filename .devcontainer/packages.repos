@@ -1,0 +1,21 @@
+repositories:
+  # PyCram requires iai_maps and iai_pr2 to be installed in the same workspace
+#  iai_maps:
+#    type: git
+#    url: https://github.com/code-iai/iai_maps.git
+#    version: ros-jazzy
+#  pycram:
+#    type: git
+#    url: https://github.com/AbdelrhmanBassiouny/pycram.git
+#    version: dev
+#  iai_pr2:
+#    type: git
+#    url: https://github.com/code-iai/iai_pr2.git
+#    version: ros-jazzy-main
+
+  # Ripple Down Rules
+  ripple_down_rules:
+    type: git
+    url: https://github.com/AbdelrhmanBassiouny/ripple_down_rules.git
+    version: rdr_decorator2
+
