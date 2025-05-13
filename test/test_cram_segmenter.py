@@ -5,8 +5,8 @@ from pycram.datastructures.grasp import GraspDescription
 from pycram.designators.action_designator import MoveTorsoActionDescription, PickUpActionDescription
 from pycram.language import SequentialPlan
 from pycram.datastructures.pose import PoseStamped, Vector3
-from episode_segmenter.segmenters.cram_segmenter import CRAMSegmenter
-from episode_segmenter.detectors.coarse_event_detectors import MotionPickUpDetector, GeneralPickUpDetector
+from segmind.segmenters.cram_segmenter import CRAMSegmenter
+from segmind.detectors.coarse_event_detectors import MotionPickUpDetector, GeneralPickUpDetector
 from pycram.datastructures.enums import Arms, Grasp, TorsoState, WorldMode
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import UseProspectionWorld

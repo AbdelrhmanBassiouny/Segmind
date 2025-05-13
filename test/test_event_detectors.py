@@ -4,14 +4,14 @@ from datetime import timedelta
 import numpy as np
 from typing_extensions import List, Type
 
-from episode_segmenter.datastructures.events import TranslationEvent, StopMotionEvent, StopTranslationEvent, \
+from segmind.datastructures.events import TranslationEvent, StopMotionEvent, StopTranslationEvent, \
     ContactEvent, Event, EventUnion
-from episode_segmenter.datastructures.object_tracker import ObjectTrackerFactory
-from episode_segmenter.detectors.atomic_event_detectors import TranslationDetector, AtomicEventDetector
-from episode_segmenter.detectors.coarse_event_detectors import GeneralPickUpDetector
-from episode_segmenter.detectors.motion_detection_helpers import ConsistentGradient, Displacement
-from episode_segmenter.detectors.spatial_relation_detector import SpatialRelationDetector
-from episode_segmenter.event_logger import EventLogger
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
+from segmind.detectors.atomic_event_detectors import TranslationDetector, AtomicEventDetector
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
+from segmind.detectors.motion_detection_helpers import ConsistentGradient, Displacement
+from segmind.detectors.spatial_relation_detector import SpatialRelationDetector
+from segmind.event_logger import EventLogger
 from pycram.testing import BulletWorldTestCase
 from pycram.datastructures.enums import LoggerLevel
 from pycram.ros import set_logger_level

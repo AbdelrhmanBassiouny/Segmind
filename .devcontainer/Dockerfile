@@ -16,7 +16,7 @@ WORKDIR /root/ros_ws/src
 COPY packages.repos .
 
 
-RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/dev/pycram-ros2.rosinstall --recursive \
+RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/dev/pycram-ros2.rosinstall \
     && cd .. \
     && source /opt/ros/${ROS_DISTRO}/setup.bash \
     && colcon build --symlink-install
@@ -56,6 +56,14 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
 
 COPY post_create_setup.sh /
 RUN chmod +x /post_create_setup.sh
+
+ENV XDG_RUNTIME_DIR=/tmp/runtime-root
+RUN mkdir -p $XDG_RUNTIME_DIR && chmod 700 $XDG_RUNTIME_DIR
+
+ENV LIBGL_ALWAYS_SOFTWARE=1
+
+RUN echo "source /root/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
+RUN echo "source /root/ros_ws/install/setup.bash" >> $HOME/.bashrc
 
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh

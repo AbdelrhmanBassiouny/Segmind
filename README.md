@@ -1,4 +1,4 @@
-# EpisodeSegmenter
+# Segmind
 
 A python library for segmenting simulation episodes of activities. This is done by detecting physical interactions,
 and events in the simulation.
@@ -6,7 +6,7 @@ This library also integrates with [NEEMPycramInterface](https://github.com/Abdel
 ## Installation
 
 ```bash
-pip install episode_segmenter
+pip install segmind
 ```
 
 ## Example Usage
@@ -22,7 +22,7 @@ and events.
 
 ```Python
 from neem_pycram_interface import PyCRAMNEEMInterface
-from episode_segmenter.neem_segmenter import NEEMSegmenter
+from segmind.neem_segmenter import NEEMSegmenter
 
 from pycram.datastructures.enums import WorldMode
 from pycram.worlds.bullet_world import BulletWorld

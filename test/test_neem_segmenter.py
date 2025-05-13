@@ -1,10 +1,16 @@
 import os
 
-from neem_pycram_interface import PyCRAMNEEMInterface
+import pytest
 
-from episode_segmenter.detectors.coarse_event_detectors import AgentPickUpDetector, PlacingDetector, \
+try:
+    from neem_pycram_interface import PyCRAMNEEMInterface
+    from segmind.segmenters.neem_segmenter import NEEMSegmenter
+except ImportError:
+    PyCRAMNEEMInterface = None
+    NEEMSegmenter = None
+
+from segmind.detectors.coarse_event_detectors import AgentPickUpDetector, PlacingDetector, \
     GeneralPickUpDetector
-from episode_segmenter.segmenters.neem_segmenter import NEEMSegmenter
 from unittest import TestCase
 
 from pycram.datastructures.enums import WorldMode, LoggerLevel
@@ -14,6 +20,7 @@ from pycram.worlds.bullet_world import BulletWorld
 from pycram.ros import set_logger_level
 
 
+@pytest.mark.skipif(PyCRAMNEEMInterface is None, reason="PyCRAMNEEMInterface not available")
 class TestNEEMSegmentor(TestCase):
     pni: PyCRAMNEEMInterface
     viz_mark_publisher: VizMarkerPublisher

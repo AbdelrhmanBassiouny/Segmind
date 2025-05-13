@@ -37,13 +37,20 @@
       "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.bash_history",
       "target": "/root/.bash_history",
       "type": "bind"
-    }
+    },
+    {
+      "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.local/share/JetBrains/Toolbox/scripts/pycharm",
+      "target": "/usr/local/bin/pycharm",
+      "type": "bind"
+    },
     //
   ],
   "postCreateCommand": "/post_create_setup.sh",
-  "postStartCommand": "/entrypoint.sh",
   "customizations": {
     "jetbrains": {
+      "settings": {
+        "com.intellij:app:HttpConfigurable.use_proxy_pac": true,
+      },
       "backend": "PyCharm"
     }
   },

@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 # workspace directory
-WORKSPACE_DIR="/root/ros_ws/src/EpisodeSegmenter"
+WORKSPACE_DIR="/root/ros_ws/src/Segmind"
 
 # Wait for files to be mounted
 while [ ! -f "$WORKSPACE_DIR/requirements.txt" ]; do
