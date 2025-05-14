@@ -38,22 +38,9 @@
       "target": "/root/.bash_history",
       "type": "bind"
     },
-    {
-      "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.local/share/JetBrains/Toolbox/scripts/pycharm",
-      "target": "/usr/local/bin/pycharm",
-      "type": "bind"
-    },
     //
   ],
   "postCreateCommand": "/post_create_setup.sh",
-  "customizations": {
-    "jetbrains": {
-      "settings": {
-        "com.intellij:app:HttpConfigurable.use_proxy_pac": true,
-      },
-      "backend": "PyCharm"
-    }
-  },
   // run as root user
   "remoteUser": "root",
 }
