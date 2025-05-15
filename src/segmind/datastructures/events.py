@@ -3,6 +3,7 @@ from abc import abstractmethod, ABC
 
 from typing_extensions import Optional, List, Union
 
+from pycram.ros import logwarn
 from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState
@@ -11,7 +12,6 @@ from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import World
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object, Link
-from pycram.ros import logwarn
 
 
 class Event(ABC):

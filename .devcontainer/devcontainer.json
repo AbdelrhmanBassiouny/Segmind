@@ -43,7 +43,7 @@
   "forwardPorts": [8080],
   "appPort": [8080],
   "postCreateCommand": "/post_create_setup.sh",
-  "postStartCommand": "/entrypoint.sh",
+  "postStartCommand": "/entrypoint.sh && start-code-server.sh",
   "customizations": {
     "jetbrains": {
       "settings": {

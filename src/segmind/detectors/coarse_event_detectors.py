@@ -327,7 +327,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
             return False
 
         if self.agent in loss_of_surface_event.latest_objects_that_got_removed:
-            logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
+            rospy.logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
             self.kill_event.set()
             return False
 

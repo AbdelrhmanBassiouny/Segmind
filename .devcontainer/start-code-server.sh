@@ -9,7 +9,8 @@ DATA_DIR="/root/.local/share/code-server"
 source /root/.virtualenvs/pycram-segmind/bin/activate
 
 # Set the default Python interpreter for VS Code
-export DEFAULT_PYTHON_PATH=$(which python)
+DEFAULT_PYTHON_PATH=$(which python)
+export DEFAULT_PYTHON_PATH
 
 # Start code-server
 echo "🚀 Starting code-server on $ADDR"
