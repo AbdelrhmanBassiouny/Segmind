@@ -57,6 +57,9 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
 COPY post_create_setup.sh /
 RUN chmod +x /post_create_setup.sh
 
+COPY test_pick_up.sh /
+RUN chmod +x /test_pick_up.sh
+
 RUN echo "source /root/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
 RUN echo "source /root/ros_ws/install/setup.bash" >> $HOME/.bashrc
 
