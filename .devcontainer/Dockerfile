@@ -54,6 +54,27 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     pip install -e ripple_down_rules && \
     pip install lark
 
+# Install code-server
+RUN apt-get update && apt-get install -y \
+    curl wget gnupg git bash sudo build-essential \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+# Install desired extensions
+# Set code-server user data dir manually if your container does this
+ENV USER_DATA_DIR=/.jbdevcontainer/data/code-server
+# Create the data dir
+RUN mkdir -p $USER_DATA_DIR
+# Install extensions into the proper location
+RUN code-server \
+    --user-data-dir=$USER_DATA_DIR \
+    --install-extension ms-python.python \
+    && code-server \
+    --user-data-dir=$USER_DATA_DIR \
+    --install-extension Codeium.codeium
+
+COPY start-code-server.sh /usr/local/bin/start-code-server.sh
+RUN chmod +x /usr/local/bin/start-code-server.sh
+
 COPY post_create_setup.sh /
 RUN chmod +x /post_create_setup.sh
 

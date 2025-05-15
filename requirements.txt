@@ -1,9 +1,4 @@
 neem_pycram_interface
-trimesh
-manifold3d
 pyglet==1.5.31
-dm_control
 pydub
-gtts
 deprecated
-pycram_bullet

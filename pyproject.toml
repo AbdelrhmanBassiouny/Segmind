@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 keywords = ["robotics", "knowledge", "memories", "episodic", "pycram"]
-dependencies = ["neem_pycram_interface==1.0.167",
+dependencies = ["neem_pycram_interface",
 ]
 requires-python = ">=3.10"
 
