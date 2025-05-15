@@ -61,7 +61,8 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://code-server.dev/install.sh | sh
 # Install desired extensions
 # Set code-server user data dir manually if your container does this
-ENV USER_DATA_DIR=/.jbdevcontainer/data/code-server
+#ENV USER_DATA_DIR=/.jbdevcontainer/data/code-server
+ENV USER_DATA_DIR=/root/.local/share/code-server
 # Create the data dir
 RUN mkdir -p $USER_DATA_DIR
 # Install extensions into the proper location
