@@ -50,7 +50,6 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     pip install --upgrade pip && \
     pip install -r pycram/requirements.txt && \
     pip install -U setuptools && \
-    pip install -r ripple_down_rules/requirements.txt && \
     pip install -e ripple_down_rules && \
     pip install lark
 
