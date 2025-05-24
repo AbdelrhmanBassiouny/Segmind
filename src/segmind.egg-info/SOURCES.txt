@@ -20,6 +20,7 @@ src/segmind/datastructures/object_tracker.py
 src/segmind/detectors/__init__.py
 src/segmind/detectors/atomic_event_detectors.py
 src/segmind/detectors/coarse_event_detectors.py
+src/segmind/detectors/edit_code_here.py
 src/segmind/detectors/motion_detection_helpers.py
 src/segmind/detectors/spatial_relation_detector.py
 src/segmind/players/__init__.py

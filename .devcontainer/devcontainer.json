@@ -45,12 +45,12 @@
   "postCreateCommand": "/post_create_setup.sh",
   "postStartCommand": "/entrypoint.sh && start-code-server.sh",
   "customizations": {
-    // "jetbrains": {
-    //   "settings": {
-    //     "com.intellij:app:HttpConfigurable.use_proxy_pac": true,
-    //   },
-    //   "backend": "PyCharm"
-    // }
+     "jetbrains": {
+       "settings": {
+         "com.intellij:app:HttpConfigurable.use_proxy_pac": true,
+       },
+       "backend": "PyCharm"
+     }
   },
   // run as root user
   "remoteUser": "root",
