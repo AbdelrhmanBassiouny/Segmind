@@ -1,7 +1,4 @@
-neem_pycram_interface==1.0.170
-trimesh
-dm_control
+neem_pycram_interface
+pyglet==1.5.31
 pydub
-gtts
 deprecated
-pycram_bullet

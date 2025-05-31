@@ -1,0 +1,7 @@
+repositories:
+  # Ripple Down Rules
+  ripple_down_rules:
+    type: git
+    url: https://github.com/AbdelrhmanBassiouny/ripple_down_rules.git
+    version: main
+
