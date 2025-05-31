@@ -1,5 +1,6 @@
 import time
 import unittest
+from typing import Optional
 
 from pycram.datastructures.grasp import GraspDescription
 from pycram.designators.action_designator import MoveTorsoActionDescription, PickUpActionDescription
@@ -19,6 +20,12 @@ from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Milk, Kitchen
 from pycram.robot_description import RobotDescriptionManager
+try:
+    from pyqt6.QtWidgets import QApplication
+    from ripple_down_rules.user_interface.gui import RDRCaseViewer
+except ImportError as e:
+    QApplication = None
+    RDRCaseViewer = None
 
 
 class TestCRAMPlayer(unittest.TestCase):
@@ -29,6 +36,9 @@ class TestCRAMPlayer(unittest.TestCase):
     render_mode: WorldMode = WorldMode.DIRECT
     viz_marker_publisher: VizMarkerPublisher
     world: BulletWorld
+    app: Optional[QApplication] = None
+    viewer: Optional[RDRCaseViewer] = None
+    use_gui: bool = False
 
     @classmethod
     def setUpClass(cls):
@@ -39,6 +49,10 @@ class TestCRAMPlayer(unittest.TestCase):
         cls.kitchen = Object("kitchen", Kitchen, "kitchen.urdf")
         cls.robot = Object("pr2", Robot, "pr2.urdf", pose=PoseStamped(Pose(Vector3(0.6, 0.4, 0))))
         cls.milk = Object("milk", Milk, "milk.stl", pose=PoseStamped(Pose(Vector3(1.3, 1, 0.9))))
+        if cls.use_gui and QApplication is not None:
+            cls.app = QApplication(sys.argv)
+            cls.viewer = RDRCaseViewer()
+
 
     def tearDown(self):
         if Plan.current_plan is not None:

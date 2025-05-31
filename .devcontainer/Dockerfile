@@ -22,6 +22,8 @@ RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pyc
     && colcon build --symlink-install
 
 RUN vcs import --input packages.repos --recursive
+RUN cd /root/ros_ws/src/ripple_down_rules && \
+    git pull
 
 # Add sourcing ROS setup.bash to .bashrc
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> $HOME/.bashrc
@@ -50,7 +52,7 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     pip install --upgrade pip && \
     pip install -r pycram/requirements.txt && \
     pip install -U setuptools && \
-    pip install -e ripple_down_rules && \
+    pip install -r ripple_down_rules/requirements.txt && \
     pip install lark
 
 # Install code-server

@@ -4,7 +4,7 @@ import os.path
 
 from pycram.plan import Plan, pause_resume
 from pycram.designators.action_designator import PickUpAction, PlaceAction
-from pycrap.ontologies import Location, Supporter
+from pycrap.ontologies import Location, Supporter, Floor, Agent
 from ripple_down_rules.rdr_decorators import RDRDecorator
 
 
@@ -94,7 +94,8 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         DetectorWithStarterEvent.__init__(self, logger, starter_event, wait_time, *args, **kwargs)
-        HasPrimaryTrackedObject.__init__(self, self.get_object_to_track_from_starter_event(starter_event))
+        object_to_track = self.get_object_to_track_from_starter_event(starter_event)
+        HasPrimaryTrackedObject.__init__(self, object_to_track)
         if self.currently_tracked_objects is None:
             self.currently_tracked_objects = {}
         self.currently_tracked_objects[self.tracked_object] = self
@@ -152,7 +153,7 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
         pass
 
     def __str__(self):
-        return f"{self.thread_id} - {self.tracked_object.name}"
+        return f"{self.thread_id} - {self.tracked_object.name if self.tracked_object is not None else None}"
 
 
 class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC):
@@ -251,21 +252,21 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     The path to the directory where the Ripple Down Rules models are stored.
     """
-    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True)
+    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent,), True, package_name="segmind")
     """
-    A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up.
+    A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
-    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object,), True)
+    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object,), True, package_name="segmind")
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
-    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True)
+    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind")
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
     @pause_resume
     @interaction_checks_rdr.decorator
-    def get_interaction_event(self) -> bool:
+    def get_interaction_event(self) -> Optional[PickUpEvent]:
         pass
 
     @classmethod
@@ -506,7 +507,7 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
     :param objects: A list of Object instances.
     """
     transportable_objects = [obj for obj in objects
-                             if not issubclass(obj.ontology_concept, (Agent, Location, Supporter))]
+                             if not issubclass(obj.ontology_concept, (Agent, Location, Supporter, Floor))]
     return transportable_objects
 
 

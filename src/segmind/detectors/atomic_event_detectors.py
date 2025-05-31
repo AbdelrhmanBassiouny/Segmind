@@ -767,8 +767,8 @@ class TranslationDetector(MotionDetector):
         """
         Calculate the Euclidean distance between the latest and current positions of the object.
         """
-        # return calculate_euclidean_distance(self.latest_pose.position_as_list(), current_pose.position_as_list())
-        return calculate_translation(self.poses[-2].position_as_list(), self.poses[-1].position_as_list())
+        # return calculate_euclidean_distance(self.latest_pose.position.to_list(), current_pose.position.to_list())
+        return calculate_translation(self.poses[-2].position.to_list(), self.poses[-1].position.to_list())
 
     def get_event_type(self):
         return TranslationEvent if self.was_moving else StopTranslationEvent
@@ -786,8 +786,8 @@ class RotationDetector(MotionDetector):
         """
         Calculate the angle between the latest and current quaternions of the object
         """
-        quat_diff = calculate_quaternion_difference(self.poses[-2].orientation_as_list(),
-                                                    self.poses[-1].orientation_as_list())
+        quat_diff = calculate_quaternion_difference(self.poses[-2].orientation.to_list(),
+                                                    self.poses[-1].orientation.to_list())
         # angle = 2 * np.arccos(quat_diff[0])
         euler_diff = list(euler_from_quaternion(quat_diff))
         euler_diff[2] = 0

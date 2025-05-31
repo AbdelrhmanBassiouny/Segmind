@@ -1,99 +1,32 @@
-from segmind.detectors.atomic_event_detectors import AbstractContactDetector
-from pycrap.ontologies.crax.classes import PhysicalObject
-from segmind.datastructures.events import EventWithTwoTrackedObjects
-from segmind.datastructures.events import NewObjectEvent
-from segmind.datastructures.events import PlacingEvent
-from segmind.detectors.atomic_event_detectors import NewObjectDetector
-from typing import Tuple
-from segmind.detectors.coarse_event_detectors import check_for_supporting_surface
-from ripple_down_rules.rdr_decorators import RDRDecorator
-from queue import Queue
-from segmind.datastructures.mixins import HasSecondaryTrackedObject
-from segmind.detectors.coarse_event_detectors import PlacingDetector
-from pycram.tf_transformations import euler_from_quaternion
-from segmind.detectors.atomic_event_detectors import AtomicEventDetector
-from segmind.detectors.atomic_event_detectors import ContactDetector
-from segmind.detectors.coarse_event_detectors import DetectorWithStarterEvent
-from typing import Optional
-from pycram.datastructures.pose import Pose
-from pycram.designators.action_designator import PickUpAction
-from segmind.detectors.motion_detection_helpers import DataFilter
-from segmind.datastructures.events import AbstractContactEvent
-from segmind.utils import calculate_translation
-from math import ceil
-from segmind.episode_player import EpisodePlayer
-from pycram.datastructures.world import World
-from segmind.detectors.coarse_event_detectors import select_transportable_objects_from_contact_event
-from segmind.datastructures.events import AbstractAgentContact
+from pycram.plan import Plan, pause_resume
 from segmind.event_logger import EventLogger
-from pycrap.ontologies.crax.classes import Location
-from segmind.datastructures.events import LossOfSurfaceEvent
-from pycram.ros.ros2.logging import logwarn
-from typing import Union
-from segmind.datastructures.events import StopTranslationEvent
-from segmind.detectors.motion_detection_helpers import ConsistentGradient
-from pycrap.ontologies.crax.classes import Agent
-from segmind.detectors.atomic_event_detectors import DetectorWithTrackedObject
-from datetime import timedelta
-from segmind.detectors.coarse_event_detectors import AgentPickUpDetector
-from segmind.detectors.atomic_event_detectors import LossOfSurfaceDetector
-from segmind.detectors.motion_detection_helpers import MotionDetectionMethod
-from segmind.datastructures.events import AgentLossOfContactEvent
-from segmind.detectors.coarse_event_detectors import DetectorWithTrackedObjectAndStarterEvent
-from pycram.datastructures.world_entity import PhysicalBody
-from segmind.utils import calculate_quaternion_difference
-from segmind.detectors.atomic_event_detectors import DetectorWithTwoTrackedObjects
-from segmind.detectors.coarse_event_detectors import select_transportable_objects
-from segmind.datastructures.events import StopMotionEvent
-from abc import abstractmethod
-from pycram.datastructures.dataclasses import ContactPointsList
-from pycram.ros.ros2.logging import logdebug
-from pycram.designators.action_designator import PlaceAction
-from segmind.utils import get_support
-from segmind.datastructures.mixins import HasPrimaryTrackedObject
-from segmind.utils import get_angle_between_vectors
-from segmind.detectors.coarse_event_detectors import select_transportable_objects_from_loss_of_contact_event
-from segmind.datastructures.events import RotationEvent
-from pycram.plan import Plan
-from segmind.datastructures.events import LossOfContactEvent
-from pycram.datastructures.dataclasses import ObjectState
-from typing import Callable
-from segmind.detectors.coarse_event_detectors import MotionPickUpDetector
-from segmind.detectors.coarse_event_detectors import AbstractInteractionDetector
-from typing import Dict
-from segmind.datastructures.events import AbstractAgentObjectInteractionEvent
-from pycram.datastructures.world import UseProspectionWorld
-from pycrap.ontologies.crax.classes import Supporter
-from segmind.datastructures.events import EventWithOneTrackedObject
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
-
-from segmind.datastructures.events import AgentContactEvent
-from pycram.datastructures.dataclasses import TextAnnotation
-from segmind.datastructures.events import EventWithTrackedObjects
-from segmind.detectors.atomic_event_detectors import RotationDetector
-from segmind.datastructures.events import MotionEvent
-from segmind.detectors.atomic_event_detectors import LossOfContactDetector
-from segmind.datastructures.events import StopRotationEvent
-from pycram.plan import pause_resume
-from pycram.ros.ros2.logging import loginfo
-from segmind.detectors.atomic_event_detectors import MotionDetector
 from pycram.world_concepts.world_object import Object
-from segmind.datastructures.events import AgentContactEvent
-from _io import open
-from segmind.datastructures.events import Event
-from segmind.datastructures.events import ContactEvent
-from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from segmind.detectors.coarse_event_detectors import AbstractPickUpDetector
-from typing import Type
-from pycram.datastructures.dataclasses import Color
-from segmind.datastructures.events import TranslationEvent
+from pycram.ros.ros2.logging import logdebug, loginfo, logwarn
+from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
+from pycram.datastructures.pose import Pose
+from segmind.detectors.motion_detection_helpers import ConsistentGradient, DataFilter, MotionDetectionMethod
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+from ripple_down_rules.rdr_decorators import RDRDecorator
+from pycram.datastructures.dataclasses import Color, ContactPointsList, ObjectState, TextAnnotation
+from segmind.detectors.coarse_event_detectors import AbstractInteractionDetector, AbstractPickUpDetector, AgentPickUpDetector, DetectorWithStarterEvent, DetectorWithTrackedObjectAndStarterEvent, GeneralPickUpDetector, MotionPickUpDetector, PlacingDetector, check_for_supporting_surface, select_transportable_objects, select_transportable_objects_from_contact_event, select_transportable_objects_from_loss_of_contact_event
+from datetime import timedelta
+from queue import Queue
+from pycrap.ontologies.crax.classes import Agent, Floor, Location, PhysicalObject, Supporter
+from ripple_down_rules.datastructures.case import Case
 from abc import ABC
-from segmind.detectors.atomic_event_detectors import TranslationDetector
-from segmind.datastructures.events import PickUpEvent
-from typing import List
-from pycram.description import Link
+from pycram.description import ObjectDescription
+from pycram.designators.action_designator import PickUpAction, PlaceAction
+from pycram.tf_transformations import euler_from_quaternion
+from pycram.datastructures.world_entity import PhysicalBody
+Link = ObjectDescription.Link
+from segmind.datastructures.events import AbstractAgentContact, AbstractAgentObjectInteractionEvent, AbstractContactEvent, AgentContactEvent, AgentLossOfContactEvent, ContactEvent, Event, EventWithOneTrackedObject, EventWithTrackedObjects, EventWithTwoTrackedObjects, LossOfContactEvent, LossOfSurfaceEvent, MotionEvent, NewObjectEvent, PickUpEvent, PlacingEvent, RotationEvent, StopMotionEvent, StopRotationEvent, StopTranslationEvent, TranslationEvent
+from segmind.episode_player import EpisodePlayer
+from pycram.datastructures.world import UseProspectionWorld, World
+from segmind.detectors.atomic_event_detectors import AbstractContactDetector, AtomicEventDetector, ContactDetector, DetectorWithTrackedObject, DetectorWithTwoTrackedObjects, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector, NewObjectDetector, RotationDetector, TranslationDetector
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
+from segmind.utils import calculate_quaternion_difference, calculate_translation, get_angle_between_vectors, get_support
 
-def general_pick_up_detector_get_object_to_track_from_starter_event(cls: Type[GeneralPickUpDetector], starter_event: AgentContactEvent) -> Object:
-    """Get possible value(s) for GeneralPickUpDetector_get_object_to_track_from_starter_event.output"""
+def general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: PickUpEvent) -> PickUpEvent:
+    """Get possible value(s) for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent."""
     # Write your code here
     pass

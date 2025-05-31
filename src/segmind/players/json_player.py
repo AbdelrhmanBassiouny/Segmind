@@ -98,8 +98,8 @@ class FileEpisodePlayer(EpisodePlayer):
             # Create the object if it does not exist in the world and set its pose
             if obj_name not in self.world.get_object_names():
                 obj = Object(obj_name, obj_type, mesh_name,
-                             pose=Pose(pose.position_as_list()), scale_mesh=self.mesh_scale)
-                quat_diff = calculate_quaternion_difference(pose.orientation_as_list(), [0, 0, 0, 1])
+                             pose=Pose(pose.position.to_list()), scale_mesh=self.mesh_scale)
+                quat_diff = calculate_quaternion_difference(pose.orientation.to_list(), [0, 0, 0, 1])
                 euler_diff = euler_from_quaternion(quat_diff)
                 quat_diff = quaternion_from_euler(euler_diff[0], euler_diff[1], 0)
                 self.correction_quaternions[obj] = quat_diff
@@ -159,7 +159,7 @@ class FileEpisodePlayer(EpisodePlayer):
         mesh = self.get_mesh_of_object(obj, apply_transform=False)
         base_points = self.get_base_points_from_mesh(mesh)
         if transform_points:
-            base_points = np.dot(base_points, quaternion_matrix(obj.get_orientation_as_list())[:3, :3].T)
+            base_points = np.dot(base_points, quaternion_matrix(obj.get_orientation.to_list())[:3, :3].T)
         return base_points
 
     def get_relative_base_origin_of_object(self, obj: Object) -> np.ndarray:
@@ -203,7 +203,7 @@ W
         if apply_scale:
             mesh.apply_scale(self.mesh_scale)
         if apply_transform:
-            mesh_transform = quaternion_matrix(obj.get_orientation_as_list())
+            mesh_transform = quaternion_matrix(obj.get_orientation.to_list())
             mesh.apply_transform(mesh_transform)
         return mesh
 

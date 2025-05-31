@@ -20,13 +20,16 @@ if TYPE_CHECKING:
     from .detectors.coarse_event_detectors import DetectorWithStarterEvent
 
 
+ConditionFunction = Callable[[Event], bool]
+CallbackFunction = Callable[[Event], None]
+
 class EventCallbacks(UserDict):
     """
-    A dictionary that maps event types to a list of callbacks that should be called when the event occurs.
+    A dictionary that maps event types to a list of tuples each has a condition and a callback, the callback will be called when the event occurs and the condition is met.
     This modifies the setitem such that if a class or its subclass is added, the callback is also added to the subclass.
     """
 
-    def __setitem__(self, key: Type[Event], value: List[Callable[[Event], None]]):
+    def __setitem__(self, key: Type[Event], value: List[Tuple[ConditionFunction, CallbackFunction]]):
         if key not in self:
             super().__setitem__(key, value)
         else:
@@ -64,7 +67,7 @@ class EventLogger:
         if EventLogger.current_logger is None:
             EventLogger.current_logger = self
 
-    def add_callback(self, event_type: Type[Event], callback: Callable[[Event], None]) -> None:
+    def add_callback(self, event_type: Type[Event], callback: CallbackFunction, condition: Optional[ConditionFunction] = lambda event: True) -> None:
         """
         Add a callback for an event type.
 
@@ -72,7 +75,7 @@ class EventLogger:
         :param callback: The callback to add.
         """
         with self.event_callbacks_lock:
-            self.event_callbacks[event_type] = [callback]
+            self.event_callbacks[event_type] = [(condition, callback)]
 
     def log_event(self, event: Event):
         if self.is_event_in_timeline(event):
@@ -92,8 +95,9 @@ class EventLogger:
         """
         with self.event_callbacks_lock:
             if type(event) in self.event_callbacks:
-                for callback in self.event_callbacks[type(event)]:
-                    callback(event)
+                for condition, callback in self.event_callbacks[type(event)]:
+                    if conition(event):
+                        callback(event)
 
     def annotate_scene_with_event(self, event: Event) -> None:
         """
