@@ -2,12 +2,6 @@ import asyncio
 import networkx as nx
 from z3 import *
 
-# Graph Representation
-graph = nx.DiGraph()
-
-# Event Queue for Asynchronous Processing
-event_queue = asyncio.Queue()
-
 
 # 1. Event Bus for Dynamic Updates
 class EventBus:
@@ -24,12 +18,8 @@ class EventBus:
             await subscriber(event)
 
 
-# Initialize the event bus
-event_bus = EventBus()
-
-
 # 2. FOL Reasoning Logic
-def infer_new_events(graph):
+def infer_new_events():
     """
     Perform reasoning on the graph and infer new events based on FOL rules.
     """
@@ -74,39 +64,27 @@ async def handle_event(event):
         print(f"Added edge: {data['source']} -> {data['target']} [{data['relation']}]")
 
     # Trigger reasoning after graph update
-    events = infer_new_events(graph)
+    events = infer_new_events()
     if events.get("placed"):
         print("Event Detected: RobotA placed ObjectB on ObjectC")
-
-
-# Subscribe the event handler to the event bus
-event_bus.subscribe(handle_event)
-
-
-# 4. Simulate Real-Time Event Generation
-async def generate_events():
-    """
-    Simulate dynamic events being published to the event bus.
-    """
-    # Example event: RobotA picks up ObjectB
-    await event_bus.publish(("add_edge", {"source": "RobotA", "target": "ObjectB", "relation": "isHolding"}))
-    await asyncio.sleep(1)
-
-    # Example event: ObjectB is above ObjectC
-    await event_bus.publish(("add_edge", {"source": "ObjectB", "target": "ObjectC", "relation": "isAbove"}))
-    await asyncio.sleep(1)
 
 
 # 5. Main Event Loop
 async def main():
     # Create a task to simulate event generation
-    asyncio.create_task(generate_events())
+    async with asyncio.TaskGroup() as group:
+        task1 = group.create_task(
+            event_bus.publish(("add_edge", {"source": "RobotA", "target": "ObjectB", "relation": "isHolding"})))
+        task2 = group.create_task(
+            event_bus.publish(("add_edge", {"source": "ObjectB", "target": "ObjectC", "relation": "isAbove"})))
+        print("both tasks created")
 
-    # Continuously process events from the event queue
-    while True:
-        event = await event_queue.get()
-        await handle_event(event)
-
-
-# Run the Event-Driven System
-asyncio.run(main())
+if __name__ == "__main__":
+    # Graph Representation
+    graph = nx.DiGraph()
+    # Initialize the event bus
+    event_bus = EventBus()
+    # Subscribe the event handler to the event bus
+    event_bus.subscribe(handle_event)
+    # Run the Event-Driven System
+    asyncio.run(main())
