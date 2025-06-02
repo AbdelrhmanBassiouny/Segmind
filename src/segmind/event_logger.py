@@ -43,7 +43,7 @@ class EventLogger:
     A class that logs events that are happening in the simulation.
     """
 
-    current_logger: Optional['EventLogger'] = None
+    current_logger: Optional[EventLogger] = None
     """
     A singleton instance of the event logger.
     """
@@ -53,6 +53,12 @@ class EventLogger:
     """
 
     def __init__(self, annotate_events: bool = False, events_to_annotate: List[Type[Event]] = None):
+        """
+        Initialize the EventLogger.
+
+        :param annotate_events: A boolean indicating whether events should be annotated.
+        :param events_to_annotate: A list of event types that should be annotated if annotation is enabled.
+        """
         self.timeline_per_thread = {}
         self.timeline = []
         self.event_queue = queue.Queue()
@@ -79,8 +85,8 @@ class EventLogger:
 
     def log_event(self, event: Event):
         if self.is_event_in_timeline(event):
-            logdebug(f"Event {event} already logged.")
             return
+        logdebug(f"Logging event: {event}")
         self.update_object_trackers_with_event(event)
         self.event_queue.put(event)
         self.annotate_scene_with_event(event)
