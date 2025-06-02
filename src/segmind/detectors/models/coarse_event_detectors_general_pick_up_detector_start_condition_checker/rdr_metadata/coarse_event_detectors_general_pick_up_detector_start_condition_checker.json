@@ -12,12 +12,12 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Dict": "typing.Dict",
-                        "Type": "typing.Type",
+                        "Case": "ripple_down_rules.datastructures.case.Case",
                         "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
                         "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
-                        "Case": "ripple_down_rules.datastructures.case.Case"
+                        "Dict": "typing.Dict",
+                        "Type": "typing.Type"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -32,12 +32,12 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Dict": "typing.Dict",
-                        "Type": "typing.Type",
+                        "Case": "ripple_down_rules.datastructures.case.Case",
                         "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
                         "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
-                        "Case": "ripple_down_rules.datastructures.case.Case"
+                        "Dict": "typing.Dict",
+                        "Type": "typing.Type"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",

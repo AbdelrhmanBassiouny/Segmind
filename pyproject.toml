@@ -1,12 +1,12 @@
 # pyproject.toml
 
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel"]
+requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "segmind"
-version = "1.0.22"
+dynamic = ["version", "dependencies"]
 description = "Annotates activitiy episodes represented by meshes moving in a 3D environment with the corresponding events, actions and activities."
 readme = "README.md"
 authors = [{ name = "Abdelrhman Bassiouny", email = "abassiou@uni-bremen.de" }]
@@ -15,9 +15,16 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 keywords = ["robotics", "knowledge", "memories", "episodic", "pycram"]
-dependencies = ["neem_pycram_interface",
-]
 requires-python = ">=3.10"
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["segmind*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "segmind.__version__"}
+dependencies = { file = ["requirements.txt"] }
 
 [project.urls]
 Homepage = "https://github.com/AbdelrhmanBassiouny/Segmind"

@@ -3,10 +3,10 @@ set -e
 
 PORT=8080
 ADDR="0.0.0.0:$PORT"
-DATA_DIR="/home/devuser/.local/share/code-server"
+DATA_DIR="/root/.local/share/code-server"
 
 # Activate your Python virtual environment
-source /home/devuser/.virtualenvs/pycram-segmind/bin/activate
+source /root/.virtualenvs/pycram-segmind/bin/activate
 
 # Set the default Python interpreter for VS Code
 DEFAULT_PYTHON_PATH=$(which python)

@@ -1,8 +1,17 @@
-FROM osrf/ros:jazzy-desktop-full
+FROM osrf/ros:jazzy-desktop-full-noble
 
 SHELL [ "/bin/bash" , "-c" ]
 
-# Upgrade all packages
+# Remove old ROS key and install updated one
+RUN sudo apt-get install -y curl gnupg lsb-release && \
+    sudo rm -f /etc/apt/sources.list.d/ros2-latest.list && \
+    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2.list && \
+    sudo apt-get update
+
+# Now safe to do full upgrade
+RUN sudo apt-get upgrade -y
+
 RUN sudo apt update && sudo apt upgrade -y
 
 # Install pycram dependencies
@@ -11,18 +20,25 @@ RUN sudo apt install wget python3.12-venv ros-jazzy-xacro python3-vcstool git ro
 # Install RDR dependencies
 RUN sudo apt-get install graphviz graphviz-dev -y
 
+# Set the user to the non-root user
+ARG USERNAME=root
+
+# Switch to non-root user
+USER $USERNAME
+ENV HOME=/root
+
 # Create overlay workspace
-WORKDIR /home/devuser/ros_ws/src
+WORKDIR $HOME/workspace/src
 COPY packages.repos .
 
 
-RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/dev/pycram-ros2.rosinstall \
+RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/dev/rosinstall/pycram-ros2.rosinstall \
     && cd .. \
     && source /opt/ros/${ROS_DISTRO}/setup.bash \
     && colcon build --symlink-install
 
-RUN vcs import --input packages.repos --recursive
-RUN cd /home/devuser/ros_ws/src/ripple_down_rules && \
+RUN vcs import --input ../packages.repos --recursive
+RUN cd $HOME/workspace/src/ripple_down_rules && \
     git pull
 
 # Add sourcing ROS setup.bash to .bashrc
@@ -41,9 +57,9 @@ RUN echo "export WORKON_HOME=$HOME/.virtualenvs" >> $HOME/.bashrc && \
     echo "source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh" >> $HOME/.bashrc
 
 
-ENV WORKON_HOME=/home/devuser/.virtualenvs
-ENV VIRTUALENVWRAPPER_PYTHON=/home/devuser/.virtualenvs/venv/bin/python
-ENV VIRTUALENVWRAPPER_VIRTUALENV=/home/devuser/.virtualenvs/venv/bin/virtualenv
+ENV WORKON_HOME=$HOME/.virtualenvs
+ENV VIRTUALENVWRAPPER_PYTHON=$HOME/.virtualenvs/venv/bin/python
+ENV VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.virtualenvs/venv/bin/virtualenv
 
 # Create a virtual environment for pycram-segmind
 RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
@@ -56,14 +72,14 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     pip install lark
 
 # Install code-server
-RUN apt-get update && apt-get install -y \
+RUN sudo apt-get update && sudo apt-get install -y \
     curl wget gnupg git bash sudo build-essential \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && sudo apt-get clean && sudo rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL https://code-server.dev/install.sh | sh
 # Install desired extensions
 # Set code-server user data dir manually if your container does this
 #ENV USER_DATA_DIR=/.jbdevcontainer/data/code-server
-ENV USER_DATA_DIR=/home/devuser/.local/share/code-server
+ENV USER_DATA_DIR=$HOME/.local/share/code-server
 # Create the data dir
 RUN mkdir -p $USER_DATA_DIR
 # Install extensions into the proper location
@@ -73,21 +89,24 @@ RUN code-server \
     && code-server \
     --user-data-dir=$USER_DATA_DIR \
     --install-extension Codeium.codeium
+    && code-server \
+    --user-data-dir=$USER_DATA_DIR \
+    --install-extension PKief.material-icon-theme
 
 COPY start-code-server.sh /usr/local/bin/start-code-server.sh
-RUN chmod +x /usr/local/bin/start-code-server.sh
+RUN sudo chmod +x /usr/local/bin/start-code-server.sh
 
 COPY post_create_setup.sh /
-RUN chmod +x /post_create_setup.sh
+RUN sudo chmod +x /post_create_setup.sh
 
 ENV XDG_RUNTIME_DIR=/tmp/runtime-root
 RUN mkdir -p $XDG_RUNTIME_DIR && chmod 700 $XDG_RUNTIME_DIR
 
 ENV LIBGL_ALWAYS_SOFTWARE=1
 
-RUN echo "source /home/devuser/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
-RUN echo "source /home/devuser/ros_ws/install/setup.bash" >> $HOME/.bashrc
+RUN echo "source ${HOME}/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
+RUN echo "source ${HOME}/workspace/install/setup.bash" >> $HOME/.bashrc
 
 COPY entrypoint.sh /
-RUN chmod +x /entrypoint.sh
+RUN sudo chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

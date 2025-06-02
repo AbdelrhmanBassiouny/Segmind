@@ -12,8 +12,8 @@ RUN sudo apt install wget python3.12-venv ros-jazzy-xacro python3-vcstool git ro
 RUN sudo apt-get install graphviz graphviz-dev -y
 
 # Create overlay workspace
-WORKDIR /root/ros_ws/src
-COPY packages.repos .
+WORKDIR /root/workspace/src
+COPY ../packages.repos .
 
 
 RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/dev/pycram-ros2.rosinstall \
@@ -54,7 +54,7 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     pip install -e ripple_down_rules && \
     pip install lark
 
-COPY post_create_setup.sh /
+COPY ../post_create_setup.sh /
 RUN chmod +x /post_create_setup.sh
 
 ENV XDG_RUNTIME_DIR=/tmp/runtime-root
@@ -63,8 +63,8 @@ RUN mkdir -p $XDG_RUNTIME_DIR && chmod 700 $XDG_RUNTIME_DIR
 ENV LIBGL_ALWAYS_SOFTWARE=1
 
 RUN echo "source /root/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
-RUN echo "source /root/ros_ws/install/setup.bash" >> $HOME/.bashrc
+RUN echo "source /root/workspace/install/setup.bash" >> $HOME/.bashrc
 
-COPY entrypoint.sh /
+COPY ../entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
