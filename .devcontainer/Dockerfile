@@ -12,7 +12,7 @@ RUN sudo apt install wget python3.12-venv ros-jazzy-xacro python3-vcstool git ro
 RUN sudo apt-get install graphviz graphviz-dev -y
 
 # Create overlay workspace
-WORKDIR /root/ros_ws/src
+WORKDIR /home/devuser/ros_ws/src
 COPY packages.repos .
 
 
@@ -22,7 +22,7 @@ RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pyc
     && colcon build --symlink-install
 
 RUN vcs import --input packages.repos --recursive
-RUN cd /root/ros_ws/src/ripple_down_rules && \
+RUN cd /home/devuser/ros_ws/src/ripple_down_rules && \
     git pull
 
 # Add sourcing ROS setup.bash to .bashrc
@@ -41,9 +41,9 @@ RUN echo "export WORKON_HOME=$HOME/.virtualenvs" >> $HOME/.bashrc && \
     echo "source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh" >> $HOME/.bashrc
 
 
-ENV WORKON_HOME=/root/.virtualenvs
-ENV VIRTUALENVWRAPPER_PYTHON=/root/.virtualenvs/venv/bin/python
-ENV VIRTUALENVWRAPPER_VIRTUALENV=/root/.virtualenvs/venv/bin/virtualenv
+ENV WORKON_HOME=/home/devuser/.virtualenvs
+ENV VIRTUALENVWRAPPER_PYTHON=/home/devuser/.virtualenvs/venv/bin/python
+ENV VIRTUALENVWRAPPER_VIRTUALENV=/home/devuser/.virtualenvs/venv/bin/virtualenv
 
 # Create a virtual environment for pycram-segmind
 RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
@@ -63,7 +63,7 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh
 # Install desired extensions
 # Set code-server user data dir manually if your container does this
 #ENV USER_DATA_DIR=/.jbdevcontainer/data/code-server
-ENV USER_DATA_DIR=/root/.local/share/code-server
+ENV USER_DATA_DIR=/home/devuser/.local/share/code-server
 # Create the data dir
 RUN mkdir -p $USER_DATA_DIR
 # Install extensions into the proper location
@@ -85,8 +85,8 @@ RUN mkdir -p $XDG_RUNTIME_DIR && chmod 700 $XDG_RUNTIME_DIR
 
 ENV LIBGL_ALWAYS_SOFTWARE=1
 
-RUN echo "source /root/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
-RUN echo "source /root/ros_ws/install/setup.bash" >> $HOME/.bashrc
+RUN echo "source /home/devuser/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
+RUN echo "source /home/devuser/ros_ws/install/setup.bash" >> $HOME/.bashrc
 
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
