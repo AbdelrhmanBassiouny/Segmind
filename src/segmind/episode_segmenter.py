@@ -14,13 +14,19 @@ class EpisodeSegmenter(ABC):
 
     def __init__(self, episode_player: EpisodePlayer,
                  detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
-                 annotate_events: bool = False):
+                 annotate_events: bool = False,
+                 plot_timeline: bool = False,
+                 show_plots: bool = False,
+                 plot_save_path: Optional[str] = None):
         """
         Initializes the EpisodeSegmenter class.
 
         :param episode_player: The thread that plays the episode and generates the motion.
         :param detectors_to_start: The list of event detectors that should be started.
         :param annotate_events: A boolean value that indicates if the events should be annotated.
+        :param plot_timeline: A boolean value that indicates if the events timeline should be plotted.
+        :param show_plots: A boolean value that indicates if the plots should be shown.
+        :param plot_save_path: The path where the plots should be saved.
         """
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start if detectors_to_start else []
@@ -29,6 +35,9 @@ class EpisodeSegmenter(ABC):
         self.starter_event_to_detector_thread_map: Dict[Tuple[Event, Type[DetectorWithStarterEvent]], DetectorWithStarterEvent] = {}
         self.detector_threads_list: List[EventDetectorUnion] = []
         self.object_trackers: Dict[Object, ObjectTracker] = {}
+        self.plot_timeline = plot_timeline
+        self.show_plots = show_plots
+        self.plot_save_path = plot_save_path
 
     def start(self) -> None:
         """
@@ -72,7 +81,8 @@ class EpisodeSegmenter(ABC):
 
             self.process_event(next_event)
 
-        self.logger.plot_events()
+        if self.plot_timeline:
+            self.logger.plot_events(show=self.show_plots, save_path=self.plot_save_path)
 
         self.join()
 
@@ -339,10 +349,11 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
 
     def __init__(self, episode_player: EpisodePlayer,
                  detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
-                 annotate_events: bool = False):
+                 annotate_events: bool = False, **kwargs):
         if detectors_to_start is None:
             detectors_to_start = [MotionPickUpDetector, PlacingDetector]
-        super().__init__(episode_player, detectors_to_start=detectors_to_start, annotate_events=annotate_events)
+        super().__init__(episode_player, detectors_to_start=detectors_to_start, annotate_events=annotate_events,
+                         **kwargs)
 
     def start_tracking_threads_for_new_object_and_event(self, new_object: Object, event: EventUnion):
         pass

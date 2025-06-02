@@ -15,7 +15,7 @@ class NEEMSegmenter(AgentEpisodeSegmenter):
 
     def __init__(self, pycram_neem_interface: PyCRAMNEEMInterface,
                  detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
-                 annotate_events: bool = False):
+                 annotate_events: bool = False, **kwargs):
         """
         Initializes the NEEMSegmenter class.
 
@@ -25,7 +25,7 @@ class NEEMSegmenter(AgentEpisodeSegmenter):
         """
         self.neem_player_thread = NEEMPlayer(pycram_neem_interface)
         super().__init__(self.neem_player_thread, detectors_to_start=detectors_to_start,
-                         annotate_events=annotate_events)
+                         annotate_events=annotate_events, **kwargs)
 
     def start(self, sql_neem_ids: Optional[List[int]] = None) -> None:
         """

@@ -1,5 +1,6 @@
 import time
 import unittest
+from os.path import dirname
 from typing import Optional
 
 from pycram.datastructures.grasp import GraspDescription
@@ -45,7 +46,8 @@ class TestCRAMPlayer(unittest.TestCase):
         RobotDescriptionManager().load_description("pr2")
         cls.world = BulletWorld(mode=cls.render_mode)
         cls.viz_marker_publisher = VizMarkerPublisher()
-        cls.cram_segmenter = CRAMSegmenter(cls.world, [GeneralPickUpDetector])
+        cls.cram_segmenter = CRAMSegmenter(cls.world, [GeneralPickUpDetector], plot_timeline=True,
+                                           plot_save_path=f"{dirname(__file__)}/test_results/cram_segmenter_test")
         cls.kitchen = Object("kitchen", Kitchen, "kitchen.urdf")
         cls.robot = Object("pr2", Robot, "pr2.urdf", pose=PoseStamped(Pose(Vector3(0.6, 0.4, 0))))
         cls.milk = Object("milk", Milk, "milk.stl", pose=PoseStamped(Pose(Vector3(1.3, 1, 0.9))))

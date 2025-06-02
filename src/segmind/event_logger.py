@@ -6,14 +6,17 @@ from collections import UserDict
 from threading import RLock
 import time
 from datetime import timedelta
+from os.path import dirname, abspath
 
+from owlready2_optimized import defaultdict
 from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable
 
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.world import World
 from pycram.ros import loginfo, logdebug
 from pycram.world_concepts.world_object import Object, Link
-from .datastructures.events import Event, EventUnion, EventWithTrackedObjects
+from .datastructures.events import Event, EventUnion, EventWithTrackedObjects, EventWithTwoTrackedObjects
+from .datastructures.mixins import HasPrimaryTrackedObject
 from .datastructures.object_tracker import ObjectTrackerFactory
 
 if TYPE_CHECKING:
@@ -146,9 +149,13 @@ class EventLogger:
         with self.timeline_lock:
             return event in self.timeline
 
-    def plot_events(self):
+    def plot_events(self, show: bool = True, save_path: Optional[str] = None):
         """
         Plot all events that have been logged in a timeline.
+
+        :param show: whether to show the plot (disable if running from docker, use the written file instead by setting
+        save_path to the save path you prefer).
+        :param save_path: the html plot will be save the given path, if not provided, it will not be saved.
         """
         loginfo("Plotting events:")
         # construct a dataframe with the events
@@ -156,7 +163,7 @@ class EventLogger:
         import plotly.express as px
         import plotly.graph_objects as go
 
-        data_dict = {'start': [], 'end': [], 'event': [], 'object': [], 'obj_type': []}
+        data_dict = defaultdict(list)
         for tracker in ObjectTrackerFactory.get_all_trackers():
             for event in tracker.get_event_history():
                 end_timestamp = event.timestamp + timedelta(seconds=0.1).total_seconds()
@@ -165,11 +172,19 @@ class EventLogger:
                 data_dict['end'].append(end_timestamp)
                 data_dict['start'].append(event.timestamp)
                 data_dict['event'].append(event.__class__.__name__)
-                data_dict['object'].append(tracker.obj.name)
-                if isinstance(tracker.obj, Object):
-                    data_dict['obj_type'].append(tracker.obj.obj_type.name)
-                elif isinstance(tracker.obj, Link):
-                    data_dict['obj_type'].append(f'Link of {tracker.obj.parent_entity.obj_type}')
+                obj = event.tracked_object if isinstance(event, HasPrimaryTrackedObject) else tracker.obj
+                data_dict['object'].append(obj.name)
+                if isinstance(obj, Object):
+                    data_dict['obj_type'].append(obj.obj_type.name)
+                elif isinstance(obj, Link):
+                    data_dict['obj_type'].append(f'Link of {obj.parent_entity.obj_type}')
+                if isinstance(event, EventWithTwoTrackedObjects) and event.with_object is not None:
+                    with_object = event.with_object
+                    data_dict['with_object'].append(with_object.name)
+                    if isinstance(with_object, Object):
+                        data_dict['with_obj_type'].append(with_object.obj_type.name)
+                    elif isinstance(with_object, Link):
+                        data_dict['with_obj_type'].append(f'Link of {with_object.parent_entity.obj_type}')
         if len(data_dict['start']) == 0:
             loginfo("No events to plot.")
             return
@@ -185,7 +200,7 @@ class EventLogger:
                           x_end=pd.to_datetime(df[f'end'], unit='s'),
                           y=f'event',
                           color=f'event',
-                          hover_data={'object': True, 'obj_type': True},
+                          hover_data={'object': True, 'obj_type': True, 'with_object': True, 'with_obj_type': True},
                           # text=f'object',
                           title=f"Events Timeline")
         fig.update_xaxes(tickvals=pd.to_datetime(df[f'start'], unit='s'), tickformat='%S')
@@ -200,7 +215,14 @@ class EventLogger:
             legend_title_font_color="black",
             legend_title_font_size=24,
         )
-        fig.show()
+        if show:
+            fig.show()
+        if save_path:
+            if not save_path.endswith('.html'):
+                save_path += '.html'
+            file_path = abspath(save_path)
+            fig.write_html(file_path)
+            loginfo(f"Plot saved to {file_path}")
 
     def print_events(self):
         """

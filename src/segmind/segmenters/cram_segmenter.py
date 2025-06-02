@@ -13,7 +13,7 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
     loss of contact, and pick up events.
     """
 
-    def __init__(self, world, detectors_to_start=None, annotate_events=False):
+    def __init__(self, world, detectors_to_start=None, annotate_events=False, **kwargs):
         """
         Initializes the CRAMSegmenter class.
 
@@ -24,7 +24,7 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
         self.cram_player_thread = CRAMPlayer(world)
         super().__init__(self.cram_player_thread,
                          detectors_to_start=detectors_to_start,
-                         annotate_events=annotate_events)
+                         annotate_events=annotate_events, **kwargs)
         self.action_types: List[Optional[Type[ActionDescription]]] = [detector.action_type()
                                                                       for detector in self.detectors_to_start]
         self.action_types.append(None)
