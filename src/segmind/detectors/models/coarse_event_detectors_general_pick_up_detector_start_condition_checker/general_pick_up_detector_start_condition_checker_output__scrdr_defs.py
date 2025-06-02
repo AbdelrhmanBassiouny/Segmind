@@ -1,7 +1,7 @@
 from ...coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
-from ....datastructures.events import AgentContactEvent
-from ripple_down_rules.datastructures.case import Case
 from typing import Dict, Type
+from ripple_down_rules.datastructures.case import Case
+from ...datastructures.events import AgentContactEvent
 
 
 def conditions_79409294830217498801042528243955850723(case):

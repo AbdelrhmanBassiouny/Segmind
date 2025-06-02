@@ -1,7 +1,7 @@
 from pycram.world_concepts.world_object import Object
 from ripple_down_rules.datastructures.case import Case
-from segmind.datastructures.events import AgentContactEvent, AgentLossOfContactEvent, ContactEvent, LossOfContactEvent, LossOfSurfaceEvent, MotionEvent, NewObjectEvent, PickUpEvent, PlacingEvent, StopMotionEvent
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
+from ....datastructures.events import AgentContactEvent, AgentLossOfContactEvent, ContactEvent, LossOfContactEvent, LossOfSurfaceEvent, MotionEvent, NewObjectEvent, PickUpEvent, PlacingEvent, StopMotionEvent
+from ....detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
 from typing import Dict, Type, Union
 
 
