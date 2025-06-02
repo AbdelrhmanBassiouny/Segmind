@@ -66,7 +66,7 @@ class EpisodeSegmenter(ABC):
         while (not closed_threads) or (self.logger.event_queue.unfinished_tasks > 0):
             if not self.episode_player.is_alive() and not closed_threads:
                 self.episode_player.join()
-
+                time.sleep(0.01)
                 for detector_thread in self.detector_threads_list:
                     detector_thread.stop()
                     logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")

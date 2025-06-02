@@ -20,7 +20,7 @@ except ImportError:
 from pycram.tf_transformations import euler_from_quaternion
 from typing_extensions import Optional, List, Union, Type, Tuple, Callable
 
-from pycram import World
+from pycram.datastructures.world import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world_entity import PhysicalBody

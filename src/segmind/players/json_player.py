@@ -12,7 +12,7 @@ from pycram.tf_transformations import euler_matrix, quaternion_from_matrix, quat
 from trimesh import Geometry, Trimesh
 from typing_extensions import Type, List, Tuple, Union, Dict, Optional
 
-from pycram import World
+from pycram.datastructures.world import World
 from pycram.datastructures.pose import Pose, Transform
 from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import PhysicalObject
