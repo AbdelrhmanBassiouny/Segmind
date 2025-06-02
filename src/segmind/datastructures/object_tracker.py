@@ -8,6 +8,7 @@ import numpy as np
 
 from pycram.world_concepts.world_object import Object
 from pycram.ros import logwarn
+from pycram.description import RootLink, Link
 
 if TYPE_CHECKING:
     from .events import Event, EventUnion
@@ -155,6 +156,10 @@ class ObjectTrackerFactory:
     @classmethod
     def get_tracker(cls, obj: Object) -> ObjectTracker:
         with cls._lock:
+            if isinstance(obj, Link) and obj.parent_entity in cls._trackers:
+                return cls._trackers[obj.parent_entity]
+            elif isinstance(obj, RootLink) and len(obj.parent_entity.links) == 1:
+                obj = obj.parent_entity
             if obj not in cls._trackers:
                 cls._trackers[obj] = ObjectTracker(obj)
             return cls._trackers[obj]
