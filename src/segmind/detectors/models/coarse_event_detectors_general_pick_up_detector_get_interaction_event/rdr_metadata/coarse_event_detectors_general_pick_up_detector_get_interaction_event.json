@@ -12,14 +12,11 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "get_support": "segmind.utils.get_support",
-                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
-                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                        "Dict": "typing.Dict",
+                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "NoneType": "builtins.NoneType",
                         "Union": "typing.Union",
-                        "logdebug": "pycram.ros.ros2.logging.logdebug",
-                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -35,14 +32,13 @@
                         "builtins.NoneType"
                     ],
                     "scope": {
-                        "get_support": "segmind.utils.get_support",
-                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                         "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
-                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                        "Dict": "typing.Dict",
+                        "get_support": "segmind.utils.get_support",
+                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "NoneType": "builtins.NoneType",
                         "Union": "typing.Union",
-                        "logdebug": "pycram.ros.ros2.logging.logdebug",
-                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                        "logdebug": "pycram.ros.ros1.logging.logdebug"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",

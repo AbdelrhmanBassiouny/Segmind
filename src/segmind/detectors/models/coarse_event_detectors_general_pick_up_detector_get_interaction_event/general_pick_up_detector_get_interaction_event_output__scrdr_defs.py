@@ -1,18 +1,19 @@
+from typing_extensions import Dict, Optional, Union
+from types import NoneType
 from ....utils import get_support
 from ....datastructures.events import AgentContactEvent, LossOfContactEvent, PickUpEvent
-from typing import Dict, Union
-from pycram.ros.ros2.logging import logdebug
+from pycram.ros.ros1.logging import logdebug
 from ...coarse_event_detectors import GeneralPickUpDetector
 
 
-def conditions_87074858769394720739688305292375760638(case):
+def conditions_87074858769394720739688305292375760638(case) -> bool:
     def conditions_for_general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[PickUpEvent, NoneType]) -> bool:
         """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent."""
         return isinstance(self_.starter_event, AgentContactEvent)
     return conditions_for_general_pick_up_detector_get_interaction_event(**case)
 
 
-def conclusion_87074858769394720739688305292375760638(case):
+def conclusion_87074858769394720739688305292375760638(case) -> Optional[PickUpEvent]:
     def general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[PickUpEvent, NoneType]) -> Union[PickUpEvent, NoneType]:
         """Get possible value(s) for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent."""
         loss_of_contact_event = self_.check_for_event_post_starter_event(LossOfContactEvent)

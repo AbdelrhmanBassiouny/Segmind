@@ -12,12 +12,15 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Case": "ripple_down_rules.datastructures.case.Case",
-                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "Dict": "typing.Dict",
+                        "Optional": "typing.Optional",
+                        "Type": "typing.Type",
+                        "Union": "typing.Union",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
                         "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
-                        "Dict": "typing.Dict",
-                        "Type": "typing.Type"
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "Case": "ripple_down_rules.datastructures.case.Case",
+                        "NoneType": "builtins.NoneType"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -32,12 +35,15 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Case": "ripple_down_rules.datastructures.case.Case",
-                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "Dict": "typing.Dict",
+                        "Optional": "typing.Optional",
+                        "Type": "typing.Type",
+                        "Union": "typing.Union",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
                         "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
-                        "Dict": "typing.Dict",
-                        "Type": "typing.Type"
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "Case": "ripple_down_rules.datastructures.case.Case",
+                        "NoneType": "builtins.NoneType"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",

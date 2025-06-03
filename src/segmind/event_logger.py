@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import queue
 import threading
 from collections import UserDict
@@ -9,7 +10,7 @@ from datetime import timedelta
 from os.path import dirname, abspath
 
 from owlready2_optimized import defaultdict
-from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable
+from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable, Tuple
 
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.world import World
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
 
 ConditionFunction = Callable[[Event], bool]
 CallbackFunction = Callable[[Event], None]
+
 
 class EventCallbacks(UserDict):
     """
@@ -105,7 +107,7 @@ class EventLogger:
         with self.event_callbacks_lock:
             if type(event) in self.event_callbacks:
                 for condition, callback in self.event_callbacks[type(event)]:
-                    if conition(event):
+                    if condition(event):
                         callback(event)
 
     def annotate_scene_with_event(self, event: Event) -> None:
@@ -218,6 +220,8 @@ class EventLogger:
         if show:
             fig.show()
         if save_path:
+            if not os.path.exists(dirname(save_path)):
+                os.makedirs(dirname(save_path))
             if not save_path.endswith('.html'):
                 save_path += '.html'
             file_path = abspath(save_path)
