@@ -19,8 +19,6 @@ try:
 except ImportError:
     pass
 
-pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
-
 
 class TestFileEpisodeSegmenter(TestCase):
     world: World
@@ -36,6 +34,7 @@ class TestFileEpisodeSegmenter(TestCase):
         simulator = BulletWorld
         annotate_events = True if simulator == BulletWorld else False
         cls.world = simulator(WorldMode.GUI)
+        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
         cls.viz_marker_publisher = VizMarkerPublisher()
         obj_id_to_name = {1: "chips", 3: "bowl", 4: "cup", 6: "bueno"}
         obj_id_to_type = {1: Container, 3: Bowl, 4: Cup, 6: Container}

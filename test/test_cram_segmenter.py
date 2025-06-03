@@ -1,3 +1,4 @@
+import sys
 import time
 import unittest
 from os.path import dirname
@@ -7,9 +8,10 @@ from pycram.datastructures.grasp import GraspDescription
 from pycram.designators.action_designator import MoveTorsoActionDescription, PickUpActionDescription
 from pycram.language import SequentialPlan
 from pycram.datastructures.pose import PoseStamped, Vector3
+from pycram.ros import set_logger_level
 from segmind.segmenters.cram_segmenter import CRAMSegmenter
 from segmind.detectors.coarse_event_detectors import MotionPickUpDetector, GeneralPickUpDetector
-from pycram.datastructures.enums import Arms, Grasp, TorsoState, WorldMode
+from pycram.datastructures.enums import Arms, Grasp, TorsoState, WorldMode, LoggerLevel
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import UseProspectionWorld
 from pycram.designator import ObjectDesignatorDescription
@@ -45,6 +47,7 @@ class TestCRAMPlayer(unittest.TestCase):
     def setUpClass(cls):
         RobotDescriptionManager().load_description("pr2")
         cls.world = BulletWorld(mode=cls.render_mode)
+        set_logger_level(LoggerLevel.DEBUG)
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.cram_segmenter = CRAMSegmenter(cls.world, [GeneralPickUpDetector], plot_timeline=True,
                                            plot_save_path=f"{dirname(__file__)}/test_results/cram_segmenter_test")

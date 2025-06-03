@@ -17,7 +17,7 @@ from pycram.datastructures.enums import LoggerLevel
 from pycram.ros import set_logger_level
 from pycram.world_concepts.world_object import Object
 
-set_logger_level(LoggerLevel.DEBUG)
+# set_logger_level(LoggerLevel.DEBUG)
 
 
 class TestEventDetectors(BulletWorldTestCase):
