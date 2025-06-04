@@ -351,7 +351,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
                  detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
                  annotate_events: bool = False, **kwargs):
         if detectors_to_start is None:
-            detectors_to_start = [MotionPickUpDetector, PlacingDetector]
+            detectors_to_start = [GeneralPickUpDetector, PlacingDetector]
         super().__init__(episode_player, detectors_to_start=detectors_to_start, annotate_events=annotate_events,
                          **kwargs)
 

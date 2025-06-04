@@ -1,5 +1,8 @@
 import datetime
+from pathlib import Path
 from unittest import TestCase
+
+from gitdb.util import dirname
 
 import pycram.ros
 from pycram.datastructures.world import World
@@ -43,7 +46,8 @@ class TestFileEpisodeSegmenter(TestCase):
                                             objects_to_ignore=[5],
                                             obj_id_to_name=obj_id_to_name,
                                             obj_id_to_type=obj_id_to_type)
-        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=annotate_events)
+        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=annotate_events,
+                                                        plot_timeline=True, plot_save_path=f'test_results/{Path(dirname(json_file)).stem}')
 
     @classmethod
     def tearDownClass(cls):
