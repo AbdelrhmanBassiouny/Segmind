@@ -6,7 +6,7 @@ import numpy as np
 from pycram.tf_transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional
 
-from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB)
+from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
 from pycram.datastructures.dataclasses import Color
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
@@ -162,9 +162,10 @@ class Imaginator:
         print(f"support index: {cls.latest_surface_idx}")
         support_name = f"imagined_support_{cls.latest_surface_idx}"
         support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
-        support = GenericObjectDescription(support_name,
-                                           [0, 0, 0], [obj_aabb.width, obj_aabb.depth, support_thickness * 0.5])
-        support_obj = Object(support_name, Supporter, None, support, color=Color(1, 1, 0, 1))
+        box_vis_shape = BoxVisualShape(Color(1, 1, 0, 1), [0, 0, 0],
+                                       [obj_aabb.width, obj_aabb.depth, support_thickness * 0.5])
+        support = GenericObjectDescription(support_name, box_vis_shape)
+        support_obj = Object(support_name, Supporter, None, support, color=support.color)
         support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
         cp = support_obj.closest_points(0.05)

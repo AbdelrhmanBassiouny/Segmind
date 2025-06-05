@@ -1,0 +1,2785 @@
+<?xml version="1.0" ?>
+<robot name="iCub_with_montessori_toys_2" version="1.0">
+  <link name="world"/>
+  <joint name="table_joint" type="floating">
+    <origin xyz="0.0 0.0 1.0" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="table"/>
+  </joint>
+  <link name="table">
+    <inertial>
+      <origin xyz="0.0 0.0 -0.20000000298023224" rpy="0.0 0.0 0.0"/>
+      <mass value="10.0"/>
+      <inertia ixx="2.251666784286499" ixy="0.0" ixz="0.0" iyy="6.551666736602783" iyz="0.0" izz="6.926666736602783"/>
+    </inertial>
+    <collision name="Geom_1">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="2.0 1.0 0.10000000149011612"/>
+      </geometry>
+    </collision>
+    <collision name="Geom_2">
+      <origin xyz="0.949999988079071 0.44999998807907104 -0.5" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.10000000149011612 0.10000000149011612 1.0"/>
+      </geometry>
+    </collision>
+    <collision name="Geom_3">
+      <origin xyz="-0.949999988079071 0.44999998807907104 -0.5" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.10000000149011612 0.10000000149011612 1.0"/>
+      </geometry>
+    </collision>
+    <collision name="Geom_4">
+      <origin xyz="0.949999988079071 -0.44999998807907104 -0.5" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.10000000149011612 0.10000000149011612 1.0"/>
+      </geometry>
+    </collision>
+    <collision name="Geom_5">
+      <origin xyz="-0.949999988079071 -0.44999998807907104 -0.5" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.10000000149011612 0.10000000149011612 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="small_table_joint" type="floating">
+    <origin xyz="-0.35 0.0 1.0" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="small_table"/>
+  </joint>
+  <link name="small_table">
+    <inertial>
+      <origin xyz="0.0 0.0 0.23000000417232513" rpy="0.0 0.0 0.0"/>
+      <mass value="10.0"/>
+      <inertia ixx="1.502666711807251" ixy="0.0" ixz="0.0" iyy="0.42766666412353516" iyz="0.0" izz="1.7316666841506958"/>
+    </inertial>
+    <collision name="small_table_geom_1">
+      <origin xyz="0.0 0.0 0.30000001192092896" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.5 1.0 0.10000000149011612"/>
+      </geometry>
+    </collision>
+    <collision name="small_table_geom_2">
+      <origin xyz="0.22499999403953552 0.4749999940395355 0.125" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.05000000074505806 0.05000000074505806 0.25"/>
+      </geometry>
+    </collision>
+    <collision name="small_table_geom_3">
+      <origin xyz="0.22499999403953552 -0.4749999940395355 0.125" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.05000000074505806 0.05000000074505806 0.25"/>
+      </geometry>
+    </collision>
+    <collision name="small_table_geom_4">
+      <origin xyz="-0.22499999403953552 0.4749999940395355 0.125" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.05000000074505806 0.05000000074505806 0.25"/>
+      </geometry>
+    </collision>
+    <collision name="small_table_geom_5">
+      <origin xyz="-0.22499999403953552 -0.4749999940395355 0.125" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.05000000074505806 0.05000000074505806 0.25"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="montessori_box_joint" type="floating">
+    <origin xyz="-0.4 0.0 1.39" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_box"/>
+  </joint>
+  <link name="montessori_box">
+    <inertial>
+      <origin xyz="0.026771999895572662 0.00018124999769497663 -0.003932740073651075" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0220400094985962"/>
+      <inertia ixx="0.006246746983379126" ixy="-1.3294325071910862e-05" ixz="-3.980706424044911e-06" iyy="0.0019284707959741354" iyz="-6.739499440300278e-06" izz="0.006575432140380144"/>
+    </inertial>
+    <collision name="UCX_MontessoriBox_001">
+      <origin xyz="-0.007499999832361937 0.0 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.01600000075995922 0.041999999433755875 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_002">
+      <origin xyz="-0.04625000059604645 0.0 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.017500000074505806 0.28200000524520874 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_003">
+      <origin xyz="0.0 0.13300000131130219 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.09799999743700027 0.00800000037997961 0.06400000303983688"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_004">
+      <origin xyz="0.0 -0.13300000131130219 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.09799999743700027 0.00800000037997961 0.06400000303983688"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_005">
+      <origin xyz="0.04500000178813934 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.0020000000949949026 0.257999986410141 0.06400000303983688"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_006">
+      <origin xyz="-0.0024999999441206455 0.04349999874830246 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.09300000220537186 0.003000000026077032 0.06400000303983688"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_007">
+      <origin xyz="-0.0024999999441206455 -0.04349999874830246 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.09300000220537186 0.003000000026077032 0.06400000303983688"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_008">
+      <origin xyz="0.0 0.0 -0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.10999999940395355 0.28200000524520874 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_009">
+      <origin xyz="0.04574999958276749 0.0 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.01850000023841858 0.28200000524520874 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_010">
+      <origin xyz="-0.0005000000237487257 -0.12200000137090683 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.07400000095367432 0.03799999877810478 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_011">
+      <origin xyz="-0.0005000000237487257 -0.04600000008940697 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.07400000095367432 0.05000000074505806 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_012">
+      <origin xyz="-0.017500000074505806 0.04600000008940697 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.03999999910593033 0.05000000074505806 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_013">
+      <origin xyz="-0.017500000074505806 0.12600000202655792 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.03999999910593033 0.029999999329447746 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_014">
+      <origin xyz="0.023936999961733818 0.019593000411987305 0.035999998450279236" rpy="0.0 0.0 -0.5235986113548279"/>
+      <geometry>
+        <box size="0.041999999433755875 0.020999999716877937 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_015">
+      <origin xyz="-0.0005000000237487257 -0.08699999749660492 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.009999999776482582 0.03200000151991844 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_016">
+      <origin xyz="0.03200000151991844 0.08100000023841858 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.008999999612569809 0.11999999731779099 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_017">
+      <origin xyz="0.02500000037252903 0.04399999976158142 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.004999999888241291 0.04600000008940697 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_018">
+      <origin xyz="0.02500000037252903 0.12800000607967377 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.004999999888241291 0.026000000536441803 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_019">
+      <origin xyz="0.0024999999441206455 0.07100000232458115 0.035999998450279236" rpy="0.0 0.0 0.7853969931602478"/>
+      <geometry>
+        <box size="0.016568999737501144 0.016568999737501144 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_020">
+      <origin xyz="0.012500000186264515 0.08100000023841858 0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.019999999552965164 0.11999999731779099 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_021">
+      <origin xyz="-0.03750000149011612 0.07100000232458115 0.035999998450279236" rpy="0.0 0.0 0.7853969931602478"/>
+      <geometry>
+        <box size="0.016568999737501144 0.016568999737501144 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_022">
+      <origin xyz="-0.03750000149011612 0.11100000143051147 0.035999998450279236" rpy="0.0 0.0 0.7853969931602478"/>
+      <geometry>
+        <box size="0.016568999737501144 0.016568999737501144 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_023">
+      <origin xyz="0.0024999999441206455 0.11100000143051147 0.035999998450279236" rpy="0.0 0.0 0.7853969931602478"/>
+      <geometry>
+        <box size="0.016568999737501144 0.016568999737501144 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_024">
+      <origin xyz="0.023936999961733818 -0.019593000411987305 0.035999998450279236" rpy="0.0 0.0 0.5235986113548279"/>
+      <geometry>
+        <box size="0.041999999433755875 0.020999999716877937 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_025">
+      <origin xyz="-0.03750000149011612 -0.07100000232458115 0.035999998450279236" rpy="0.0 0.0 0.7853969931602478"/>
+      <geometry>
+        <box size="0.013255000114440918 0.013255000114440918 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_026">
+      <origin xyz="-0.005499999970197678 -0.07100000232458115 0.035999998450279236" rpy="0.0 0.0 0.7853969931602478"/>
+      <geometry>
+        <box size="0.013255000114440918 0.013255000114440918 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_027">
+      <origin xyz="-0.005499999970197678 -0.10300000011920929 0.035999998450279236" rpy="0.0 0.0 0.7853969931602478"/>
+      <geometry>
+        <box size="0.013255000114440918 0.013255000114440918 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriBox_028">
+      <origin xyz="-0.03750000149011612 -0.10300000011920929 0.035999998450279236" rpy="0.0 0.0 0.7853969931602478"/>
+      <geometry>
+        <box size="0.013255000114440918 0.013255000114440918 0.00800000037997961"/>
+      </geometry>
+    </collision>
+    <visual name="MontessoriBox">
+      <origin xyz="0.00525750732049346 1.4678077604912687e-05 -0.0003088224621023983" rpy="-1.586214303970337 -1.5560582876205444 -3.1267335414886475"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_box_MontessoriBox.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="MontessoriBox_material">
+        <color rgba="0.89 0.67 0.57 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_drawer_1_joint" type="prismatic">
+    <origin xyz="-0.003000000026077032 0.08699999749660492 0.0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <parent link="montessori_box"/>
+    <child link="montessori_drawer_1"/>
+    <limit effort="1000.0" lower="0.0" upper="0.10000000149011612" velocity="1000.0"/>
+  </joint>
+  <link name="montessori_drawer_1">
+    <inertial>
+      <origin xyz="0.0257485993206501 5.7039901690814077e-08 -0.0025818198919296265" rpy="0.0 0.0 0.0"/>
+      <mass value="0.13218800723552704"/>
+      <inertia ixx="0.0001644437579670921" ixy="1.272882515536422e-12" ixz="3.2807527077238774e-06" iyy="0.0002020050014834851" iyz="9.96200517910939e-13" izz="0.00026708925724960864"/>
+    </inertial>
+    <collision name="UCX_MontessoriDrawer1_001">
+      <origin xyz="0.0 0.0 -0.029999999329447746" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.09200000017881393 0.0820000022649765 0.0020000000949949026"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer1_002">
+      <origin xyz="-0.041999999433755875 0.0 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.00800000037997961 0.0820000022649765 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer1_003">
+      <origin xyz="0.004000000189989805 0.03849999979138374 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.08399999886751175 0.004999999888241291 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer1_004">
+      <origin xyz="0.004000000189989805 -0.03849999979138374 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.08399999886751175 0.004999999888241291 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer1_005">
+      <origin xyz="0.04349999874830246 0.0 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.004999999888241291 0.07199999690055847 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <visual name="MontessoriDrawer1">
+      <origin xyz="0.00039275470771826804 -9.528518252199802e-11 -0.004749107174575329" rpy="0.0 -1.5696903467178345 3.1415927410125732"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_box_MontessoriDrawer.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="MontessoriDrawer1_material">
+        <color rgba="1.0 0.83 0.67 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_drawer_1_handle_joint" type="fixed">
+    <origin xyz="-0.061 0.0 0.001" rpy="0.0 0.0 0.0"/>
+    <parent link="montessori_drawer_1"/>
+    <child link="montessori_drawer_1_handle"/>
+  </joint>
+  <link name="montessori_drawer_1_handle">
+    <inertial>
+      <origin xyz="0.003915579989552498 7.503020427179763e-09 -7.799900308969043e-11" rpy="0.0 0.0 0.0"/>
+      <mass value="0.005739749874919653"/>
+      <inertia ixx="2.2677200206544512e-07" ixy="-1.7225866458074612e-13" ixz="4.098988519890849e-15" iyy="3.5472399417812994e-07" iyz="5.498105549545885e-21" izz="3.5430400657787686e-07"/>
+    </inertial>
+    <collision name="UCX_MontessoriDrawer1Handle_001">
+      <origin xyz="0.007499999832361937 0.0 0.0" rpy="-0.0 1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.00800000037997961" length="0.014999999664723873"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer1Handle_002">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <sphere radius="0.004999999888241291"/>
+      </geometry>
+    </collision>
+    <visual name="MontessoriDrawer1Handle">
+      <origin xyz="0.0039155809208750725 7.543388136355134e-09 -2.279017252693194e-11" rpy="1.5707963705062866 -1.3322676295501878e-15 1.5707963705062866"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_box_MontessoriDrawerHandle.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="MontessoriDrawer1Handle_material">
+        <color rgba="0.89 0.67 0.57 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_drawer_2_joint" type="prismatic">
+    <origin xyz="-0.003000000026077032 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <parent link="montessori_box"/>
+    <child link="montessori_drawer_2"/>
+    <limit effort="1000.0" lower="0.0" upper="0.10000000149011612" velocity="1000.0"/>
+  </joint>
+  <link name="montessori_drawer_2">
+    <inertial>
+      <origin xyz="0.0257485993206501 5.7039901690814077e-08 -0.0025818198919296265" rpy="0.0 0.0 0.0"/>
+      <mass value="0.13218800723552704"/>
+      <inertia ixx="0.0001644437579670921" ixy="1.272882515536422e-12" ixz="3.2807527077238774e-06" iyy="0.0002020050014834851" iyz="9.96200517910939e-13" izz="0.00026708925724960864"/>
+    </inertial>
+    <collision name="UCX_MontessoriDrawer2_001">
+      <origin xyz="0.0 0.0 -0.029999999329447746" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.09200000017881393 0.0820000022649765 0.0020000000949949026"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer2_002">
+      <origin xyz="-0.041999999433755875 0.0 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.00800000037997961 0.0820000022649765 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer2_003">
+      <origin xyz="0.004000000189989805 0.03849999979138374 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.08399999886751175 0.004999999888241291 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer2_004">
+      <origin xyz="0.004000000189989805 -0.03849999979138374 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.08399999886751175 0.004999999888241291 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer2_005">
+      <origin xyz="0.04349999874830246 0.0 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.004999999888241291 0.07199999690055847 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <visual name="MontessoriDrawer2">
+      <origin xyz="0.00039275470771826804 -9.528518252199802e-11 -0.004749107174575329" rpy="0.0 -1.5696903467178345 3.1415927410125732"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_box_MontessoriDrawer.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="MontessoriDrawer2_material">
+        <color rgba="0.99 0.73 0.55 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_drawer_2_handle_joint" type="fixed">
+    <origin xyz="-0.061 0.0 0.001" rpy="0.0 0.0 0.0"/>
+    <parent link="montessori_drawer_2"/>
+    <child link="montessori_drawer_2_handle"/>
+  </joint>
+  <link name="montessori_drawer_2_handle">
+    <inertial>
+      <origin xyz="0.003915579989552498 7.503020427179763e-09 -7.799900308969043e-11" rpy="0.0 0.0 0.0"/>
+      <mass value="0.005739749874919653"/>
+      <inertia ixx="2.2677200206544512e-07" ixy="-1.7225866458074612e-13" ixz="4.098988519890849e-15" iyy="3.5472399417812994e-07" iyz="5.498105549545885e-21" izz="3.5430400657787686e-07"/>
+    </inertial>
+    <collision name="UCX_MontessoriDrawer2Handle_001">
+      <origin xyz="0.007499999832361937 0.0 0.0" rpy="-0.0 1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.00800000037997961" length="0.014999999664723873"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer2Handle_002">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <sphere radius="0.004999999888241291"/>
+      </geometry>
+    </collision>
+    <visual name="MontessoriDrawer2Handle">
+      <origin xyz="0.0039155809208750725 7.543388136355134e-09 -2.279017252693194e-11" rpy="1.5707963705062866 -1.3322676295501878e-15 1.5707963705062866"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_box_MontessoriDrawerHandle.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="MontessoriDrawer2Handle_material">
+        <color rgba="0.89 0.67 0.57 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_drawer_3_joint" type="prismatic">
+    <origin xyz="-0.003000000026077032 -0.08699999749660492 0.0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <parent link="montessori_box"/>
+    <child link="montessori_drawer_3"/>
+    <limit effort="1000.0" lower="0.0" upper="0.10000000149011612" velocity="1000.0"/>
+  </joint>
+  <link name="montessori_drawer_3">
+    <inertial>
+      <origin xyz="0.0257485993206501 5.7039901690814077e-08 -0.0025818198919296265" rpy="0.0 0.0 0.0"/>
+      <mass value="0.13218800723552704"/>
+      <inertia ixx="0.0001644437579670921" ixy="1.272882515536422e-12" ixz="3.2807527077238774e-06" iyy="0.0002020050014834851" iyz="9.96200517910939e-13" izz="0.00026708925724960864"/>
+    </inertial>
+    <collision name="UCX_MontessoriDrawer3_001">
+      <origin xyz="0.0 0.0 -0.029999999329447746" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.09200000017881393 0.0820000022649765 0.0020000000949949026"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer3_002">
+      <origin xyz="-0.041999999433755875 0.0 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.00800000037997961 0.0820000022649765 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer3_003">
+      <origin xyz="0.004000000189989805 0.03849999979138374 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.08399999886751175 0.004999999888241291 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer3_004">
+      <origin xyz="0.004000000189989805 -0.03849999979138374 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.08399999886751175 0.004999999888241291 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer3_005">
+      <origin xyz="0.04349999874830246 0.0 0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.004999999888241291 0.07199999690055847 0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <visual name="MontessoriDrawer3">
+      <origin xyz="0.00039275470771826804 -9.528518252199802e-11 -0.004749107174575329" rpy="0.0 -1.5696903467178345 3.1415927410125732"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_box_MontessoriDrawer.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="MontessoriDrawer3_material">
+        <color rgba="0.87 0.94 0.98 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_drawer_3_handle_joint" type="fixed">
+    <origin xyz="-0.061 0.0 0.001" rpy="0.0 0.0 0.0"/>
+    <parent link="montessori_drawer_3"/>
+    <child link="montessori_drawer_3_handle"/>
+  </joint>
+  <link name="montessori_drawer_3_handle">
+    <inertial>
+      <origin xyz="0.003915579989552498 7.503020427179763e-09 -7.799900308969043e-11" rpy="0.0 0.0 0.0"/>
+      <mass value="0.005739749874919653"/>
+      <inertia ixx="2.2677200206544512e-07" ixy="-1.7225866458074612e-13" ixz="4.098988519890849e-15" iyy="3.5472399417812994e-07" iyz="5.498105549545885e-21" izz="3.5430400657787686e-07"/>
+    </inertial>
+    <collision name="UCX_MontessoriDrawer3Handle_001">
+      <origin xyz="0.007499999832361937 0.0 0.0" rpy="-0.0 1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.00800000037997961" length="0.014999999664723873"/>
+      </geometry>
+    </collision>
+    <collision name="UCX_MontessoriDrawer3Handle_002">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <sphere radius="0.004999999888241291"/>
+      </geometry>
+    </collision>
+    <visual name="MontessoriDrawer3Handle">
+      <origin xyz="0.0039155809208750725 7.543388136355134e-09 -2.279017252693194e-11" rpy="1.5707963705062866 -1.3322676295501878e-15 1.5707963705062866"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_box_MontessoriDrawerHandle.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="MontessoriDrawer3Handle_material">
+        <color rgba="0.89 0.67 0.57 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_object_1_joint" type="floating">
+    <origin xyz="-0.375 0.091 1.5" rpy="-0.0 1.5707963705062866 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_1"/>
+  </joint>
+  <link name="montessori_object_1">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.004115180112421513"/>
+      <inertia ixx="2.389730013874214e-07" ixy="0.0" ixz="0.0" iyy="2.389730013874214e-07" iyz="0.0" izz="4.5374500245998206e-07"/>
+    </inertial>
+    <collision name="MontessoriObject1">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.02199999988079071" length="0.004000000189989805"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="montessori_object_2_joint" type="floating">
+    <origin xyz="-0.4015 0.25 1.4" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_2"/>
+  </joint>
+  <link name="montessori_object_2">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.01134410034865141"/>
+      <inertia ixx="1.2508099871411105e-06" ixy="0.0" ixz="0.0" iyy="1.2508099871411105e-06" iyz="0.0" izz="8.338760153492331e-07"/>
+    </inertial>
+    <collision name="MontessoriObject2">
+      <origin xyz="-0.005819993559271097 1.2720914664890083e-19 3.725290298461914e-09" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_object_2_MontessoriObject_002.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="montessori_object_3_joint" type="floating">
+    <origin xyz="-0.4015 -0.237 1.4" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_3"/>
+  </joint>
+  <link name="montessori_object_3">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.007762390188872814"/>
+      <inertia ixx="5.07195011323347e-07" ixy="0.0" ixz="0.0" iyy="5.07195011323347e-07" iyz="0.0" izz="5.07195011323347e-07"/>
+    </inertial>
+    <collision name="MontessoriObject3">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.029999999329447746 0.029999999329447746 0.029999999329447746"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="montessori_object_4_joint" type="floating">
+    <origin xyz="-0.4175 0.091 1.5" rpy="-0.0 1.5707963705062866 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_4"/>
+  </joint>
+  <link name="montessori_object_4">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.01371730025857687"/>
+      <inertia ixx="1.209990045936138e-06" ixy="0.0" ixz="0.0" iyy="1.209990045936138e-06" iyz="0.0" izz="1.209990045936138e-06"/>
+    </inertial>
+    <collision name="MontessoriObject4">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <sphere radius="0.019999999552965164"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="montessori_object_5_joint" type="floating">
+    <origin xyz="-0.3095 0.25 1.4" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_5"/>
+  </joint>
+  <link name="montessori_object_5">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.008732689544558525"/>
+      <inertia ixx="1.2838399925385602e-06" ixy="0.0" ixz="0.0" iyy="7.13243025529664e-07" iyz="0.0" izz="7.13243025529664e-07"/>
+    </inertial>
+    <collision name="MontessoriObject5">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.019999999552965164 0.03999999910593033 0.029999999329447746"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="montessori_object_6_joint" type="floating">
+    <origin xyz="-0.3095 -0.237 1.4" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_6"/>
+  </joint>
+  <link name="montessori_object_6">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.006096569821238518"/>
+      <inertia ixx="3.4855600006267196e-07" ixy="0.0" ixz="0.0" iyy="3.4855600006267196e-07" iyz="0.0" izz="2.987619893701776e-07"/>
+    </inertial>
+    <collision name="MontessoriObject6">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.014999999664723873" length="0.029999999329447746"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="iCub_joint" type="floating">
+    <origin xyz="-0.8 0.0 0.55" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="iCub"/>
+  </joint>
+  <link name="iCub">
+    <inertial>
+      <origin xyz="-0.800000011920929 0.0 0.550000011920929" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="base_footprint_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="iCub"/>
+    <child link="base_footprint"/>
+  </joint>
+  <link name="base_footprint">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="root_link_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.635" rpy="0.0 0.0 0.0"/>
+    <parent link="base_footprint"/>
+    <child link="root_link"/>
+  </joint>
+  <link name="root_link">
+    <inertial>
+      <origin xyz="0.011262699961662292 0.0 0.02912450022995472" rpy="0.0 0.0 0.0"/>
+      <mass value="0.5866919755935669"/>
+      <inertia ixx="0.0015237851766869426" ixy="0.0" ixz="-3.417327025090344e-05" iyy="0.0015093700494617224" iyz="0.0" izz="0.0006631968426518142"/>
+    </inertial>
+    <collision name="SM_root_link_collision_0">
+      <origin xyz="0.0020000000949949026 0.0 0.05999999865889549" rpy="-0.0 1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.07400000095367432"/>
+      </geometry>
+    </collision>
+    <collision name="SM_root_link_collision_1">
+      <origin xyz="0.019999999552965164 0.0 0.0" rpy="1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.03099999949336052" length="0.10000000149011612"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hip_pitch" type="revolute">
+    <origin xyz="0.02160000056028366 -0.040550000965595245 0.0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="root_link"/>
+    <child link="r_hip_1"/>
+    <limit effort="1000.0" lower="-0.785398006439209" upper="2.0071299076080322" velocity="1000.0"/>
+  </joint>
+  <link name="r_hip_1">
+    <inertial>
+      <origin xyz="0.0 -0.03999999910593033 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.3988569974899292"/>
+      <inertia ixx="0.0009688229765743017" ixy="0.0" ixz="0.0" iyy="0.0004219900001771748" iyz="0.0" izz="0.0009688229765743017"/>
+    </inertial>
+    <collision name="SM_r_hip_1_collision_0">
+      <origin xyz="0.0 -0.03999999910593033 0.0" rpy="1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.04600000008940697" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hip_roll" type="revolute">
+    <origin xyz="-0.04729999974370003 -0.03310000151395798 -0.008999999612569809" rpy="0.0 0.0 0.0"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <parent link="r_hip_1"/>
+    <child link="r_hip_2"/>
+    <limit effort="1000.0" lower="-0.17453299462795258" upper="1.9547699689865112" velocity="1000.0"/>
+  </joint>
+  <link name="r_hip_2">
+    <inertial>
+      <origin xyz="-0.001244709943421185 0.0030985199846327305 -0.034212298691272736" rpy="0.0 0.0 0.0"/>
+      <mass value="2.5818800926208496"/>
+      <inertia ixx="0.016487816348671913" ixy="-8.319831977132708e-05" ixz="0.0006409407360479236" iyy="0.018370114266872406" iyz="0.0011647982755675912" izz="0.008273440413177013"/>
+    </inertial>
+    <collision name="SM_r_hip_2_collision_0">
+      <origin xyz="-0.02800000086426735 0.0 0.0" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="SM_r_hip_2_collision_1">
+      <origin xyz="-0.02800000086426735 0.0 -0.06499999761581421" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.03099999949336052" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="SM_r_hip_2_collision_2">
+      <origin xyz="0.03700000047683716 0.0 -0.0729999989271164" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.028999999165534973" length="0.03400000184774399"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hip_3_joint" type="fixed">
+    <origin xyz="0.0367 0.0 -0.0897" rpy="0.0 0.0 0.0"/>
+    <parent link="r_hip_2"/>
+    <child link="r_hip_3"/>
+  </joint>
+  <link name="r_hip_3">
+    <inertial>
+      <origin xyz="0.004999999888241291 0.00800000037997961 -0.07000000029802322" rpy="0.0 0.0 0.0"/>
+      <mass value="2.0799999237060547"/>
+      <inertia ixx="0.014987770467996597" ixy="-8.319768676301464e-05" ixz="0.0007279943092726171" iyy="0.016414696350693703" iyz="0.0011648023501038551" izz="0.007551783695816994"/>
+    </inertial>
+    <collision name="SM_r_hip_3_collision_0">
+      <origin xyz="0.004999999888241291 0.00800000037997961 -0.07000000029802322" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.1599999964237213 0.12999999523162842 0.10000000149011612"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hip_yaw" type="revolute">
+    <origin xyz="0.0 0.014999999664723873 -0.07090000063180923" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+    <parent link="r_hip_3"/>
+    <child link="r_upper_leg"/>
+    <limit effort="1000.0" lower="-1.3962599039077759" upper="1.3962599039077759" velocity="1000.0"/>
+  </joint>
+  <link name="r_upper_leg">
+    <inertial>
+      <origin xyz="0.017999999225139618 0.0 -0.10999999940395355" rpy="0.0 0.0 0.0"/>
+      <mass value="0.09236279875040054"/>
+      <inertia ixx="0.0012601247290149331" ixy="0.0" ixz="0.00018287725106347352" iyy="0.0012040899600833654" iyz="0.0" izz="0.00017246429342776537"/>
+    </inertial>
+    <collision name="SM_r_upper_leg_collision_0">
+      <origin xyz="0.017999999225139618 -0.03500000014901161 -0.10999999940395355" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.012000000104308128"/>
+      </geometry>
+    </collision>
+    <collision name="SM_r_upper_leg_collision_1">
+      <origin xyz="0.017999999225139618 0.03500000014901161 -0.10999999940395355" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.012000000104308128"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_knee" type="revolute">
+    <origin xyz="0.014999999664723873 -0.024900000542402267 -0.10620000213384628" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="r_upper_leg"/>
+    <child link="r_lower_leg"/>
+    <limit effort="1000.0" lower="-1.2217299938201904" upper="0.08726649731397629" velocity="1000.0"/>
+  </joint>
+  <link name="r_lower_leg">
+    <inertial>
+      <origin xyz="-0.01915070042014122 0.02116990089416504 -0.12723499536514282" rpy="0.0 0.0 0.0"/>
+      <mass value="2.1712000370025635"/>
+      <inertia ixx="0.04889758303761482" ixy="0.0008315950399264693" ixz="-0.0054054283536970615" iyy="0.04933898523449898" iyz="0.005825192667543888" izz="0.006015085149556398"/>
+    </inertial>
+    <collision name="SM_r_lower_leg_collision_0">
+      <origin xyz="0.0 0.02500000037252903 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.041999999433755875" length="0.05000000074505806"/>
+      </geometry>
+    </collision>
+    <collision name="SM_r_lower_leg_collision_1">
+      <origin xyz="-0.02500000037252903 0.019999999552965164 -0.12999999523162842" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.11999999731779099 0.10999999940395355 0.12600000202655792"/>
+      </geometry>
+    </collision>
+    <collision name="SM_r_lower_leg_collision_2">
+      <origin xyz="0.0 0.02500000037252903 -0.25999999046325684" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_ankle_pitch" type="revolute">
+    <origin xyz="0.0 0.0005000000237487257 -0.2559889853000641" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="r_lower_leg"/>
+    <child link="r_ankle_1"/>
+    <limit effort="1000.0" lower="-0.785398006439209" upper="0.785398006439209" velocity="1000.0"/>
+  </joint>
+  <link name="r_ankle_1">
+    <inertial>
+      <origin xyz="0.0 0.014999999664723873 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.028274299576878548"/>
+      <inertia ixx="1.2959099876752589e-05" ixy="0.0" ixz="0.0" iyy="1.2723399777314626e-05" iyz="0.0" izz="1.2959099876752589e-05"/>
+    </inertial>
+    <collision name="SM_r_ankle_1_collision_0">
+      <origin xyz="0.0 0.014999999664723873 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.029999999329447746" length="0.009999999776482582"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_ankle_roll" type="revolute">
+    <origin xyz="-0.05274999886751175 0.018200000748038292 -0.03500000014901161" rpy="0.0 0.0 0.0"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <parent link="r_ankle_1"/>
+    <child link="r_ankle_2"/>
+    <limit effort="1000.0" lower="-0.43633201718330383" upper="0.43633201718330383" velocity="1000.0"/>
+  </joint>
+  <link name="r_ankle_2">
+    <inertial>
+      <origin xyz="0.06708010286092758 0.0 -0.02671789936721325" rpy="0.0 0.0 0.0"/>
+      <mass value="1.6124000549316406"/>
+      <inertia ixx="0.00380721315741539" ixy="0.0" ixz="0.0036863882560282946" iyy="0.01751440018415451" iyz="0.0" izz="0.017239296808838844"/>
+    </inertial>
+    <collision name="SM_r_ankle_2_collision_0">
+      <origin xyz="0.11999999731779099 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.03999999910593033 0.10000000149011612 0.03999999910593033"/>
+      </geometry>
+    </collision>
+    <collision name="SM_r_ankle_2_collision_1">
+      <origin xyz="-0.019999999552965164 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.03999999910593033 0.10000000149011612 0.03999999910593033"/>
+      </geometry>
+    </collision>
+    <collision name="SM_r_ankle_2_collision_2">
+      <origin xyz="0.07999999821186066 0.0 -0.03999999910593033" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.23999999463558197 0.11999999731779099 0.03999999910593033"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_foot_rear_joint" type="fixed">
+    <origin xyz="0.016 0.0 -0.0658" rpy="0.0 0.0 0.0"/>
+    <parent link="r_ankle_2"/>
+    <child link="r_foot_rear"/>
+  </joint>
+  <link name="r_foot_rear">
+    <inertial>
+      <origin xyz="0.0 0.0 0.003000000026077032" rpy="0.0 0.0 0.0"/>
+      <mass value="0.07020000368356705"/>
+      <inertia ixx="5.934240107308142e-05" ixy="0.0" ixz="0.0" iyy="8.092299685813487e-05" iyz="0.0" izz="0.0001385810028295964"/>
+    </inertial>
+    <collision name="SM_r_foot_rear_collision_0">
+      <origin xyz="0.0 0.0 0.003000000026077032" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.11699999868869781 0.10000000149011612 0.006000000052154064"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_sole_joint" type="fixed">
+    <origin xyz="0.05963 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="r_foot_rear"/>
+    <child link="r_sole"/>
+  </joint>
+  <link name="r_sole">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="r_foot_front_joint" type="fixed">
+    <origin xyz="0.13525 0.0 -0.0658" rpy="0.0 0.0 0.0"/>
+    <parent link="r_ankle_2"/>
+    <child link="r_foot_front"/>
+  </joint>
+  <link name="r_foot_front">
+    <inertial>
+      <origin xyz="0.0 0.0 0.003000000026077032" rpy="0.0 0.0 0.0"/>
+      <mass value="0.07020000368356705"/>
+      <inertia ixx="5.934240107308142e-05" ixy="0.0" ixz="0.0" iyy="8.092299685813487e-05" iyz="0.0" izz="0.0001385810028295964"/>
+    </inertial>
+    <collision name="SM_r_foot_front_collision_0">
+      <origin xyz="0.0 0.0 0.003000000026077032" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.11699999868869781 0.10000000149011612 0.006000000052154064"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="torso_roll" type="revolute">
+    <origin xyz="0.0 0.0 0.060499999672174454" rpy="0.0 0.0 0.0"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <parent link="root_link"/>
+    <child link="torso_1"/>
+    <limit effort="1000.0" lower="-0.4014259874820709" upper="0.4014259874820709" velocity="1000.0"/>
+  </joint>
+  <link name="torso_1">
+    <inertial>
+      <origin xyz="-0.017438799142837524 0.0 0.05014000087976456" rpy="0.0 0.0 0.0"/>
+      <mass value="0.5539370179176331"/>
+      <inertia ixx="0.0022754929959774017" ixy="0.0" ixz="0.0003313801425974816" iyy="0.0028055200818926096" iyz="0.0" izz="0.0010024969233199954"/>
+    </inertial>
+    <collision name="SM_torso_1_collision_0">
+      <origin xyz="0.0 0.0 0.0729999989271164" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.0729999989271164"/>
+      </geometry>
+    </collision>
+    <collision name="SM_torso_1_collision_1">
+      <origin xyz="-0.05000000074505806 0.0 0.029999999329447746" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.029999999329447746 0.07000000029802322 0.10999999940395355"/>
+      </geometry>
+    </collision>
+    <collision name="SM_torso_1_collision_2">
+      <origin xyz="0.04500000178813934 0.0 0.00800000037997961" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.009999999776482582 0.07000000029802322 0.05999999865889549"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="torso_pitch" type="revolute">
+    <origin xyz="0.0 0.0 0.07249999791383743" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="torso_1"/>
+    <child link="torso_2"/>
+    <limit effort="1000.0" lower="-0.31415900588035583" upper="0.785398006439209" velocity="1000.0"/>
+  </joint>
+  <link name="torso_2">
+    <inertial>
+      <origin xyz="0.03799999877810478 0.0 0.014999999664723873" rpy="0.0 0.0 0.0"/>
+      <mass value="0.007853980176150799"/>
+      <inertia ixx="4.221514245728031e-06" ixy="0.0" ixz="-4.476768936001463e-06" iyy="1.434600017091725e-05" iyz="0.0" izz="1.257881558558438e-05"/>
+    </inertial>
+    <collision name="SM_torso_2_collision_0">
+      <origin xyz="0.03799999877810478 0.0 0.014999999664723873" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.02500000037252903" length="0.004000000189989805"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="torso_yaw" type="revolute">
+    <origin xyz="0.0 0.0 0.06447000056505203" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+    <parent link="torso_2"/>
+    <child link="chest"/>
+    <limit effort="1000.0" lower="-0.7504919767379761" upper="0.7504919767379761" velocity="1000.0"/>
+  </joint>
+  <link name="chest">
+    <inertial>
+      <origin xyz="-0.014636700041592121 0.0005911639891564846 0.07015179842710495" rpy="0.0 0.0 0.0"/>
+      <mass value="3.008359909057617"/>
+      <inertia ixx="0.018329452723264694" ixy="4.6821469368296675e-06" ixz="0.0012843685690313578" iyy="0.022339090704917908" iyz="-7.129261575755663e-06" izz="0.01451855804771185"/>
+    </inertial>
+    <collision name="SM_chest_collision_0">
+      <origin xyz="-0.02500000037252903 0.014999999664723873 0.06800000369548798" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.07999999821186066" length="0.029999999329447746"/>
+      </geometry>
+    </collision>
+    <collision name="SM_chest_collision_1">
+      <origin xyz="-0.02500000037252903 -0.014999999664723873 0.06800000369548798" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.07999999821186066" length="0.029999999329447746"/>
+      </geometry>
+    </collision>
+    <collision name="SM_chest_collision_2">
+      <origin xyz="0.02500000037252903 0.014999999664723873 0.06800000369548798" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.07999999821186066" length="0.029999999329447746"/>
+      </geometry>
+    </collision>
+    <collision name="SM_chest_collision_3">
+      <origin xyz="0.02500000037252903 -0.014999999664723873 0.06800000369548798" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.07999999821186066" length="0.029999999329447746"/>
+      </geometry>
+    </collision>
+    <collision name="SM_chest_collision_4">
+      <origin xyz="-0.09000000357627869 0.0 0.029999999329447746" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.019999999552965164 0.14000000059604645 0.17000000178813934"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="chest_depth_frame_joint" type="fixed">
+    <origin xyz="0.0894115 0.0175 0.0992995" rpy="-1.5707963705062866 0.0 -1.5707963705062866"/>
+    <parent link="chest"/>
+    <child link="chest_depth_frame"/>
+  </joint>
+  <link name="chest_depth_frame">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="r_shoulder_pitch" type="revolute">
+    <origin xyz="-0.02083509974181652 -0.03974229842424393 0.10520300269126892" rpy="-0.2532612383365631 1.2867664622717712e-07 0.26179933547973633"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="chest"/>
+    <child link="r_shoulder_1"/>
+    <limit effort="1000.0" lower="-0.34906598925590515" upper="3.0543298721313477" velocity="1000.0"/>
+  </joint>
+  <link name="r_shoulder_1">
+    <inertial>
+      <origin xyz="0.0 -0.10000000149011612 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.13744500279426575"/>
+      <inertia ixx="0.0014520500553771853" ixy="0.0" ixz="0.0" iyy="4.295149847166613e-05" iyz="0.0" izz="0.0014520500553771853"/>
+    </inertial>
+    <collision name="SM_r_shoulder_1_collision_0">
+      <origin xyz="0.0 -0.10000000149011612 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.02500000037252903" length="0.07000000029802322"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_shoulder_roll" type="revolute">
+    <origin xyz="0.007489010225981474 -0.11150000244379044 0.0004027860122732818" rpy="0.17453297972679138 -0.053747691214084625 -6.040646667315741e-07"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <parent link="r_shoulder_1"/>
+    <child link="r_shoulder_2"/>
+    <limit effort="1000.0" lower="0.20943999290466309" upper="2.8448898792266846" velocity="1000.0"/>
+  </joint>
+  <link name="r_shoulder_2">
+    <inertial>
+      <origin xyz="0.004344259854406118 0.0 -0.017704900354146957" rpy="0.0 0.0 0.0"/>
+      <mass value="0.04790930077433586"/>
+      <inertia ixx="3.818014374701306e-05" ixy="-5.064447126711528e-22" ixz="-8.48228137328988e-06" iyy="5.0375099817756563e-05" iyz="1.0356740506915934e-21" izz="3.1054256396600977e-05"/>
+    </inertial>
+    <collision name="SM_r_shoulder_2_collision_0">
+      <origin xyz="-0.009999999776482582 0.0 -0.029999999329447746" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.029999999329447746" length="0.009999999776482582"/>
+      </geometry>
+    </collision>
+    <collision name="SM_r_shoulder_2_collision_1">
+      <origin xyz="0.02500000037252903 0.0 0.0" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.02500000037252903" length="0.009999999776482582"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_shoulder_3_joint" type="fixed">
+    <origin xyz="-0.00684995 2.1905e-07 -0.0543" rpy="0.0 0.0 0.0"/>
+    <parent link="r_shoulder_2"/>
+    <child link="r_shoulder_3"/>
+  </joint>
+  <link name="r_shoulder_3">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="r_shoulder_yaw" type="revolute">
+    <origin xyz="0.0 4.218329934246867e-07 -0.022499900311231613" rpy="6.938893903907228e-18 0.0 -4.336808689942018e-19"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_shoulder_3"/>
+    <child link="r_upper_arm"/>
+    <limit effort="1000.0" lower="-0.8726650476455688" upper="1.3962599039077759" velocity="1000.0"/>
+  </joint>
+  <link name="r_upper_arm">
+    <inertial>
+      <origin xyz="0.0 0.0 -0.05000000074505806" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0178799629211426"/>
+      <inertia ixx="0.005231460090726614" ixy="0.0" ixz="0.0" iyy="0.005231460090726614" iyz="0.0" izz="0.0010306000476703048"/>
+    </inertial>
+    <collision name="SM_r_upper_arm_collision_0">
+      <origin xyz="0.0 0.0 -0.05000000074505806" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.04500000178813934" length="0.1599999964237213"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_elbow" type="revolute">
+    <origin xyz="0.009999929927289486 0.0014996400568634272 -0.12370000034570694" rpy="0.0 0.0 -4.336808689942018e-19"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="r_upper_arm"/>
+    <child link="r_elbow_1"/>
+    <limit effort="1000.0" lower="-0.05235989764332771" upper="1.309000015258789" velocity="1000.0"/>
+  </joint>
+  <link name="r_elbow_1">
+    <inertial>
+      <origin xyz="-0.009999999776482582 0.0 -0.019999999552965164" rpy="0.0 0.0 0.0"/>
+      <mass value="0.02513270080089569"/>
+      <inertia ixx="1.34041247292771e-05" ixy="0.0" ixz="-5.026548933528829e-06" iyy="1.759289989422541e-05" iyz="0.0" izz="5.864305421710014e-06"/>
+    </inertial>
+    <collision name="SM_r_elbow_1_collision_0">
+      <origin xyz="-0.009999999776482582 0.0 -0.019999999552965164" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.019999999552965164" length="0.019999999552965164"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_wrist_prosup" type="revolute">
+    <origin xyz="-0.01499990001320839 -0.001999649917706847 -0.05530010163784027" rpy="6.938893903907228e-18 0.0 -4.336808689942018e-19"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_elbow_1"/>
+    <child link="r_forearm"/>
+    <limit effort="1000.0" lower="-1.535889983177185" upper="1.535889983177185" velocity="1000.0"/>
+  </joint>
+  <link name="r_forearm">
+    <inertial>
+      <origin xyz="0.0 0.0 -0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <mass value="0.6870660185813904"/>
+      <inertia ixx="0.0019060899503529072" ixy="0.0" ixz="0.0" iyy="0.0019060899503529072" iyz="0.0" izz="0.0006956550059840083"/>
+    </inertial>
+    <collision name="SM_r_forearm_collision_0">
+      <origin xyz="0.0 0.0 -0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.04500000178813934" length="0.1080000028014183"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_wrist_pitch" type="revolute">
+    <origin xyz="0.016300000250339508 -0.0020074399653822184 -0.10750000178813934" rpy="6.938893903907228e-18 0.0 -4.336808689942018e-19"/>
+    <axis xyz="1.0 0.0 0.0"/>
+    <parent link="r_forearm"/>
+    <child link="r_wrist_1"/>
+    <limit effort="1000.0" lower="-1.2217299938201904" upper="0.43633201718330383" velocity="1000.0"/>
+  </joint>
+  <link name="r_wrist_1">
+    <inertial>
+      <origin xyz="-0.019999999552965164 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0125663997605443"/>
+      <inertia ixx="6.283179914134962e-07" ixy="0.0" ixz="0.0" iyy="7.016220024524955e-06" iyz="0.0" izz="7.016220024524955e-06"/>
+    </inertial>
+    <collision name="SM_r_wrist_1_collision_0">
+      <origin xyz="-0.019999999552965164 0.0 0.0" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.009999999776482582" length="0.03999999910593033"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_wrist_yaw" type="revolute">
+    <origin xyz="-0.016300100833177567 0.006999390199780464 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="r_wrist_1"/>
+    <child link="r_hand"/>
+    <limit effort="1000.0" lower="-0.26179900765419006" upper="0.6108649969100952" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand">
+    <inertial>
+      <origin xyz="-0.03999999910593033 0.004999999888241291 0.009999999776482582" rpy="0.0 0.0 0.0"/>
+      <mass value="0.06499999761581421"/>
+      <inertia ixx="2.5329838535981253e-05" ixy="1.2991220501135103e-05" ixz="2.6119971153093502e-05" iyy="0.00012775497452821583" iyz="-3.964659299526829e-06" izz="0.00013265528832562268"/>
+    </inertial>
+    <collision name="SM_r_hand_collision_0">
+      <origin xyz="-0.03999999910593033 0.004999999888241291 0.009999999776482582" rpy="-1.5707963705062866 0.2617996633052826 0.0"/>
+      <geometry>
+        <box size="0.05000000074505806 0.05000000074505806 0.026000000536441803"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_little_0_joint" type="revolute">
+    <origin xyz="-0.06362900137901306 0.004443199839442968 -0.010110899806022644" rpy="-1.5479661226272583 -0.15434320271015167 3.0537750720977783"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_little_0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.34906598925590515" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_little_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 -0.0020000000949949026 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0015833600191399455"/>
+      <inertia ixx="3.6417294069224226e-08" ixy="2.2166977586834946e-08" ixz="1.1083486128882214e-08" iyy="1.1927956222734792e-07" iyz="-3.1667146682679004e-09" izz="1.240296398918872e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_little_0_collision_0">
+      <origin xyz="0.007000000216066837 -0.0020000000949949026 -0.0010000000474974513" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_little_1_joint" type="revolute">
+    <origin xyz="0.014800000004470348 -0.0017500000540167093 2.7755575615628914e-17" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_little_0"/>
+    <child link="r_hand_little_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_little_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_little_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_little_2_joint" type="revolute">
+    <origin xyz="0.021900000050663948 2.7755575615628914e-17 -2.220446049250313e-16" rpy="-3.469446951953614e-18 0.0 -1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_little_1"/>
+    <child link="r_hand_little_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_little_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_little_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_little_3_joint" type="revolute">
+    <origin xyz="0.01899999938905239 5.551115123125783e-17 0.0" rpy="-3.469446951953614e-18 0.0 -1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_little_2"/>
+    <child link="r_hand_little_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_little_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_little_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_little_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="r_hand_little_3"/>
+    <child link="r_hand_little_tip"/>
+  </joint>
+  <link name="r_hand_little_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="r_gripper_tool_frame_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.13" rpy="0.0 0.0 0.0"/>
+    <parent link="r_hand"/>
+    <child link="r_gripper_tool_frame"/>
+  </joint>
+  <link name="r_gripper_tool_frame">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="r_hand_middle_0_joint" type="revolute">
+    <origin xyz="-0.05754049867391586 0.0060431999154388905 0.023778000846505165" rpy="-1.5707963705062866 -0.2617996633052826 3.1415927410125732"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_middle_0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.34906598925590515" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_middle_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 0.0020000000949949026 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0015833600191399455"/>
+      <inertia ixx="3.6417294069224226e-08" ixy="-2.2166977586834946e-08" ixz="1.1083486128882214e-08" iyy="1.1927956222734792e-07" iyz="3.1667146682679004e-09" izz="1.240296398918872e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_middle_0_collision_0">
+      <origin xyz="0.007000000216066837 0.0020000000949949026 -0.0010000000474974513" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_middle_1_joint" type="revolute">
+    <origin xyz="0.015300000086426735 0.002199999988079071 -3.469446951953614e-17" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_middle_0"/>
+    <child link="r_hand_middle_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_middle_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_middle_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_middle_2_joint" type="revolute">
+    <origin xyz="0.025800000876188278 -2.0816681711721685e-17 0.0" rpy="-3.469446951953614e-18 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_middle_1"/>
+    <child link="r_hand_middle_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_middle_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_middle_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_middle_3_joint" type="revolute">
+    <origin xyz="0.024000000208616257 0.0 0.0" rpy="-3.469446951953614e-18 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_middle_2"/>
+    <child link="r_hand_middle_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_middle_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_middle_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_middle_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="r_hand_middle_3"/>
+    <child link="r_hand_middle_tip"/>
+  </joint>
+  <link name="r_hand_middle_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="r_hand_index_0_joint" type="revolute">
+    <origin xyz="-0.052558399736881256 0.005143200047314167 0.03947329893708229" rpy="-1.659997582435608 -0.3330806493759155 -3.1349987983703613"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_index_0"/>
+    <limit effort="1000.0" lower="-0.34906598925590515" upper="0.0" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_index_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 0.0020000000949949026 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0015833600191399455"/>
+      <inertia ixx="3.6417294069224226e-08" ixy="-2.2166977586834946e-08" ixz="1.1083486128882214e-08" iyy="1.1927956222734792e-07" iyz="3.1667146682679004e-09" izz="1.240296398918872e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_index_0_collision_0">
+      <origin xyz="0.007000000216066837 0.0020000000949949026 -0.0010000000474974513" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_index_1_joint" type="revolute">
+    <origin xyz="0.014800000004470348 0.0017500000540167093 2.949029909160572e-17" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_index_0"/>
+    <child link="r_hand_index_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_index_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_index_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_index_2_joint" type="revolute">
+    <origin xyz="0.02590000070631504 6.418476861114186e-17 1.1102230246251565e-16" rpy="4.163336342344337e-17 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_index_1"/>
+    <child link="r_hand_index_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_index_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_index_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_index_3_joint" type="revolute">
+    <origin xyz="0.02199999988079071 3.642919299551295e-17 1.1102230246251565e-16" rpy="4.163336342344337e-17 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_index_2"/>
+    <child link="r_hand_index_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_index_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_index_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_index_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="r_hand_index_3"/>
+    <child link="r_hand_index_tip"/>
+  </joint>
+  <link name="r_hand_index_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="r_hand_ring_0_joint" type="revolute">
+    <origin xyz="-0.06069109961390495 0.0054432000033557415 0.008658230304718018" rpy="-1.5479661226272583 -0.15434320271015167 3.0537750720977783"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_ring_0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.34906598925590515" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_ring_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 0.0020000000949949026 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0015833600191399455"/>
+      <inertia ixx="3.6417294069224226e-08" ixy="-2.2166977586834946e-08" ixz="1.1083486128882214e-08" iyy="1.1927956222734792e-07" iyz="3.1667146682679004e-09" izz="1.240296398918872e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_ring_0_collision_0">
+      <origin xyz="0.007000000216066837 0.0020000000949949026 -0.0010000000474974513" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_ring_1_joint" type="revolute">
+    <origin xyz="0.014800000004470348 0.0017500000540167093 0.0" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_ring_0"/>
+    <child link="r_hand_ring_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_ring_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_ring_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_ring_2_joint" type="revolute">
+    <origin xyz="0.02590000070631504 5.551115123125783e-17 -1.1102230246251565e-16" rpy="-3.469446951953614e-18 0.0 -1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_ring_1"/>
+    <child link="r_hand_ring_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_ring_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_ring_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_ring_3_joint" type="revolute">
+    <origin xyz="0.02199999988079071 0.0 1.1102230246251565e-16" rpy="-3.469446951953614e-18 0.0 -1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_ring_2"/>
+    <child link="r_hand_ring_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_ring_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_ring_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_ring_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="r_hand_ring_3"/>
+    <child link="r_hand_ring_tip"/>
+  </joint>
+  <link name="r_hand_ring_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="r_hand_thumb_0_joint" type="revolute">
+    <origin xyz="-0.031849201768636703 -0.004056800156831741 0.0192026998847723" rpy="0.0880846455693245 -1.3239694833755493 2.975843906402588"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_thumb_0"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_thumb_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 0.003000000026077032 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0028148700948804617"/>
+      <inertia ixx="1.1822453416243661e-07" ixy="-5.911226352850463e-08" ixz="1.9704067710790696e-08" iyy="2.3175739727321343e-07" iyz="8.444522414663425e-09" izz="2.542761592394527e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_thumb_0_collision_0">
+      <origin xyz="0.007000000216066837 0.003000000026077032 -0.0010000000474974513" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.00800000037997961" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_thumb_1_joint" type="revolute">
+    <origin xyz="0.0210999995470047 0.004900000058114529 -1.1102230246251565e-16" rpy="-1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_thumb_0"/>
+    <child link="r_hand_thumb_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_thumb_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_thumb_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_thumb_2_joint" type="revolute">
+    <origin xyz="0.026000000536441803 0.0 -2.7755575615628914e-17" rpy="1.3877787807814457e-17 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_thumb_1"/>
+    <child link="r_hand_thumb_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_thumb_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_thumb_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_thumb_3_joint" type="revolute">
+    <origin xyz="0.02199999988079071 0.0 -2.7755575615628914e-17" rpy="1.3877787807814457e-17 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="r_hand_thumb_2"/>
+    <child link="r_hand_thumb_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="r_hand_thumb_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_r_hand_thumb_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="r_hand_thumb_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="r_hand_thumb_3"/>
+    <child link="r_hand_thumb_tip"/>
+  </joint>
+  <link name="r_hand_thumb_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="chest_rgb_frame_joint" type="fixed">
+    <origin xyz="0.0894115 -0.0115 0.0992995" rpy="-1.5707963705062866 0.0 -1.5707963705062866"/>
+    <parent link="chest"/>
+    <child link="chest_rgb_frame"/>
+  </joint>
+  <link name="chest_rgb_frame">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="l_shoulder_pitch" type="revolute">
+    <origin xyz="-0.02083509974181652 0.03974229842424393 0.10520300269126892" rpy="0.2532612681388855 -2.7434651883595507e-07 -0.2617993652820587"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="chest"/>
+    <child link="l_shoulder_1"/>
+    <limit effort="1000.0" lower="-3.0543298721313477" upper="0.34906598925590515" velocity="1000.0"/>
+  </joint>
+  <link name="l_shoulder_1">
+    <inertial>
+      <origin xyz="0.0 0.10000000149011612 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.13744500279426575"/>
+      <inertia ixx="0.0014520500553771853" ixy="0.0" ixz="0.0" iyy="4.295149847166613e-05" iyz="0.0" izz="0.0014520500553771853"/>
+    </inertial>
+    <collision name="SM_l_shoulder_1_collision_0">
+      <origin xyz="0.0 0.10000000149011612 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.02500000037252903" length="0.07000000029802322"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_shoulder_roll" type="revolute">
+    <origin xyz="0.004992850124835968 0.11150000244379044 0.0002686500083655119" rpy="-0.17453299462795258 -0.053747568279504776 2.1501342928331724e-09"/>
+    <axis xyz="1.0 0.0 0.0"/>
+    <parent link="l_shoulder_1"/>
+    <child link="l_shoulder_2"/>
+    <limit effort="1000.0" lower="0.20943999290466309" upper="2.8448898792266846" velocity="1000.0"/>
+  </joint>
+  <link name="l_shoulder_2">
+    <inertial>
+      <origin xyz="0.004344259854406118 0.0 -0.017704900354146957" rpy="0.0 0.0 0.0"/>
+      <mass value="0.04790930077433586"/>
+      <inertia ixx="3.818014374701306e-05" ixy="-5.064447126711528e-22" ixz="-8.48228137328988e-06" iyy="5.0375099817756563e-05" iyz="1.0356740506915934e-21" izz="3.1054256396600977e-05"/>
+    </inertial>
+    <collision name="SM_l_shoulder_2_collision_0">
+      <origin xyz="-0.009999999776482582 0.0 -0.029999999329447746" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.029999999329447746" length="0.009999999776482582"/>
+      </geometry>
+    </collision>
+    <collision name="SM_l_shoulder_2_collision_1">
+      <origin xyz="0.02500000037252903 0.0 0.0" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.02500000037252903" length="0.009999999776482582"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_shoulder_3_joint" type="fixed">
+    <origin xyz="-0.00435013 3.63257e-07 -0.0543" rpy="0.0 0.0 0.0"/>
+    <parent link="l_shoulder_2"/>
+    <child link="l_shoulder_3"/>
+  </joint>
+  <link name="l_shoulder_3">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="l_shoulder_yaw" type="revolute">
+    <origin xyz="-1.1102230246251565e-16 -4.2345200768068025e-07 -0.022499900311231613" rpy="-1.3877787807814457e-17 0.0 -2.8189256484623115e-17"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+    <parent link="l_shoulder_3"/>
+    <child link="l_upper_arm"/>
+    <limit effort="1000.0" lower="-0.8726650476455688" upper="1.3962599039077759" velocity="1000.0"/>
+  </joint>
+  <link name="l_upper_arm">
+    <inertial>
+      <origin xyz="0.0 0.0 -0.05000000074505806" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0178799629211426"/>
+      <inertia ixx="0.005231460090726614" ixy="0.0" ixz="0.0" iyy="0.005231460090726614" iyz="0.0" izz="0.0010306000476703048"/>
+    </inertial>
+    <collision name="SM_l_upper_arm_collision_0">
+      <origin xyz="0.0 0.0 -0.05000000074505806" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.04500000178813934" length="0.1599999964237213"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_elbow" type="revolute">
+    <origin xyz="0.009999929927289486 -0.0014996499521657825 -0.12370000034570694" rpy="0.0 0.0 -2.8189256484623115e-17"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="l_upper_arm"/>
+    <child link="l_elbow_1"/>
+    <limit effort="1000.0" lower="-0.05235989764332771" upper="1.309000015258789" velocity="1000.0"/>
+  </joint>
+  <link name="l_elbow_1">
+    <inertial>
+      <origin xyz="-0.009999999776482582 0.0 -0.019999999552965164" rpy="0.0 0.0 0.0"/>
+      <mass value="0.02513270080089569"/>
+      <inertia ixx="1.34041247292771e-05" ixy="0.0" ixz="-5.026548933528829e-06" iyy="1.759289989422541e-05" iyz="0.0" izz="5.864305421710014e-06"/>
+    </inertial>
+    <collision name="SM_l_elbow_1_collision_0">
+      <origin xyz="-0.009999999776482582 0.0 -0.019999999552965164" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.019999999552965164" length="0.019999999552965164"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_wrist_prosup" type="revolute">
+    <origin xyz="-0.01499990001320839 0.00199963990598917 -0.05530010163784027" rpy="-1.3877787807814457e-17 0.0 -2.8189256484623115e-17"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+    <parent link="l_elbow_1"/>
+    <child link="l_forearm"/>
+    <limit effort="1000.0" lower="-1.535889983177185" upper="1.535889983177185" velocity="1000.0"/>
+  </joint>
+  <link name="l_forearm">
+    <inertial>
+      <origin xyz="0.0 0.0 -0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <mass value="0.6870660185813904"/>
+      <inertia ixx="0.0019060899503529072" ixy="0.0" ixz="0.0" iyy="0.0019060899503529072" iyz="0.0" izz="0.0006956550059840083"/>
+    </inertial>
+    <collision name="SM_l_forearm_collision_0">
+      <origin xyz="0.0 0.0 -0.035999998450279236" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.04500000178813934" length="0.1080000028014183"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_wrist_pitch" type="revolute">
+    <origin xyz="0.016599999740719795 0.002006900031119585 -0.10750000178813934" rpy="-1.3877789462175682e-17 0.0 -2.8189256484623115e-17"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <parent link="l_forearm"/>
+    <child link="l_wrist_1"/>
+    <limit effort="1000.0" lower="-1.2217299938201904" upper="0.43633201718330383" velocity="1000.0"/>
+  </joint>
+  <link name="l_wrist_1">
+    <inertial>
+      <origin xyz="-0.019999999552965164 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0125663997605443"/>
+      <inertia ixx="6.283179914134962e-07" ixy="0.0" ixz="0.0" iyy="7.016220024524955e-06" iyz="0.0" izz="7.016220024524955e-06"/>
+    </inertial>
+    <collision name="SM_l_wrist_1_collision_0">
+      <origin xyz="-0.019999999552965164 0.0 0.0" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.009999999776482582" length="0.03999999910593033"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_wrist_yaw" type="revolute">
+    <origin xyz="-0.0006341069820336998 -0.019499899819493294 0.0023665199987590313" rpy="-0.0 1.5707963705062866 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="l_wrist_1"/>
+    <child link="l_hand"/>
+    <limit effort="1000.0" lower="-0.34906598925590515" upper="0.43633201718330383" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand">
+    <inertial>
+      <origin xyz="0.03999999910593033 0.004999999888241291 0.009999999776482582" rpy="0.0 0.0 0.0"/>
+      <mass value="0.06499999761581421"/>
+      <inertia ixx="2.53298112511402e-05" ixy="-1.3008683708903845e-05" ixz="-2.6119905669474974e-05" iyy="0.0001277549599763006" iyz="-2.5353651835757773e-06" izz="0.00013265533198136836"/>
+    </inertial>
+    <collision name="SM_l_hand_collision_0">
+      <origin xyz="0.03999999910593033 0.004999999888241291 0.009999999776482582" rpy="1.5707963705062866 -0.2617996633052826 0.0"/>
+      <geometry>
+        <box size="0.05000000074505806 0.05000000074505806 0.026000000536441803"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_ring_0_joint" type="revolute">
+    <origin xyz="0.06069109961390495 0.0054432000033557415 0.008658230304718018" rpy="1.5936264991760254 -0.15434320271015167 -0.08781757950782776"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_ring_0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.34906598925590515" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_ring_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 -0.0020000000949949026 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0015833600191399455"/>
+      <inertia ixx="3.6417294069224226e-08" ixy="2.2166977586834946e-08" ixz="1.1083486128882214e-08" iyy="1.1927956222734792e-07" iyz="-3.1667146682679004e-09" izz="1.240296398918872e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_ring_0_collision_0">
+      <origin xyz="0.007000000216066837 -0.0020000000949949026 -0.0010000000474974513" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_ring_1_joint" type="revolute">
+    <origin xyz="0.014800000004470348 -0.0017500000540167093 -2.7755575615628914e-17" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_ring_0"/>
+    <child link="l_hand_ring_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_ring_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_ring_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_ring_2_joint" type="revolute">
+    <origin xyz="0.02590000070631504 1.3877787807814457e-17 -1.1102230246251565e-16" rpy="-4.401860820291148e-17 0.0 -4.336808689942018e-19"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_ring_1"/>
+    <child link="l_hand_ring_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_ring_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_ring_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_ring_3_joint" type="revolute">
+    <origin xyz="0.02199999988079071 4.163336342344337e-17 0.0" rpy="-4.401860820291148e-17 0.0 -4.336808689942018e-19"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_ring_2"/>
+    <child link="l_hand_ring_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_ring_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_ring_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_ring_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="l_hand_ring_3"/>
+    <child link="l_hand_ring_tip"/>
+  </joint>
+  <link name="l_hand_ring_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="l_hand_little_0_joint" type="revolute">
+    <origin xyz="0.06362900137901306 0.004443199839442968 -0.010110899806022644" rpy="1.5936264991760254 -0.15434320271015167 -0.08781757950782776"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_little_0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.34906598925590515" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_little_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 0.0020000000949949026 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0015833600191399455"/>
+      <inertia ixx="3.6417294069224226e-08" ixy="-2.2166977586834946e-08" ixz="1.1083486128882214e-08" iyy="1.1927956222734792e-07" iyz="3.1667146682679004e-09" izz="1.240296398918872e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_little_0_collision_0">
+      <origin xyz="0.007000000216066837 0.0020000000949949026 -0.0010000000474974513" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_little_1_joint" type="revolute">
+    <origin xyz="0.014800000004470348 0.0017500000540167093 1.3877787807814457e-17" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_little_0"/>
+    <child link="l_hand_little_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_little_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_little_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_little_2_joint" type="revolute">
+    <origin xyz="0.021900000050663948 1.3877787807814457e-17 0.0" rpy="-4.401860820291148e-17 0.0 -4.336808689942018e-19"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_little_1"/>
+    <child link="l_hand_little_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_little_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_little_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_little_3_joint" type="revolute">
+    <origin xyz="0.01899999938905239 1.3877787807814457e-17 -1.1102230246251565e-16" rpy="-4.401860820291148e-17 0.0 -4.336808689942018e-19"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_little_2"/>
+    <child link="l_hand_little_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_little_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_little_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_little_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="l_hand_little_3"/>
+    <child link="l_hand_little_tip"/>
+  </joint>
+  <link name="l_hand_little_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="l_gripper_tool_frame_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.13" rpy="0.0 0.0 0.0"/>
+    <parent link="l_hand"/>
+    <child link="l_gripper_tool_frame"/>
+  </joint>
+  <link name="l_gripper_tool_frame">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="l_hand_thumb_0_joint" type="revolute">
+    <origin xyz="0.031849201768636703 -0.004056800156831741 0.0192026998847723" rpy="3.0535080432891846 -1.3239694833755493 0.16574880480766296"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_thumb_0"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_thumb_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 0.003000000026077032 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0028148700948804617"/>
+      <inertia ixx="1.1822453416243661e-07" ixy="-5.911226352850463e-08" ixz="1.9704067710790696e-08" iyy="2.3175739727321343e-07" iyz="8.444522414663425e-09" izz="2.542761592394527e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_thumb_0_collision_0">
+      <origin xyz="0.007000000216066837 0.003000000026077032 -0.0010000000474974513" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.00800000037997961" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_thumb_1_joint" type="revolute">
+    <origin xyz="0.0210999995470047 0.004900000058114529 0.0" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_thumb_0"/>
+    <child link="l_hand_thumb_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_thumb_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_thumb_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_thumb_2_joint" type="revolute">
+    <origin xyz="0.026000000536441803 0.0 0.0" rpy="0.0 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_thumb_1"/>
+    <child link="l_hand_thumb_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_thumb_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_thumb_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_thumb_3_joint" type="revolute">
+    <origin xyz="0.02199999988079071 0.0 0.0" rpy="0.0 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_thumb_2"/>
+    <child link="l_hand_thumb_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_thumb_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_thumb_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_thumb_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="l_hand_thumb_3"/>
+    <child link="l_hand_thumb_tip"/>
+  </joint>
+  <link name="l_hand_thumb_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="l_hand_middle_0_joint" type="revolute">
+    <origin xyz="0.05754049867391586 0.0060431999154388905 0.023778000846505165" rpy="1.5707963705062866 -0.2617996633052826 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_middle_0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.34906598925590515" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_middle_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 -0.0020000000949949026 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0015833600191399455"/>
+      <inertia ixx="3.6417294069224226e-08" ixy="2.2166977586834946e-08" ixz="1.1083486128882214e-08" iyy="1.1927956222734792e-07" iyz="-3.1667146682679004e-09" izz="1.240296398918872e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_middle_0_collision_0">
+      <origin xyz="0.007000000216066837 -0.0020000000949949026 -0.0010000000474974513" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_middle_1_joint" type="revolute">
+    <origin xyz="0.015300000086426735 -0.002199999988079071 -6.938893903907228e-18" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_middle_0"/>
+    <child link="l_hand_middle_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_middle_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_middle_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_middle_2_joint" type="revolute">
+    <origin xyz="0.025800000876188278 -6.938893903907228e-18 1.1102230246251565e-16" rpy="5.551115123125783e-17 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_middle_1"/>
+    <child link="l_hand_middle_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_middle_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_middle_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_middle_3_joint" type="revolute">
+    <origin xyz="0.024000000208616257 1.3877787807814457e-17 5.551115123125783e-17" rpy="5.551115123125783e-17 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_middle_2"/>
+    <child link="l_hand_middle_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_middle_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_middle_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_middle_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="l_hand_middle_3"/>
+    <child link="l_hand_middle_tip"/>
+  </joint>
+  <link name="l_hand_middle_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="l_hand_index_0_joint" type="revolute">
+    <origin xyz="0.052558399736881256 0.005143200047314167 0.03947329893708229" rpy="1.659997582435608 -0.3330806493759155 -0.006593884434551001"/>
+    <axis xyz="0.0 0.0 -1.0"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_index_0"/>
+    <limit effort="1000.0" lower="-0.34906598925590515" upper="0.0" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_index_0">
+    <inertial>
+      <origin xyz="0.007000000216066837 -0.0020000000949949026 -0.0010000000474974513" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0015833600191399455"/>
+      <inertia ixx="3.6417294069224226e-08" ixy="2.2166977586834946e-08" ixz="1.1083486128882214e-08" iyy="1.1927956222734792e-07" iyz="-3.1667146682679004e-09" izz="1.240296398918872e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_index_0_collision_0">
+      <origin xyz="0.007000000216066837 -0.0020000000949949026 -0.0010000000474974513" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_index_1_joint" type="revolute">
+    <origin xyz="0.014800000004470348 -0.0017500000540167093 1.5612511283791264e-17" rpy="1.5707963705062866 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_index_0"/>
+    <child link="l_hand_index_1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_index_1">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_index_1_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_index_2_joint" type="revolute">
+    <origin xyz="0.02590000070631504 -3.946495907847236e-17 1.6653345369377348e-16" rpy="1.0408340855860843e-17 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_index_1"/>
+    <child link="l_hand_index_2"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_index_2">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.001858250005170703"/>
+      <inertia ixx="3.925559965978209e-08" ixy="0.0" ixz="0.0" iyy="4.680860001826659e-07" iyz="0.0" izz="4.680860001826659e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_index_2_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006500000134110451" length="0.014000000432133675"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_index_3_joint" type="revolute">
+    <origin xyz="0.02199999988079071 -5.334274688628682e-17 5.551115123125783e-17" rpy="1.0408340855860843e-17 0.0 1.3877787807814457e-17"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hand_index_2"/>
+    <child link="l_hand_index_3"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708000659942627" velocity="1000.0"/>
+  </joint>
+  <link name="l_hand_index_3">
+    <inertial>
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0009047790081240237"/>
+      <inertia ixx="1.6286000104059895e-08" ixy="0.0" ixz="0.0" iyy="2.1654399517956335e-07" iyz="0.0" izz="2.1654399517956335e-07"/>
+    </inertial>
+    <collision name="SM_l_hand_index_3_collision_0">
+      <origin xyz="0.014999999664723873 0.0 0.0" rpy="3.1415927410125732 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.006000000052154064" length="0.00800000037997961"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hand_index_tip_joint" type="fixed">
+    <origin xyz="0.0168 0.0 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+    <parent link="l_hand_index_3"/>
+    <child link="l_hand_index_tip"/>
+  </joint>
+  <link name="l_hand_index_tip">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="neck_1_joint" type="fixed">
+    <origin xyz="-0.00378849 0.0 0.1653" rpy="0.0 0.0 0.0"/>
+    <parent link="chest"/>
+    <child link="neck_1"/>
+  </joint>
+  <link name="neck_1">
+    <inertial>
+      <origin xyz="-0.0011924899881705642 0.001778429956175387 0.03269509971141815" rpy="0.0 0.0 0.0"/>
+      <mass value="0.11961299926042557"/>
+      <inertia ixx="0.00023644714383408427" ixy="4.67991139885271e-06" ixz="-8.476625339426391e-07" iyy="0.00018703212845139205" iyz="-7.126257060008356e-06" izz="9.804972069105133e-05"/>
+    </inertial>
+    <collision name="SM_neck_1_collision_0">
+      <origin xyz="0.008500000461935997 0.03099999949336052 0.04899999871850014" rpy="1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.019500000402331352" length="0.019999999552965164"/>
+      </geometry>
+    </collision>
+    <collision name="SM_neck_1_collision_1">
+      <origin xyz="0.008500000461935997 -0.03099999949336052 0.04899999871850014" rpy="1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.019500000402331352" length="0.019999999552965164"/>
+      </geometry>
+    </collision>
+    <collision name="SM_neck_1_collision_2">
+      <origin xyz="-0.02199999988079071 0.00800000037997961 0.03350000083446503" rpy="1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.011500000022351742" length="0.06400000303983688"/>
+      </geometry>
+    </collision>
+    <collision name="SM_neck_1_collision_4">
+      <origin xyz="0.0007999999797903001 0.0 0.014999999664723873" rpy="1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.014999999664723873" length="0.06400000303983688"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="neck_pitch" type="revolute">
+    <origin xyz="0.00865000020712614 0.0 0.04899999871850014" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="neck_1"/>
+    <child link="neck_2"/>
+    <limit effort="1000.0" lower="-0.5235990285873413" upper="0.3839719891548157" velocity="1000.0"/>
+  </joint>
+  <link name="neck_2">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.028274299576878548"/>
+      <inertia ixx="5.3603398555424064e-06" ixy="0.0" ixz="0.0" iyy="3.180859948770376e-06" iyz="0.0" izz="5.3603398555424064e-06"/>
+    </inertial>
+    <collision name="SM_neck_2_collision_0">
+      <origin xyz="0.0 0.0 0.0" rpy="1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.014999999664723873" length="0.03999999910593033"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="neck_roll" type="revolute">
+    <origin xyz="0.0 0.0 0.009500499814748764" rpy="0.0 0.0 0.0"/>
+    <axis xyz="1.0 0.0 0.0"/>
+    <parent link="neck_2"/>
+    <child link="neck_3"/>
+    <limit effort="1000.0" lower="-0.34906598925590515" upper="0.34906598925590515" velocity="1000.0"/>
+  </joint>
+  <link name="neck_3">
+    <inertial>
+      <origin xyz="0.0 0.0 0.04107140004634857" rpy="0.0 0.0 0.0"/>
+      <mass value="0.05404540151357651"/>
+      <inertia ixx="0.00012041300215059891" ixy="0.0" ixz="0.0" iyy="0.00012236500333528966" iyz="0.0" izz="8.869709745340515e-06"/>
+    </inertial>
+    <collision name="SM_neck_3_collision_0">
+      <origin xyz="0.019999999552965164 0.0 0.0" rpy="-0.0 1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.01600000075995922" length="0.003599999938160181"/>
+      </geometry>
+    </collision>
+    <collision name="SM_neck_3_collision_1">
+      <origin xyz="-0.019999999552965164 0.0 0.0" rpy="-0.0 1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.01600000075995922" length="0.003599999938160181"/>
+      </geometry>
+    </collision>
+    <collision name="SM_neck_3_collision_3">
+      <origin xyz="0.0 0.0 0.04600000008940697" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.01600000075995922" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="neck_yaw" type="revolute">
+    <origin xyz="0.0 0.0 0.06915000081062317" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="neck_3"/>
+    <child link="head"/>
+    <limit effort="1000.0" lower="-0.785398006439209" upper="0.785398006439209" velocity="1000.0"/>
+  </joint>
+  <link name="head">
+    <inertial>
+      <origin xyz="-0.017999999225139618 0.0 0.03999999910593033" rpy="0.0 0.0 0.0"/>
+      <mass value="0.8042479753494263"/>
+      <inertia ixx="0.0038603886496275663" ixy="0.0" ixz="0.0005790571449324489" iyy="0.002941400045529008" iyz="0.0" izz="0.0016546015394851565"/>
+    </inertial>
+    <collision name="SM_head_collision_0">
+      <origin xyz="-0.017999999225139618 0.0 0.03999999910593033" rpy="-0.0 1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.07999999821186066" length="0.03999999910593033"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="imu_frame_joint" type="fixed">
+    <origin xyz="0.0035 0.0055 0.101334" rpy="-3.1415927410125732 0.0 -1.5707963705062866"/>
+    <parent link="head"/>
+    <child link="imu_frame"/>
+  </joint>
+  <link name="imu_frame">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="eyes_tilt" type="revolute">
+    <origin xyz="0.05000000074505806 0.0 0.014999999664723873" rpy="1.570000171661377 -4.790741137128407e-10 3.140000104904175"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="head"/>
+    <child link="eyes_tilt_frame"/>
+    <limit effort="1000.0" lower="-0.5235990285873413" upper="0.5235990285873413" velocity="1000.0"/>
+  </joint>
+  <link name="eyes_tilt_frame">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0010000000474974513"/>
+      <inertia ixx="9.999999747378752e-05" ixy="0.0" ixz="0.0" iyy="9.999999747378752e-05" iyz="0.0" izz="9.999999747378752e-05"/>
+    </inertial>
+  </link>
+  <joint name="l_eye_pan_joint" type="revolute">
+    <origin xyz="-1.1102230246251565e-16 0.0 0.03400000184774399" rpy="0.0 -1.570000171661377 0.0"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="eyes_tilt_frame"/>
+    <child link="l_eye"/>
+    <limit effort="1000.0" lower="-0.5235990285873413" upper="0.9599310159683228" velocity="1000.0"/>
+  </joint>
+  <link name="l_eye">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0010000000474974513"/>
+      <inertia ixx="9.999999747378752e-05" ixy="0.0" ixz="0.0" iyy="9.999999747378752e-05" iyz="0.0" izz="9.999999747378752e-05"/>
+    </inertial>
+  </link>
+  <joint name="r_eye_pan_joint" type="revolute">
+    <origin xyz="0.0 0.0 -0.03400000184774399" rpy="0.0 -1.570000171661377 0.0"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="eyes_tilt_frame"/>
+    <child link="r_eye"/>
+    <limit effort="1000.0" lower="-0.9599310159683228" upper="0.5235990285873413" velocity="1000.0"/>
+  </joint>
+  <link name="r_eye">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0010000000474974513"/>
+      <inertia ixx="9.999999747378752e-05" ixy="0.0" ixz="0.0" iyy="9.999999747378752e-05" iyz="0.0" izz="9.999999747378752e-05"/>
+    </inertial>
+  </link>
+  <joint name="l_hip_pitch" type="revolute">
+    <origin xyz="0.02160000056028366 0.040449999272823334 0.0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="root_link"/>
+    <child link="l_hip_1"/>
+    <limit effort="1000.0" lower="-0.785398006439209" upper="2.0071299076080322" velocity="1000.0"/>
+  </joint>
+  <link name="l_hip_1">
+    <inertial>
+      <origin xyz="0.0 0.03999999910593033 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.3988569974899292"/>
+      <inertia ixx="0.0009688229765743017" ixy="0.0" ixz="0.0" iyy="0.0004219900001771748" iyz="0.0" izz="0.0009688229765743017"/>
+    </inertial>
+    <collision name="SM_l_hip_1_collision_0">
+      <origin xyz="0.0 0.03999999910593033 0.0" rpy="1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.04600000008940697" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hip_roll" type="revolute">
+    <origin xyz="-0.04724999889731407 0.03310000151395798 -0.008999999612569809" rpy="0.0 0.0 0.0"/>
+    <axis xyz="1.0 0.0 0.0"/>
+    <parent link="l_hip_1"/>
+    <child link="l_hip_2"/>
+    <limit effort="1000.0" lower="-0.17453299462795258" upper="2.0071299076080322" velocity="1000.0"/>
+  </joint>
+  <link name="l_hip_2">
+    <inertial>
+      <origin xyz="-0.001244709943421185 -0.0030985199846327305 -0.034212298691272736" rpy="0.0 0.0 0.0"/>
+      <mass value="2.5818800926208496"/>
+      <inertia ixx="0.016487816348671913" ixy="8.319831977132708e-05" ixz="0.0006409407360479236" iyy="0.018370114266872406" iyz="-0.0011647982755675912" izz="0.008273440413177013"/>
+    </inertial>
+    <collision name="SM_l_hip_2_collision_0">
+      <origin xyz="-0.02800000086426735 0.0 0.0" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="SM_l_hip_2_collision_1">
+      <origin xyz="-0.02800000086426735 0.0 -0.06499999761581421" rpy="0.0 -1.5707963705062866 0.0"/>
+      <geometry>
+        <cylinder radius="0.03099999949336052" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+    <collision name="SM_l_hip_2_collision_2">
+      <origin xyz="0.03700000047683716 0.0 -0.0729999989271164" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.028999999165534973" length="0.03400000184774399"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hip_3_joint" type="fixed">
+    <origin xyz="0.0367 0.0 -0.0897" rpy="0.0 0.0 0.0"/>
+    <parent link="l_hip_2"/>
+    <child link="l_hip_3"/>
+  </joint>
+  <link name="l_hip_3">
+    <inertial>
+      <origin xyz="0.004999999888241291 -0.00800000037997961 -0.07000000029802322" rpy="0.0 0.0 0.0"/>
+      <mass value="2.0799999237060547"/>
+      <inertia ixx="0.014987770467996597" ixy="8.319768676301464e-05" ixz="0.0007279943092726171" iyy="0.016414696350693703" iyz="-0.0011648023501038551" izz="0.007551783695816994"/>
+    </inertial>
+    <collision name="SM_l_hip_3_collision_0">
+      <origin xyz="0.004999999888241291 -0.00800000037997961 -0.07000000029802322" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.1599999964237213 0.12999999523162842 0.10000000149011612"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_hip_yaw" type="revolute">
+    <origin xyz="0.0 -0.014999999664723873 -0.07090000063180923" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="l_hip_3"/>
+    <child link="l_upper_leg"/>
+    <limit effort="1000.0" lower="-1.3962599039077759" upper="1.3962599039077759" velocity="1000.0"/>
+  </joint>
+  <link name="l_upper_leg">
+    <inertial>
+      <origin xyz="0.017999999225139618 0.0 -0.10999999940395355" rpy="0.0 0.0 0.0"/>
+      <mass value="0.09236279875040054"/>
+      <inertia ixx="0.0012601247290149331" ixy="0.0" ixz="0.00018287725106347352" iyy="0.0012040899600833654" iyz="0.0" izz="0.00017246429342776537"/>
+    </inertial>
+    <collision name="SM_l_upper_leg_collision_0">
+      <origin xyz="0.017999999225139618 -0.03500000014901161 -0.10999999940395355" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.012000000104308128"/>
+      </geometry>
+    </collision>
+    <collision name="SM_l_upper_leg_collision_1">
+      <origin xyz="0.017999999225139618 0.03500000014901161 -0.10999999940395355" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.012000000104308128"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_knee" type="revolute">
+    <origin xyz="0.014999999664723873 0.024900000542402267 -0.10620000213384628" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="l_upper_leg"/>
+    <child link="l_lower_leg"/>
+    <limit effort="1000.0" lower="-1.2217299938201904" upper="0.08726649731397629" velocity="1000.0"/>
+  </joint>
+  <link name="l_lower_leg">
+    <inertial>
+      <origin xyz="-0.01915070042014122 -0.02116990089416504 -0.12723499536514282" rpy="0.0 0.0 0.0"/>
+      <mass value="2.1712000370025635"/>
+      <inertia ixx="0.04889758303761482" ixy="-0.0008315950399264693" ixz="-0.0054054283536970615" iyy="0.04933898523449898" iyz="-0.005825192667543888" izz="0.006015085149556398"/>
+    </inertial>
+    <collision name="SM_l_lower_leg_collision_0">
+      <origin xyz="0.0 -0.02500000037252903 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.041999999433755875" length="0.05000000074505806"/>
+      </geometry>
+    </collision>
+    <collision name="SM_l_lower_leg_collision_1">
+      <origin xyz="-0.02500000037252903 -0.019999999552965164 -0.12999999523162842" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.11999999731779099 0.10999999940395355 0.12600000202655792"/>
+      </geometry>
+    </collision>
+    <collision name="SM_l_lower_leg_collision_2">
+      <origin xyz="0.0 -0.02500000037252903 -0.25999999046325684" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.03500000014901161" length="0.05999999865889549"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_ankle_pitch" type="revolute">
+    <origin xyz="0.0 -0.0005000000237487257 -0.2559889853000641" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="l_lower_leg"/>
+    <child link="l_ankle_1"/>
+    <limit effort="1000.0" lower="-0.785398006439209" upper="0.785398006439209" velocity="1000.0"/>
+  </joint>
+  <link name="l_ankle_1">
+    <inertial>
+      <origin xyz="0.0 0.014999999664723873 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.028274299576878548"/>
+      <inertia ixx="1.2959099876752589e-05" ixy="0.0" ixz="0.0" iyy="1.2723399777314626e-05" iyz="0.0" izz="1.2959099876752589e-05"/>
+    </inertial>
+    <collision name="SM_l_ankle_1_collision_0">
+      <origin xyz="0.0 0.014999999664723873 0.0" rpy="-1.5707963705062866 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.029999999329447746" length="0.009999999776482582"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_ankle_roll" type="revolute">
+    <origin xyz="-0.05274999886751175 -0.018200000748038292 -0.03500000014901161" rpy="0.0 0.0 0.0"/>
+    <axis xyz="1.0 0.0 0.0"/>
+    <parent link="l_ankle_1"/>
+    <child link="l_ankle_2"/>
+    <limit effort="1000.0" lower="-0.43633201718330383" upper="0.43633201718330383" velocity="1000.0"/>
+  </joint>
+  <link name="l_ankle_2">
+    <inertial>
+      <origin xyz="0.06708010286092758 0.0 -0.02671789936721325" rpy="0.0 0.0 0.0"/>
+      <mass value="1.6124000549316406"/>
+      <inertia ixx="0.00380721315741539" ixy="0.0" ixz="0.0036863882560282946" iyy="0.01751440018415451" iyz="0.0" izz="0.017239296808838844"/>
+    </inertial>
+    <collision name="SM_l_ankle_2_collision_0">
+      <origin xyz="0.11999999731779099 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.03999999910593033 0.10000000149011612 0.03999999910593033"/>
+      </geometry>
+    </collision>
+    <collision name="SM_l_ankle_2_collision_1">
+      <origin xyz="-0.019999999552965164 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.03999999910593033 0.10000000149011612 0.03999999910593033"/>
+      </geometry>
+    </collision>
+    <collision name="SM_l_ankle_2_collision_2">
+      <origin xyz="0.07999999821186066 0.0 -0.03999999910593033" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.23999999463558197 0.11999999731779099 0.03999999910593033"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_foot_front_joint" type="fixed">
+    <origin xyz="0.13525 0.0 -0.0658" rpy="0.0 0.0 0.0"/>
+    <parent link="l_ankle_2"/>
+    <child link="l_foot_front"/>
+  </joint>
+  <link name="l_foot_front">
+    <inertial>
+      <origin xyz="0.0 0.0 0.003000000026077032" rpy="0.0 0.0 0.0"/>
+      <mass value="0.07020000368356705"/>
+      <inertia ixx="5.934240107308142e-05" ixy="0.0" ixz="0.0" iyy="8.092299685813487e-05" iyz="0.0" izz="0.0001385810028295964"/>
+    </inertial>
+    <collision name="SM_l_foot_front_collision_0">
+      <origin xyz="0.0 0.0 0.003000000026077032" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.11699999868869781 0.10000000149011612 0.006000000052154064"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_foot_rear_joint" type="fixed">
+    <origin xyz="0.016 0.0 -0.0658" rpy="0.0 0.0 0.0"/>
+    <parent link="l_ankle_2"/>
+    <child link="l_foot_rear"/>
+  </joint>
+  <link name="l_foot_rear">
+    <inertial>
+      <origin xyz="0.0 0.0 0.003000000026077032" rpy="0.0 0.0 0.0"/>
+      <mass value="0.07020000368356705"/>
+      <inertia ixx="5.934240107308142e-05" ixy="0.0" ixz="0.0" iyy="8.092299685813487e-05" iyz="0.0" izz="0.0001385810028295964"/>
+    </inertial>
+    <collision name="SM_l_foot_rear_collision_0">
+      <origin xyz="0.0 0.0 0.003000000026077032" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.11699999868869781 0.10000000149011612 0.006000000052154064"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="l_sole_joint" type="fixed">
+    <origin xyz="0.05963 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="l_foot_rear"/>
+    <child link="l_sole"/>
+  </joint>
+  <link name="l_sole">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="base_link_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="root_link"/>
+    <child link="base_link"/>
+  </joint>
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="montessori_object_2_ref_joint" type="floating">
+    <origin xyz="-0.4015 0.25 1.4" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_2_ref"/>
+  </joint>
+  <link name="montessori_object_2_ref">
+    <inertial>
+      <origin xyz="-0.005819993559271097 1.2720914664890083e-19 3.725290298461914e-09" rpy="0.0 0.0 0.0"/>
+      <mass value="0.0213395357131958"/>
+      <inertia ixx="3.0762159894948127e-06" ixy="0.0" ixz="0.0" iyy="3.0461055757768918e-06" iyz="0.0" izz="2.9213929337856825e-06"/>
+    </inertial>
+    <visual name="montessori_object_2_ref_MontessoriObject2">
+      <origin xyz="-0.005819993559271097 1.2720914664890083e-19 3.725290298461914e-09" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="file://scene/meshes/stl/montessori_object_2_MontessoriObject_002.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="montessori_object_2_ref_MontessoriObject2_material">
+        <color rgba="0.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_object_3_ref_joint" type="floating">
+    <origin xyz="-0.4015 -0.237 1.4" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_3_ref"/>
+  </joint>
+  <link name="montessori_object_3_ref">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.027000000700354576"/>
+      <inertia ixx="4.0499999158782884e-06" ixy="0.0" ixz="0.0" iyy="4.0499999158782884e-06" iyz="0.0" izz="4.0499999158782884e-06"/>
+    </inertial>
+    <visual name="montessori_object_3_ref_MontessoriObject3">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.029999999329447746 0.029999999329447746 0.029999999329447746"/>
+      </geometry>
+      <material name="montessori_object_3_ref_MontessoriObject3_material">
+        <color rgba="0.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_object_5_ref_joint" type="floating">
+    <origin xyz="-0.3095 0.25 1.4" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_5_ref"/>
+  </joint>
+  <link name="montessori_object_5_ref">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.024000000208616257"/>
+      <inertia ixx="4.999999873689376e-06" ixy="0.0" ixz="0.0" iyy="2.6000000161729986e-06" iyz="0.0" izz="3.999999989900971e-06"/>
+    </inertial>
+    <visual name="montessori_object_5_ref_MontessoriObject5">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.019999999552965164 0.03999999910593033 0.029999999329447746"/>
+      </geometry>
+      <material name="montessori_object_5_ref_MontessoriObject5_material">
+        <color rgba="0.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="montessori_object_6_ref_joint" type="floating">
+    <origin xyz="-0.3095 -0.237 1.4" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="montessori_object_6_ref"/>
+  </joint>
+  <link name="montessori_object_6_ref">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.021205751225352287"/>
+      <inertia ixx="2.7832547857542522e-06" ixy="0.0" ixz="0.0" iyy="2.7832547857542522e-06" iyz="0.0" izz="2.385646894254023e-06"/>
+    </inertial>
+    <visual name="montessori_object_6_ref_MontessoriObject6">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.014999999664723873" length="0.029999999329447746"/>
+      </geometry>
+      <material name="montessori_object_6_ref_MontessoriObject6_material">
+        <color rgba="0.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+</robot>

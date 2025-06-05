@@ -11,6 +11,7 @@ import pycram.ros
 from pycram.config.multiverse_conf import SimulatorConfig, MultiverseConfig
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
+from pycram.robot_description import RobotDescriptionManager
 from segmind.players.csv_player import CSVEpisodePlayer
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
@@ -27,7 +28,7 @@ except ImportError:
 
 
 class TestMultiverseEpisodeSegmenter(TestCase):
-    world: World
+    world: Multiverse
     file_player: CSVEpisodePlayer
     episode_segmenter: NoAgentEpisodeSegmenter
     viz_marker_publisher: VizMarkerPublisher
@@ -38,15 +39,18 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         selected_episode = "icub_montessori_no_hands"
         episode_dir = os.path.join(multiverse_episodes_dir, selected_episode)
         csv_file = os.path.join(episode_dir, f"data.csv")
-        scene_file_path = os.path.join(episode_dir, f"models/scene.xml")
+        models_dir = os.path.join(episode_dir, "models")
+        scene_file_path = os.path.join(models_dir, f"scene.xml")
         simulator_conf = MultiverseConfig.simulator_config
         simulator_conf.step_size = timedelta(milliseconds=4)
         simulator_conf.integrator = "IMPLICITFAST"
         simulator_conf.cone = "ELLIPTIC"
-        cls.world = Multiverse(WorldMode.DIRECT, scene_file_path=scene_file_path, simulator_config=simulator_conf)
+        rdm = RobotDescriptionManager()
+        rdm.load_description("iCub3")
+        cls.world: Multiverse = Multiverse(WorldMode.GUI, scene_file_path=scene_file_path, simulator_config=simulator_conf)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
         # cls.viz_marker_publisher = VizMarkerPublisher()
-        cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world,
+        cls.file_player = CSVEpisodePlayer(csv_file, models_dir, world=cls.world,
                                            time_between_frames=datetime.timedelta(milliseconds=10))
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=False,
                                                         plot_timeline=True,
