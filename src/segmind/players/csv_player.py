@@ -27,7 +27,6 @@ class CSVEpisodePlayer(EpisodePlayer):
         self.data_frames = pd.read_csv(csv_file)
         self.world = world if world is not None else World.current_world
         self.copy_model_files_to_world_data_dir()
-        self._pause: bool = False
 
     def copy_model_files_to_world_data_dir(self):
         """
@@ -38,13 +37,19 @@ class CSVEpisodePlayer(EpisodePlayer):
         # Copy the entire folder and its contents
         shutil.copytree(models_path, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
 
-    def run(self):
+    def _run(self):
         for frame_id, objects_data in self.data_frames.items():
             self._wait_if_paused()
             last_processing_time = time.time()
             self.process_objects_data(objects_data)
             self._wait_to_maintain_frame_rate(last_processing_time)
             self._ready = True
+
+    def _pause(self):
+        ...
+
+    def _resume(self):
+        ...
 
     def process_objects_data(self, objects_data: dict):
         objects_poses: Dict[Object, Pose] = {}

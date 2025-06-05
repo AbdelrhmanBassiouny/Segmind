@@ -4,14 +4,16 @@ from datetime import timedelta
 
 from typing_extensions import Optional
 
-from pycram.datastructures.enums import Arms, Grasp, TorsoState
+from pycram.datastructures.enums import Arms, Grasp, TorsoState, PlanStatus
 from pycram.datastructures.grasp import GraspDescription
 from pycram.designator import ObjectDesignatorDescription
 from pycram.designators.action_designator import PickUpActionDescription, MoveTorsoActionDescription
 from pycram.language import SequentialPlan
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import World
+from pycram.plan import Plan
 from pycram.process_module import ProcessModule, simulated_robot
+from pycram.ros import logdebug
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Kitchen
 from pycram.world_concepts.world_object import Object
@@ -43,10 +45,12 @@ class CRAMPlayer(EpisodePlayer):
             self.world = BulletWorld()
     
     def _pause(self):
-        Plan.status = PlanStatus.Paused
+        logdebug("Pausing Plan")
+        Plan.status = PlanStatus.PAUSED
 
     def _resume(self):
-        Plan.status = PlanStatus.Running
+        logdebug("Resuming Plan")
+        Plan.status = PlanStatus.RUNNING
 
     def _run(self):
         self.ready = True

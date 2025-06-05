@@ -57,7 +57,7 @@ class EpisodePlayer(threading.Thread, ABC):
         self._ready = value
 
     def run(self):
-        self._state = PlayerStatus.PLAYING
+        self._status = PlayerStatus.PLAYING
         self._run()
 
     @abstractmethod
