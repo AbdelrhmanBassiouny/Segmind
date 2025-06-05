@@ -1,6 +1,6 @@
 from types import NoneType
-from typing_extensions import Optional
 from ripple_down_rules.datastructures.case import create_case
+from typing_extensions import Optional
 from .general_pick_up_detector_start_condition_checker_output__scrdr_defs import *
 
 

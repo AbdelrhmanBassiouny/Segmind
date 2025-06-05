@@ -1,5 +1,6 @@
 import datetime
 from unittest import TestCase
+from os.path import dirname
 
 import pycram.ros
 from pycram.datastructures.world import World
@@ -7,6 +8,7 @@ from pycram.datastructures.enums import WorldMode
 from segmind.players.json_player import FileEpisodePlayer
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.json_player import FileEpisodePlayer
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
 from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
@@ -28,12 +30,12 @@ class TestFileEpisodeSegmenter(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        json_file = "../resources/fame_episodes/alessandro_with_ycp_objects_in_max_room_2/refined_poses.json"
+        json_file = f"{dirname(__file__)}/../resources/fame_episodes/alessandro_with_ycp_objects_in_max_room_2/refined_poses.json"
         # json_file = "../resources/fame_episodes/alessandro_sliding_bueno/refined_poses.json"
         # simulator = BulletWorld if Multiverse is None else Multiverse
         simulator = BulletWorld
         annotate_events = True if simulator == BulletWorld else False
-        cls.world = simulator(WorldMode.GUI)
+        cls.world = simulator(WorldMode.DIRECT)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
         cls.viz_marker_publisher = VizMarkerPublisher()
         obj_id_to_name = {1: "chips", 3: "bowl", 4: "cup", 6: "bueno"}
@@ -43,7 +45,8 @@ class TestFileEpisodeSegmenter(TestCase):
                                             objects_to_ignore=[5],
                                             obj_id_to_name=obj_id_to_name,
                                             obj_id_to_type=obj_id_to_type)
-        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=annotate_events)
+        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=annotate_events, \
+            detectors_to_start=[GeneralPickUpDetector])
 
     @classmethod
     def tearDownClass(cls):

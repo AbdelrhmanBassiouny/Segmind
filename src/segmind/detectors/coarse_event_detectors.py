@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os.path
 
-from pycram.plan import Plan, pause_resume
+from pycram.plan import Plan
 from pycram.designators.action_designator import PickUpAction, PlaceAction
 from pycrap.ontologies import Location, Supporter, Floor, Agent
 from ripple_down_rules.rdr_decorators import RDRDecorator
@@ -20,6 +20,7 @@ from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import *
 from ..datastructures.events import *
 from ..utils import get_angle_between_vectors, get_support
+from ..episode_player import EpisodePlayer
 
 
 class DetectorWithStarterEvent(AtomicEventDetector, ABC):
@@ -252,31 +253,31 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     The path to the directory where the Ripple Down Rules models are stored.
     """
-    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind", update_existing_rules=False)
+    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind", update_existing_rules=True)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
-    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind", update_existing_rules=False)
+    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind", update_existing_rules=True)
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
-    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind", update_existing_rules=False)
+    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind", update_existing_rules=True)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
-    @pause_resume
+    @EpisodePlayer.pause_resume
     @interaction_checks_rdr.decorator
     def get_interaction_event(self) -> Optional[PickUpEvent]:
         pass
 
     @classmethod
-    @pause_resume
+    @EpisodePlayer.pause_resume
     @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
         pass
 
     @classmethod
-    @pause_resume
+    @EpisodePlayer.pause_resume
     @start_condition_rdr.decorator
     def start_condition_checker(cls, event: Event, target: Optional[bool] = None) -> bool:
         pass

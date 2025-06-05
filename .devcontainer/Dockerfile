@@ -37,7 +37,7 @@ RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pyc
     && source /opt/ros/${ROS_DISTRO}/setup.bash \
     && colcon build --symlink-install
 
-RUN vcs import --input ../packages.repos --recursive
+RUN vcs import --input ./packages.repos --recursive
 RUN cd $HOME/workspace/src/ripple_down_rules && \
     git pull
 
@@ -88,10 +88,13 @@ RUN code-server \
     --install-extension ms-python.python \
     && code-server \
     --user-data-dir=$USER_DATA_DIR \
-    --install-extension Codeium.codeium
+    --install-extension Codeium.codeium \
     && code-server \
     --user-data-dir=$USER_DATA_DIR \
-    --install-extension PKief.material-icon-theme
+    --install-extension PKief.material-icon-theme \
+    && code-server \
+    --user-data-dir=$USER_DATA_DIR \
+    --install-extension virgilsisoe.python-auto-import
 
 COPY start-code-server.sh /usr/local/bin/start-code-server.sh
 RUN sudo chmod +x /usr/local/bin/start-code-server.sh
