@@ -257,11 +257,11 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
-    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind", update_existing_rules=True)
+    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind", fit=False, update_existing_rules=False)
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
-    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind", update_existing_rules=True)
+    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind", fit=False, update_existing_rules=False)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
@@ -329,7 +329,7 @@ class AgentPickUpDetector(AbstractPickUpDetector):
             return False
 
         if self.agent in loss_of_surface_event.latest_objects_that_got_removed:
-            rospy.logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
+            logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
             self.kill_event.set()
             return False
 

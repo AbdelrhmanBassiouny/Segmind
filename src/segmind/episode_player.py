@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import threading
+from threading import RLock
 import time
 from abc import ABC, abstractmethod
 from typing_extensions import Callable, Any, Optional
@@ -23,6 +24,7 @@ class EpisodePlayer(threading.Thread, ABC):
     """
 
     _instance: Optional[EpisodePlayer] = None
+    pause_resume_lock: RLock = RLock()
     
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -57,7 +59,7 @@ class EpisodePlayer(threading.Thread, ABC):
         self._ready = value
 
     def run(self):
-        self._state = PlayerStatus.PLAYING
+        self._status = PlayerStatus.PLAYING
         self._run()
 
     @abstractmethod
@@ -121,13 +123,14 @@ class EpisodePlayer(threading.Thread, ABC):
         :return: The wrapped callable
         """
         def wrapper(*args, **kwargs) -> Any:
-            if cls._instance.status == PlayerStatus.PLAYING:
-                logdebug("Pausing player")
-                cls._instance.pause()
-                result = func(*args, **kwargs)
-                cls._instance.resume()
-                logdebug("Resuming player")
-                return result
-            else:
-                return func(*args, **kwargs)
+            with cls.pause_resume_lock:
+                if cls._instance.status == PlayerStatus.PLAYING:
+                    logdebug("Pausing player")
+                    cls._instance.pause()
+                    result = func(*args, **kwargs)
+                    cls._instance.resume()
+                    logdebug("Resuming player")
+                    return result
+                else:
+                    return func(*args, **kwargs)
         return wrapper

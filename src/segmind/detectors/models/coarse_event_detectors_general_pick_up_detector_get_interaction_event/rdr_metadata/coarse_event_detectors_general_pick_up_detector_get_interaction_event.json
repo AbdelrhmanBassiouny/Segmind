@@ -12,11 +12,15 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "NoneType": "builtins.NoneType",
+                        "Dict": "typing.Dict",
+                        "Optional": "typing.Optional",
                         "Union": "typing.Union",
+                        "NoneType": "builtins.NoneType",
+                        "get_support": "segmind.utils.get_support",
                         "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent"
+                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -32,13 +36,15 @@
                         "builtins.NoneType"
                     ],
                     "scope": {
-                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
-                        "get_support": "segmind.utils.get_support",
-                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "NoneType": "builtins.NoneType",
+                        "Dict": "typing.Dict",
+                        "Optional": "typing.Optional",
                         "Union": "typing.Union",
+                        "NoneType": "builtins.NoneType",
+                        "get_support": "segmind.utils.get_support",
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                        "logdebug": "pycram.ros.ros1.logging.logdebug"
+                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
