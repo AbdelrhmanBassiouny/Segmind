@@ -12,15 +12,15 @@
                         "builtins.bool"
                     ],
                     "scope": {
+                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
                         "Dict": "typing.Dict",
                         "Optional": "typing.Optional",
                         "Type": "typing.Type",
                         "Union": "typing.Union",
-                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
-                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "NoneType": "builtins.NoneType",
                         "Case": "ripple_down_rules.datastructures.case.Case",
-                        "NoneType": "builtins.NoneType"
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -35,15 +35,15 @@
                         "builtins.bool"
                     ],
                     "scope": {
+                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
                         "Dict": "typing.Dict",
                         "Optional": "typing.Optional",
                         "Type": "typing.Type",
                         "Union": "typing.Union",
-                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
-                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "NoneType": "builtins.NoneType",
                         "Case": "ripple_down_rules.datastructures.case.Case",
-                        "NoneType": "builtins.NoneType"
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",

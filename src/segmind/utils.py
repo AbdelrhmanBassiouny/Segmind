@@ -17,6 +17,17 @@ from pycrap.ontologies import Supporter, Floor, Location
 from pycram.ros import logdebug
 
 
+def singleton(cls):
+    instances = {}
+    
+    def get_instance(*args, **kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+    
+    return get_instance
+
+
 def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
     """
     Check if the object is supported by any other object.
@@ -160,6 +171,7 @@ class Imaginator:
         contacted_objects = cp.get_objects_that_have_points()
         contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created and obj != support_obj]
         for obj in contacted_surfaces:
+            import pdb; pdb.set_trace()
             support_obj = support_obj.merge(obj)
             cls.surfaces_created.remove(obj)
         World.current_world.get_object_by_type(Floor)[0].attach(support_obj)

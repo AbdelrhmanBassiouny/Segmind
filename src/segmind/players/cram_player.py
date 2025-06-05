@@ -41,8 +41,14 @@ class CRAMPlayer(EpisodePlayer):
         self.world = world if world else World.current_world
         if not self.world:
             self.world = BulletWorld()
+    
+    def _pause(self):
+        Plan.status = PlanStatus.Paused
 
-    def run(self):
+    def _resume(self):
+        Plan.status = PlanStatus.Running
+
+    def _run(self):
         self.ready = True
         object_description = ObjectDesignatorDescription(names=["milk"])
         description = PickUpActionDescription(object_description, [Arms.LEFT], [GraspDescription(Grasp.FRONT)])

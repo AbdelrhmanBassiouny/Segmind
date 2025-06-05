@@ -12,8 +12,8 @@ from pycram.tf_transformations import euler_matrix, quaternion_from_matrix, quat
 from trimesh import Geometry, Trimesh
 from typing_extensions import Type, List, Tuple, Union, Dict, Optional
 
-from pycram.datastructures.world import World
-from pycram.datastructures.pose import Pose, Transform
+from pycram.datastructures.world import TransformStamped, World
+from pycram.datastructures.pose import Header, PoseStamped, Vector3, Quaternion, Pose, Transform
 from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import PhysicalObject
 from ..episode_player import EpisodePlayer
@@ -54,7 +54,6 @@ class FileEpisodePlayer(EpisodePlayer):
         self.base_origin_of_objects: Dict[Object, np.ndarray] = {}
         self.average_rotation_correction_matrix: Optional[np.ndarray] = None
         self.copy_model_files_to_world_data_dir()
-        self._pause: bool = False
 
     def _remove_ignored_objects(self, objects_to_ignore: List[int]):
         """
@@ -75,13 +74,19 @@ class FileEpisodePlayer(EpisodePlayer):
         # Copy the entire folder and its contents
         shutil.copytree(models_path, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
 
-    def run(self):
+    def _run(self):
         for frame_id, objects_data in self.data_frames.items():
             self._wait_if_paused()
             last_processing_time = time.time()
             self.process_objects_data(objects_data)
             self._wait_to_maintain_frame_rate(last_processing_time)
             self._ready = True
+
+    def _pause(self):
+        ...
+
+    def _resume(self):
+        ...
 
     def process_objects_data(self, objects_data: dict):
         objects_poses: Dict[Object, Pose] = {}
@@ -98,7 +103,7 @@ class FileEpisodePlayer(EpisodePlayer):
             # Create the object if it does not exist in the world and set its pose
             if obj_name not in self.world.get_object_names():
                 obj = Object(obj_name, obj_type, mesh_name,
-                             pose=Pose(pose.position.to_list()), scale_mesh=self.mesh_scale)
+                             pose=PoseStamped(Pose(pose.position)), scale_mesh=self.mesh_scale)
                 quat_diff = calculate_quaternion_difference(pose.orientation.to_list(), [0, 0, 0, 1])
                 euler_diff = euler_from_quaternion(quat_diff)
                 quat_diff = quaternion_from_euler(euler_diff[0], euler_diff[1], 0)
@@ -109,7 +114,7 @@ class FileEpisodePlayer(EpisodePlayer):
         if len(objects_poses):
             self.world.reset_multiple_objects_base_poses(objects_poses)
 
-    def apply_orientation_correction_to_object_pose(self, obj: Object, obj_pose: Pose) -> Pose:
+    def apply_orientation_correction_to_object_pose(self, obj: Object, obj_pose: PoseStamped) -> Pose:
         """
         Correct the orientation of an object based on the orientation of the mesh, and return the corrected pose.
 
@@ -118,11 +123,11 @@ class FileEpisodePlayer(EpisodePlayer):
         """
         if self.average_rotation_correction_matrix is None:
             self.average_rotation_correction_matrix = self.calculate_average_rotation()
-        homogeneous_pose = obj_pose.to_transform(obj.tf_frame).get_homogeneous_matrix()
+        homogeneous_pose = obj_pose.to_transform_stamped(obj.tf_frame).transform.to_matrix()
         new_pose_transform = np.dot(self.average_rotation_correction_matrix, homogeneous_pose)
-        new_quaternion = quaternion_from_matrix(new_pose_transform).tolist()
+        new_quaternion = quaternion_from_matrix(new_pose_transform)
         new_translation = new_pose_transform[:3, 3].tolist()
-        return Pose(new_translation, new_quaternion)
+        return PoseStamped(Pose(Vector3(*new_translation)), Quaternion(*new_quaternion))
 
     def calculate_average_rotation(self):
         """
@@ -258,7 +263,7 @@ W
 
         return rotation_matrix
 
-    def get_pose_and_transform_to_map_frame(self, object_pose: dict) -> Pose:
+    def get_pose_and_transform_to_map_frame(self, object_pose: dict) -> Optional[PoseStamped]:
         """
         Get the pose of an object and transform it to the map frame.
 
@@ -281,21 +286,21 @@ W
         rotation = np.array(list(map(float, object_data['R']))).reshape(3, 3)
         homogeneous_matrix = np.eye(4)
         homogeneous_matrix[:3, :3] = rotation
-        quaternion = quaternion_from_matrix(homogeneous_matrix).tolist()
+        quaternion = quaternion_from_matrix(homogeneous_matrix)
         return position, quaternion
 
-    def transform_pose_to_map_frame(self, position: List[float], quaternion: List[float]) -> Pose:
+    def transform_pose_to_map_frame(self, position: List[float], quaternion: List[float]) -> Optional[PoseStamped]:
         """
         Transform the pose of an object to the map frame.
 
         :param position: The position of the object.
         :param quaternion: The quaternion of the object.
         """
-        new_transform = Transform([0, 0, 1],
-                                  quaternion_from_matrix(euler_matrix(-np.pi / 2, 0, 0)).tolist(),
-                                  child_frame=self.camera_frame_name)
+        new_transform = TransformStamped(pose=Pose(Vector3(0, 0, 1),
+                                  Quaternion(*quaternion_from_matrix(euler_matrix(-np.pi / 2, 0, 0)))),
+                                  child_frame_id=self.camera_frame_name)
         self.world.local_transformer.update_transforms([new_transform])
-        pose = Pose(position, quaternion, frame=self.camera_frame_name)
+        pose = PoseStamped(Pose(Vector3(*position), Quaternion(*quaternion)), header=Header(frame_id=self.camera_frame_name))
         return self.world.local_transformer.transform_pose(pose, "map")
 
     @property

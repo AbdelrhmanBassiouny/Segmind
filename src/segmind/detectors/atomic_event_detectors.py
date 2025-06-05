@@ -55,7 +55,7 @@ class AtomicEventDetector(threading.Thread, ABC):
         """
 
         super().__init__()
-        self.episode_player = episode_player
+        self.episode_player: EpisodePlayer = episode_player
         self.fit_mode = fit_mode
         self.logger = logger if logger else EventLogger.current_logger
         self.world = world if world else World.current_world
@@ -112,8 +112,8 @@ class AtomicEventDetector(threading.Thread, ABC):
             if self.fit_mode and self.episode_player:
                 self.episode_player.pause()
 
-            last_processing_time = time.time()
             self.detect_and_log_events()
+            last_processing_time = time.time()
 
             if self.fit_mode and self.episode_player:
                 self.episode_player.resume()

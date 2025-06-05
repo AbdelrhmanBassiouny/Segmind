@@ -19,9 +19,15 @@ class NEEMPlayer(EpisodePlayer):
     def ready(self):
         return self.pni.replay_environment_initialized
 
-    def run(self):
+    def _run(self):
         motion_gen = self.pni.replay_motions_in_query(real_time=True,
                                                       step_time=datetime.timedelta(milliseconds=10),
                                                       continuous_mode=False)
         for _ in motion_gen:
             self._wait_if_paused()
+
+    def _pause(self):
+        ...
+
+    def _resume(self):
+        ...
