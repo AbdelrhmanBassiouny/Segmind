@@ -9,7 +9,6 @@ from pathlib import Path
 import pandas as pd
 from typing_extensions import Optional, Dict
 
-from mujoco_connector.src.mujoco_connector import MultiverseMujocoConnector
 from pycram.datastructures.dataclasses import MeshVisualShape, BoxVisualShape, CylinderVisualShape, Color
 from pycram.datastructures.pose import Pose, PoseStamped, Vector3, Quaternion
 from pycram.datastructures.world import World

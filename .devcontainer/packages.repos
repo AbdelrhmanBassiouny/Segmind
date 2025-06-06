@@ -4,4 +4,8 @@ repositories:
     type: git
     url: https://github.com/AbdelrhmanBassiouny/ripple_down_rules.git
     version: main
+  external_robots:
+    type: git
+    url: https://github.com/AbdelrhmanBassiouny/external-robots.git
+    version: icub_ro2_jazzy
 
