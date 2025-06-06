@@ -172,7 +172,6 @@ class Imaginator:
         contacted_objects = cp.get_objects_that_have_points()
         contacted_surfaces = [obj for obj in contacted_objects if obj in cls.surfaces_created and obj != support_obj]
         for obj in contacted_surfaces:
-            import pdb; pdb.set_trace()
             support_obj = support_obj.merge(obj)
             cls.surfaces_created.remove(obj)
         World.current_world.get_object_by_type(Floor)[0].attach(support_obj)
