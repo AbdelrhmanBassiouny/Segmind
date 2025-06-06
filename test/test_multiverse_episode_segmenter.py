@@ -59,7 +59,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.file_player = CSVEpisodePlayer(csv_file, models_dir, world=cls.world,
                                            time_between_frames=datetime.timedelta(milliseconds=10))
         # scene = Object("scene", Location, f"{Path(scene_file_path).stem}.urdf")
-        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=False,
+        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
                                                         plot_save_path=f'test_results/{Path(dirname(csv_file)).stem}',
                                                         detectors_to_start=[GeneralPickUpDetector])

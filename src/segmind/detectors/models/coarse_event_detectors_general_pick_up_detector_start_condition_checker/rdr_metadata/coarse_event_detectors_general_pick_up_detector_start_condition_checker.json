@@ -12,9 +12,19 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Event": "segmind.datastructures.events.Event",
+                        "Dict": "typing.Dict",
+                        "Optional": "typing.Optional",
+                        "Type": "typing.Type",
+                        "Union": "typing.Union",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "Type": "typing.Type"
+                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                        "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "Event": "segmind.datastructures.events.Event",
+                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                        "NoneType": "builtins.NoneType",
+                        "get_support": "segmind.utils.get_support",
+                        "timedelta": "datetime.timedelta"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -29,11 +39,19 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Event": "segmind.datastructures.events.Event",
-                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                        "Dict": "typing.Dict",
+                        "Optional": "typing.Optional",
+                        "Type": "typing.Type",
+                        "Union": "typing.Union",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                        "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
                         "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                        "Type": "typing.Type"
+                        "Event": "segmind.datastructures.events.Event",
+                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                        "NoneType": "builtins.NoneType",
+                        "get_support": "segmind.utils.get_support",
+                        "timedelta": "datetime.timedelta"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -65,10 +83,19 @@
                             "builtins.bool"
                         ],
                         "scope": {
+                            "Dict": "typing.Dict",
+                            "Optional": "typing.Optional",
+                            "Type": "typing.Type",
+                            "Union": "typing.Union",
+                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                            "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                            "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                            "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                             "Event": "segmind.datastructures.events.Event",
                             "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
-                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                            "Type": "typing.Type"
+                            "NoneType": "builtins.NoneType",
+                            "get_support": "segmind.utils.get_support",
+                            "timedelta": "datetime.timedelta"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -83,11 +110,19 @@
                             "builtins.bool"
                         ],
                         "scope": {
-                            "Event": "segmind.datastructures.events.Event",
-                            "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                            "Dict": "typing.Dict",
+                            "Optional": "typing.Optional",
+                            "Type": "typing.Type",
+                            "Union": "typing.Union",
                             "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                            "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                            "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                            "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                            "Event": "segmind.datastructures.events.Event",
+                            "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                            "NoneType": "builtins.NoneType",
                             "get_support": "segmind.utils.get_support",
-                            "Type": "typing.Type"
+                            "timedelta": "datetime.timedelta"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -119,12 +154,19 @@
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "timedelta": "datetime.timedelta",
-                                "Event": "segmind.datastructures.events.Event",
-                                "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
-                                "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                "Dict": "typing.Dict",
+                                "Optional": "typing.Optional",
+                                "Type": "typing.Type",
+                                "Union": "typing.Union",
                                 "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                "Type": "typing.Type"
+                                "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                                "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                                "Event": "segmind.datastructures.events.Event",
+                                "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                "NoneType": "builtins.NoneType",
+                                "get_support": "segmind.utils.get_support",
+                                "timedelta": "datetime.timedelta"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -139,9 +181,19 @@
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "Event": "segmind.datastructures.events.Event",
+                                "Dict": "typing.Dict",
+                                "Optional": "typing.Optional",
+                                "Type": "typing.Type",
+                                "Union": "typing.Union",
                                 "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                "Type": "typing.Type"
+                                "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                                "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                                "Event": "segmind.datastructures.events.Event",
+                                "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                "NoneType": "builtins.NoneType",
+                                "get_support": "segmind.utils.get_support",
+                                "timedelta": "datetime.timedelta"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
