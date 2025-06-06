@@ -254,7 +254,9 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     The path to the directory where the Ripple Down Rules models are stored.
     """
-    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind", fit=False, update_existing_rules=False)
+    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)),
+                                                        True, package_name="segmind", fit=False,
+                                                        update_existing_rules=True, use_generated_classifier=True)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """

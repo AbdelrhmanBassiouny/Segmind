@@ -187,6 +187,9 @@ class EventLogger:
                         data_dict['with_obj_type'].append(with_object.obj_type.name)
                     elif isinstance(with_object, Link):
                         data_dict['with_obj_type'].append(f'Link of {with_object.parent_entity.obj_type}')
+                else:
+                    data_dict['with_object'].append(None)
+                    data_dict['with_obj_type'].append(None)
         if len(data_dict['start']) == 0:
             loginfo("No events to plot.")
             return

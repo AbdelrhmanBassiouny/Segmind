@@ -1,10 +1,10 @@
-from ripple_down_rules.datastructures.case import Case
 from pycram.ros.ros1.logging import logdebug
-from segmind.utils import get_support
 from segmind.datastructures.events import AgentContactEvent, LossOfContactEvent, PickUpEvent, PlacingEvent
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, check_for_supporting_surface
+from segmind.utils import get_support
 from typing_extensions import Dict, Optional, Union
 from types import NoneType
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, check_for_supporting_surface
+from ripple_down_rules.datastructures.case import Case
 
 
 def conditions_87074858769394720739688305292375760638(case) -> bool:
@@ -49,14 +49,12 @@ def conclusion_320416996501934194262144719758568379805(case) -> Optional[PickUpE
     def general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[NoneType, PickUpEvent]) -> Union[NoneType, PickUpEvent]:
         """Get possible value(s) for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent."""
         latest_pick_up_event = self_.object_tracker.get_latest_event_of_type(PickUpEvent)
-        if latest_pick_up_event is None:
-            return output_
-        else:
+        if latest_pick_up_event is not None:
             any_placing_event_after_pick_up_event = self_.object_tracker.get_first_event_of_type_after_event(PlacingEvent, latest_pick_up_event)
             if any_placing_event_after_pick_up_event is None:
+                self_.kill_event.set()
                 return None
-            else:
-                return output_
+        return output_
     return general_pick_up_detector_get_interaction_event(**case)
 
 
