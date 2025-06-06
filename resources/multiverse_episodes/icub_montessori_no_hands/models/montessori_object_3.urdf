@@ -1,11 +1,5 @@
 <?xml version="1.0" ?>
 <robot name="montessori_object_3" version="1.0">
-  <link name="world"/>
-  <joint name="montessori_object_3_joint" type="floating">
-    <origin xyz="-0.4015 -0.237 1.4" rpy="0.0 0.0 0.0"/>
-    <parent link="world"/>
-    <child link="montessori_object_3"/>
-  </joint>
   <link name="montessori_object_3">
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>

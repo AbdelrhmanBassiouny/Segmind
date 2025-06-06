@@ -12,6 +12,7 @@ from pycram.config.multiverse_conf import SimulatorConfig, MultiverseConfig
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from pycram.robot_description import RobotDescriptionManager
+from pycram.world_concepts.world_object import Object
 from segmind.players.csv_player import CSVEpisodePlayer
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
@@ -19,7 +20,7 @@ from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.worlds.bullet_world import BulletWorld
-from pycrap.ontologies import Container, Bowl, Cup
+from pycrap.ontologies import Container, Bowl, Cup, Location
 
 try:
     from pycram.worlds.multiverse2 import Multiverse
@@ -28,7 +29,7 @@ except ImportError:
 
 
 class TestMultiverseEpisodeSegmenter(TestCase):
-    world: Multiverse
+    world: World
     file_player: CSVEpisodePlayer
     episode_segmenter: NoAgentEpisodeSegmenter
     viz_marker_publisher: VizMarkerPublisher
@@ -47,11 +48,17 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         simulator_conf.cone = "ELLIPTIC"
         rdm = RobotDescriptionManager()
         rdm.load_description("iCub3")
-        cls.world: Multiverse = Multiverse(WorldMode.GUI, scene_file_path=scene_file_path, simulator_config=simulator_conf)
+        simulator = BulletWorld
+        if simulator is Multiverse:
+            cls.world: Multiverse = Multiverse(WorldMode.GUI, scene_file_path=scene_file_path,
+                                               simulator_config=simulator_conf)
+        else:
+            cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
         # cls.viz_marker_publisher = VizMarkerPublisher()
         cls.file_player = CSVEpisodePlayer(csv_file, models_dir, world=cls.world,
                                            time_between_frames=datetime.timedelta(milliseconds=10))
+        # scene = Object("scene", Location, f"{Path(scene_file_path).stem}.urdf")
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=False,
                                                         plot_timeline=True,
                                                         plot_save_path=f'test_results/{Path(dirname(csv_file)).stem}',

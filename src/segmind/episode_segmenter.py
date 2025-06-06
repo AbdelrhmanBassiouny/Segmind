@@ -133,8 +133,9 @@ class EpisodeSegmenter(ABC):
                 set_of_objects.add(obj)
                 if not check_if_object_is_supported(obj):
                     logdebug(f"Object {obj.name} is not supported.")
-                    Imaginator.imagine_support_for_object(obj)
-                    logdebug(f"Imagined support for object {obj.name}.")
+                    if World.current_world.conf.supports_spawning:
+                        Imaginator.imagine_support_for_object(obj)
+                        logdebug(f"Imagined support for object {obj.name}.")
         for obj in set_of_objects:
             self.start_motion_threads_for_object(obj)
             self.start_contact_threads_for_object(obj)
