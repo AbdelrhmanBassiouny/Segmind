@@ -12,19 +12,11 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "logdebug": "pycram.ros.ros1.logging.logdebug",
-                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                        "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
-                        "get_support": "segmind.utils.get_support",
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Union": "typing.Union",
-                        "NoneType": "builtins.NoneType",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
-                        "Case": "ripple_down_rules.datastructures.case.Case"
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "NoneType": "builtins.NoneType",
+                        "Union": "typing.Union"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -40,19 +32,13 @@
                         "builtins.NoneType"
                     ],
                     "scope": {
-                        "logdebug": "pycram.ros.ros1.logging.logdebug",
-                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                        "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
-                        "get_support": "segmind.utils.get_support",
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Union": "typing.Union",
-                        "NoneType": "builtins.NoneType",
+                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
-                        "Case": "ripple_down_rules.datastructures.case.Case"
+                        "get_support": "segmind.utils.get_support",
+                        "NoneType": "builtins.NoneType",
+                        "logdebug": "pycram.ros.ros1.logging.logdebug",
+                        "Union": "typing.Union"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -82,19 +68,11 @@
                             "builtins.bool"
                         ],
                         "scope": {
-                            "logdebug": "pycram.ros.ros1.logging.logdebug",
-                            "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                            "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                             "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                            "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
-                            "get_support": "segmind.utils.get_support",
-                            "Dict": "typing.Dict",
-                            "Optional": "typing.Optional",
-                            "Union": "typing.Union",
-                            "NoneType": "builtins.NoneType",
+                            "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                             "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                            "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
-                            "Case": "ripple_down_rules.datastructures.case.Case"
+                            "NoneType": "builtins.NoneType",
+                            "Union": "typing.Union"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -110,19 +88,11 @@
                             "segmind.datastructures.events.PickUpEvent"
                         ],
                         "scope": {
-                            "logdebug": "pycram.ros.ros1.logging.logdebug",
-                            "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                            "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                             "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                            "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
-                            "get_support": "segmind.utils.get_support",
-                            "Dict": "typing.Dict",
-                            "Optional": "typing.Optional",
-                            "Union": "typing.Union",
-                            "NoneType": "builtins.NoneType",
-                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
                             "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
-                            "Case": "ripple_down_rules.datastructures.case.Case"
+                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                            "NoneType": "builtins.NoneType",
+                            "Union": "typing.Union"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -151,19 +121,10 @@
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "logdebug": "pycram.ros.ros1.logging.logdebug",
-                                "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                                "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                                 "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                                "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
-                                "get_support": "segmind.utils.get_support",
-                                "Dict": "typing.Dict",
-                                "Optional": "typing.Optional",
-                                "Union": "typing.Union",
-                                "NoneType": "builtins.NoneType",
                                 "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
-                                "Case": "ripple_down_rules.datastructures.case.Case"
+                                "NoneType": "builtins.NoneType",
+                                "Union": "typing.Union"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -179,19 +140,12 @@
                                 "segmind.datastructures.events.PickUpEvent"
                             ],
                             "scope": {
-                                "logdebug": "pycram.ros.ros1.logging.logdebug",
-                                "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
-                                "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
                                 "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                                 "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
-                                "get_support": "segmind.utils.get_support",
-                                "Dict": "typing.Dict",
-                                "Optional": "typing.Optional",
-                                "Union": "typing.Union",
-                                "NoneType": "builtins.NoneType",
                                 "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
-                                "Case": "ripple_down_rules.datastructures.case.Case"
+                                "NoneType": "builtins.NoneType",
+                                "logdebug": "pycram.ros.ros1.logging.logdebug",
+                                "Union": "typing.Union"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
