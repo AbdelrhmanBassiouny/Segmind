@@ -30,7 +30,7 @@ from ..event_logger import EventLogger
 from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
     AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, MotionEvent
-from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter
+from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter, Displacement
 from ..utils import calculate_quaternion_difference, \
     get_support, calculate_translation
 
@@ -57,8 +57,8 @@ class AtomicEventDetector(threading.Thread, ABC):
         super().__init__()
         self.episode_player: EpisodePlayer = episode_player
         self.fit_mode = fit_mode
-        self.logger = logger if logger else EventLogger.current_logger
-        self.world = world if world else World.current_world
+        self.logger: EventLogger = logger if logger else EventLogger.current_logger
+        self.world: World = world if world else World.current_world
         self.wait_time = wait_time if wait_time is not None else timedelta(seconds=0.1)
 
         self.kill_event = threading.Event()
@@ -436,9 +436,9 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     """
 
     def __init__(self, logger: EventLogger, tracked_object: Object,
-                 detection_method: MotionDetectionMethod = ConsistentGradient(),
-                 time_between_frames: timedelta = timedelta(milliseconds=50),
-                 window_size: int = 7,
+                 detection_method: MotionDetectionMethod = Displacement(0.01),
+                 time_between_frames: timedelta = timedelta(milliseconds=500),
+                 window_size: int = 2,
                  distance_filter_method: Optional[DataFilter] = None,
                  *args, **kwargs):
         """
@@ -768,7 +768,9 @@ class TranslationDetector(MotionDetector):
         Calculate the Euclidean distance between the latest and current positions of the object.
         """
         # return calculate_euclidean_distance(self.latest_pose.position.to_list(), current_pose.position.to_list())
-        return calculate_translation(self.poses[-2].position.to_list(), self.poses[-1].position.to_list())
+        translation = calculate_translation(self.poses[-2].position.to_list(), self.poses[-1].position.to_list())
+        # logdebug(f"Translation: {translation}")
+        return translation
 
     def get_event_type(self):
         return TranslationEvent if self.was_moving else StopTranslationEvent

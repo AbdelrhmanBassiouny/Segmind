@@ -16,6 +16,7 @@ from pycram.world_concepts.world_object import Object
 from segmind.players.csv_player import CSVEpisodePlayer
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
+from segmind.detectors.spatial_relation_detector import InsertionDetector
 from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
@@ -62,7 +63,8 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
                                                         plot_save_path=f'test_results/{Path(dirname(csv_file)).stem}',
-                                                        detectors_to_start=[GeneralPickUpDetector])
+                                                        detectors_to_start=[GeneralPickUpDetector],
+                                                        initial_detectors=[InsertionDetector])
 
     @classmethod
     def tearDownClass(cls):

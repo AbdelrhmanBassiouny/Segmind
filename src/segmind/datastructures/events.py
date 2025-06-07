@@ -214,13 +214,13 @@ class TranslationEvent(MotionEvent):
 class RotationEvent(MotionEvent):
     @property
     def color(self) -> Color:
-        return Color(1, 1, 0, 1)
+        return Color(0, 1, 1, 1)
 
 
 class StopMotionEvent(MotionEvent):
     @property
     def color(self) -> Color:
-        return Color(1, 1, 1, 1)
+        return Color(1, 0, 0, 1)
 
 
 class StopTranslationEvent(StopMotionEvent):
@@ -406,14 +406,20 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         return self.with_object_state
 
     def __eq__(self, other):
+        if self.end_timestamp is None:
+            return super().__eq__(other)
         return (super().__eq__(other)
                 and round(self.end_timestamp, 1) == round(other.end_timestamp, 1))
-
-    def __hash__(self):
+    
+    @property
+    def hash_tuple(self):
         hash_tuple = (self.__class__, self.agent, self.tracked_object, round(self.timestamp, 1))
         if self.end_timestamp is not None:
             hash_tuple += (round(self.end_timestamp, 1),)
-        return hash(hash_tuple)
+        return hash_tuple
+
+    def __hash__(self):
+        return hash(self.hash_tuple)
 
     def record_end_timestamp(self):
         self.end_timestamp = time.time()
@@ -438,6 +444,28 @@ class PickUpEvent(AbstractAgentObjectInteractionEvent):
 
 
 class PlacingEvent(AbstractAgentObjectInteractionEvent):
+
+    @property
+    def color(self) -> Color:
+        return Color(1, 0, 1, 1)
+
+
+class InsertionEvent(AbstractAgentObjectInteractionEvent):
+    def __init__(self, inserted_object: Object,
+                 inserted_into_objects: List[Object],
+                 agent: Optional[Object] = None,
+                 timestamp: Optional[float] = None,
+                 end_timestamp: Optional[float] = None):
+        super().__init__(inserted_object, agent, timestamp, end_timestamp)
+        self.inserted_into_objects: List[Object] = inserted_into_objects
+
+    def hash_tuple(self):
+        hash_tuple = (*super().hash_tuple, *(obj.name for obj in self.inserted_into_objects))
+        return hash_tuple
+
+    def __str__(self):
+        with_object_name = " - " + f" - ".join([obj.name for obj in self.inserted_into_objects])
+        return f"{self.__class__.__name__}: {self.tracked_object.name}{with_object_name} - {self.timestamp}"
 
     @property
     def color(self) -> Color:

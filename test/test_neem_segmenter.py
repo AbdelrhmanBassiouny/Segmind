@@ -9,8 +9,7 @@ except ImportError:
     PyCRAMNEEMInterface = None
     NEEMSegmenter = None
 
-from segmind.detectors.coarse_event_detectors import AgentPickUpDetector, PlacingDetector, \
-    GeneralPickUpDetector
+from segmind.detectors.coarse_event_detectors import PlacingDetector, GeneralPickUpDetector
 from unittest import TestCase
 
 from pycram.datastructures.enums import WorldMode, LoggerLevel
@@ -39,7 +38,7 @@ class TestNEEMSegmentor(TestCase):
             World.current_world.exit()
 
     def test_event_detector(self):
-        ns = NEEMSegmenter(self.pni, detectors_to_start=[AgentPickUpDetector, PlacingDetector], annotate_events=True)
+        ns = NEEMSegmenter(self.pni, detectors_to_start=[GeneralPickUpDetector, PlacingDetector], annotate_events=True)
         ns.start([17])
 
     def test_general_pick_up_detector(self):

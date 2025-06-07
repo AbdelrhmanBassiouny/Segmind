@@ -65,7 +65,7 @@ class CSVEpisodePlayer(EpisodePlayer):
 
     def _run(self):
         for frame_id, objects_data in self.data_frames.iterrows():
-            logdebug(f"Processing frame {frame_id}")
+            # logdebug(f"Processing frame {frame_id}")
             self._wait_if_paused()
             self.process_objects_data(objects_data.to_dict())
             last_processing_time = time.time()

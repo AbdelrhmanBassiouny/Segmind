@@ -14,6 +14,7 @@ class EpisodeSegmenter(ABC):
 
     def __init__(self, episode_player: EpisodePlayer,
                  detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
+                 initial_detectors: Optional[List[Type[AtomicEventDetector]]] = None,
                  annotate_events: bool = False,
                  plot_timeline: bool = False,
                  show_plots: bool = False,
@@ -30,7 +31,8 @@ class EpisodeSegmenter(ABC):
         """
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start if detectors_to_start else []
-        self.logger = EventLogger(annotate_events, [detector.event_type() for detector in detectors_to_start])
+        self.initial_detectors: List[Type[AtomicEventDetector]] = initial_detectors if initial_detectors else []
+        self.logger = EventLogger(annotate_events, [detector.event_type() for detector in detectors_to_start + initial_detectors])
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']
         self.starter_event_to_detector_thread_map: Dict[Tuple[Event, Type[DetectorWithStarterEvent]], DetectorWithStarterEvent] = {}
         self.detector_threads_list: List[EventDetectorUnion] = []
@@ -114,8 +116,16 @@ class EpisodeSegmenter(ABC):
         """
         pass
 
-    @abstractmethod
     def run_initial_event_detectors(self) -> None:
+        """
+        Run the initial event detectors on the episode played by the episode player thread.
+        """
+        for detector in self.initial_detectors:
+            self.create_detector_and_start_it(detector)
+        self._run_initial_event_detectors()
+    
+    @abstractmethod
+    def _run_initial_event_detectors(self) -> None:
         """
         Run the initial event detectors on the episode played by the episode player thread.
         """
@@ -256,10 +266,11 @@ class EpisodeSegmenter(ABC):
         :param detector_args: The positional arguments to be passed to the detector constructor.
         :param detector_kwargs: The keyword arguments to be passed to the detector constructor.
         """
-        detector_args = self.get_detector_args(detector_type, tracked_object=tracked_object,
-                                               starter_event=starter_event, *detector_args)
+        detector_kwargs = self.get_detector_args(detector_type, tracked_object=tracked_object,
+                                               starter_event=starter_event, **detector_kwargs)
         detector_kwargs['episode_player'] = self.episode_player
-        detector = detector_type(self.logger, *detector_args, **detector_kwargs)
+        detector_kwargs['logger'] = self.logger
+        detector = detector_type(**detector_kwargs)
         self.start_and_add_detector(detector)
 
     def start_and_add_detector(self, detector: EventDetectorUnion) -> None:
@@ -276,7 +287,7 @@ class EpisodeSegmenter(ABC):
 
     @staticmethod
     def get_detector_args(detector_type: TypeEventDetectorUnion, tracked_object: Optional[Object] = None,
-                          starter_event: Optional[EventUnion] = None, *other_detector_args):
+                          starter_event: Optional[EventUnion] = None, **other_detector_kwargs):
         """
         Get the detector arguments from the tracked object and/or the starter event.
 
@@ -285,14 +296,13 @@ class EpisodeSegmenter(ABC):
         :param starter_event: The event that starts the detector thread.
         :param other_detector_args: The positional arguments to be passed to the detector constructor.
         """
-        detector_args = []
         tracked_object = tracked_object if tracked_object is not None else \
             getattr(starter_event, 'tracked_object', None)
         if tracked_object and issubclass(detector_type, (DetectorWithTrackedObject, DetectorWithTwoTrackedObjects)):
-            detector_args.append(tracked_object)
+            other_detector_kwargs['tracked_object'] = tracked_object
         if starter_event and issubclass(detector_type, DetectorWithStarterEvent):
-            detector_args.append(starter_event)
-        return detector_args + list(other_detector_args)
+            other_detector_kwargs['starter_event'] = starter_event
+        return other_detector_kwargs
 
     @property
     def time_between_frames(self) -> datetime.timedelta:
@@ -325,7 +335,7 @@ class AgentEpisodeSegmenter(EpisodeSegmenter):
         if isinstance(event, ContactEvent):
             self.update_tracked_objects(event)
 
-    def run_initial_event_detectors(self) -> None:
+    def _run_initial_event_detectors(self) -> None:
         """
         Start the contact threads for the agents.
         """
@@ -365,7 +375,7 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
     def _process_event(self, event: EventUnion) -> None:
         pass
 
-    def run_initial_event_detectors(self) -> None:
+    def _run_initial_event_detectors(self) -> None:
         """
         Start the motion detection threads for the objects in the world.
         """

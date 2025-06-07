@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os.path
-from types import NoneType
 
 from pycram.plan import Plan
 from pycram.designators.action_designator import PickUpAction, PlaceAction
@@ -254,98 +253,38 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     The path to the directory where the Ripple Down Rules models are stored.
     """
-    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)),
-                                                        True, package_name="segmind", fit=False,
-                                                        update_existing_rules=True, use_generated_classifier=True)
+    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind", fit=False, use_generated_classifier=False)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
-    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind", fit=False, update_existing_rules=False)
+    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind", fit=False, use_generated_classifier=False)
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
-    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind", fit=False, update_existing_rules=False)
+    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind", fit=False, use_generated_classifier=False)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
-    @EpisodePlayer.pause_resume
+    # @EpisodePlayer.pause_resume
     @interaction_checks_rdr.decorator
     def get_interaction_event(self) -> Optional[PickUpEvent]:
         pass
 
     @classmethod
-    @EpisodePlayer.pause_resume
+    # @EpisodePlayer.pause_resume
     @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
         pass
 
     @classmethod
-    @EpisodePlayer.pause_resume
+    # @EpisodePlayer.pause_resume
     @start_condition_rdr.decorator
     def start_condition_checker(cls, event: Event, target: Optional[bool] = None) -> bool:
         pass
 
-
-class AgentPickUpDetector(AbstractPickUpDetector):
-    """
-    A detector that detects if the tracked_object was picked up by an agent, such as a human or a robot.
-    """
-
-    def __init__(self, logger: EventLogger, starter_event: AgentContactEvent, *args, **kwargs):
-        """
-        :param logger: An instance of the EventLogger class that is used to log the events.
-        :param starter_event: An instance of the AgentContactEvent class that represents the event to start the
-        event detector, this is a contact between the agent and the tracked_object.
-        """
-        super().__init__(logger, starter_event, *args, **kwargs)
-        self.surface_detector = LossOfSurfaceDetector(logger, self.tracked_object)
-        self.surface_detector.start()
-        self.agent = starter_event.agent
-        self.interaction_event.agent = self.agent
-
-    @classmethod
-    def get_object_to_track_from_starter_event(cls, event: AgentContactEvent) -> Object:
-        return cls.get_new_transportable_objects(event)[0]
-
-    @classmethod
-    def get_new_transportable_objects(cls, event: AgentContactEvent) -> List[Object]:
-        transportable_objects = select_transportable_objects_from_contact_event(event)
-        new_transportable_objects = [obj for obj in transportable_objects if obj not in cls.currently_tracked_objects]
-        return new_transportable_objects
-
-    @classmethod
-    def start_condition_checker(cls, event: Event) -> bool:
-        """
-        Check if an agent is in contact with the tracked_object.
-
-        :param event: The ContactEvent instance that represents the contact event.
-        """
-        return isinstance(event, AgentContactEvent) and any(cls.get_new_transportable_objects(event))
-
-    def get_interaction_event(self) -> bool:
-        """
-        Perform extra checks to determine if the object was picked up.
-        """
-        loss_of_surface_event = self.check_for_event_post_starter_event(LossOfSurfaceEvent)
-
-        if not loss_of_surface_event:
-            return False
-
-        if self.agent in loss_of_surface_event.latest_objects_that_got_removed:
-            logdebug(f"Agent lost contact with tracked_object: {self.tracked_object.name}")
-            self.kill_event.set()
-            return False
-
-        self.end_timestamp = loss_of_surface_event.timestamp
-        return True
-
-    def stop(self, timeout: Optional[float] = None):
-        self.surface_detector.stop()
-        self.surface_detector.join(timeout)
-        super().stop()
-
     def __str__(self):
-        return f"{self.thread_id} - {self.tracked_object.name} - {self.agent.name}"
+        if hasattr(self.starter_event, "agent"):
+            return f"{super().__str__()} - Agent: {self.agent.name}"
 
 
 class MotionPickUpDetector(AbstractPickUpDetector):
@@ -396,6 +335,9 @@ class MotionPickUpDetector(AbstractPickUpDetector):
 
         self.kill_event.set()
         return False
+
+
+
 
 
 class PlacingDetector(AbstractInteractionDetector):
@@ -516,9 +458,9 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
 
 
 EventDetectorUnion = Union[NewObjectDetector, ContactDetector, LossOfContactDetector, LossOfSurfaceDetector,
-MotionDetector, TranslationDetector, RotationDetector, AgentPickUpDetector,
+MotionDetector, TranslationDetector, RotationDetector,
 MotionPickUpDetector, PlacingDetector]
 TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
 Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
-Type[NewObjectDetector], Type[AgentPickUpDetector], Type[MotionPickUpDetector],
+Type[NewObjectDetector], Type[MotionPickUpDetector],
 Type[PlacingDetector]]

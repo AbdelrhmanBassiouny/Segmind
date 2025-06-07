@@ -10,7 +10,7 @@ from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from segmind.detectors.atomic_event_detectors import TranslationDetector, AtomicEventDetector
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
 from segmind.detectors.motion_detection_helpers import ConsistentGradient, Displacement
-from segmind.detectors.spatial_relation_detector import SpatialRelationDetector
+from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.event_logger import EventLogger
 from pycram.testing import BulletWorldTestCase
 from pycram.datastructures.enums import LoggerLevel
@@ -31,7 +31,7 @@ class TestEventDetectors(BulletWorldTestCase):
         translation_detector = self.run_and_get_translation_detector(self.milk)
 
         try:
-            fridge_position = self.kitchen.links["iai_fridge_main"].position_as_list
+            fridge_position = self.kitchen.links["iai_fridge_main"].position.to_list()
             self.milk.set_position(fridge_position)
 
             # wait one timestep to detect that it is moving
@@ -49,17 +49,17 @@ class TestEventDetectors(BulletWorldTestCase):
             translation_detector.stop()
             translation_detector.join()
 
-    def test_spatial_relation_detector(self):
+    def test_insertion_detector(self):
         milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
         time_between_frames = timedelta(seconds=0.01)
         translation_detector = self.run_and_get_translation_detector(self.milk, time_between_frames)
 
-        sr_detector = SpatialRelationDetector(wait_time=time_between_frames)
+        sr_detector = InsertionDetector(wait_time=time_between_frames)
         sr_detector.start()
 
         try:
             self.assertFalse(self.kitchen.links["iai_fridge_main"].contains_body(self.milk))
-            fridge_position = self.kitchen.links["iai_fridge_main"].position_as_list
+            fridge_position = self.kitchen.links["iai_fridge_main"].position.to_list()
             self.milk.set_position(fridge_position)
             # because milk goes to moving state then to stop state thus we need to wait for 2 changes
             time.sleep(translation_detector.get_n_changes_wait_time(2))
