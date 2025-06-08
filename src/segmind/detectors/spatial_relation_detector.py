@@ -1,5 +1,6 @@
 from copy import copy
 from queue import Queue, Empty
+import time
 
 from typing_extensions import Any, Dict, List, Optional, Type
 
@@ -64,6 +65,9 @@ class SpatialRelationDetector(AtomicEventDetector):
     def __str__(self):
         return self.__class__.__name__
 
+    def _join(self, timeout=None):
+        pass
+
 
 class InsertionDetector(SpatialRelationDetector):
 
@@ -71,7 +75,7 @@ class InsertionDetector(SpatialRelationDetector):
         """
         Update the state of a body.
         """
-        body.update_containment()
+        body.update_containment(intersection_ratio=0.5)
         self.bodies_states[body] = copy(body.contained_in_bodies)
 
     def detect_events(self) -> None:
@@ -81,6 +85,8 @@ class InsertionDetector(SpatialRelationDetector):
         try:
             checked_bodies: List[PhysicalBody] = []
             while True:
+                if self.exc is not None:
+                    break
                 event = self.event_queue.get_nowait()
                 self.event_queue.task_done()
                 if event.tracked_object in checked_bodies:
@@ -98,6 +104,7 @@ class InsertionDetector(SpatialRelationDetector):
                 end_timestamp = event.end_timestamp if hasattr(event, "end_timestamp") else None
                 self.logger.log_event(InsertionEvent(event.tracked_object, new_containments,
                  agent=agent, timestamp=event.timestamp, end_timestamp=end_timestamp))
+                time.sleep(self.wait_time.total_seconds())
         except Empty:
             pass
     

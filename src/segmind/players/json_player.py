@@ -75,10 +75,13 @@ class FileEpisodePlayer(EpisodePlayer):
         shutil.copytree(models_path, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
 
     def _run(self):
-        for frame_id, objects_data in self.data_frames.items():
+        for i,(frame_id, objects_data) in enumerate(self.data_frames.items()):
             self._wait_if_paused()
             last_processing_time = time.time()
             self.process_objects_data(objects_data)
+            with self.frame_callback_lock:
+                for cb in self.frame_callbacks:
+                    cb(i * self.time_between_frames.total_seconds())
             self._wait_to_maintain_frame_rate(last_processing_time)
             self._ready = True
 
@@ -322,3 +325,6 @@ W
     @staticmethod
     def get_mesh_name(object_id: str) -> str:
         return f"obj_{object_id:0>6}.ply"
+
+    def _join(self, timeout=None):
+        pass

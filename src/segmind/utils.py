@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import math
+import threading
+from abc import ABC, abstractmethod
+import pytest
 
 import numpy as np
 from pycram.tf_transformations import quaternion_inverse, quaternion_multiply
@@ -15,6 +18,39 @@ from pycram.object_descriptors.generic import ObjectDescription as GenericObject
 from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import Supporter, Floor, Location
 from pycram.ros import logdebug
+
+
+class PropagatingThread(threading.Thread, ABC):
+    kill_event = threading.Event()
+
+    def run(self):
+        self.exc = None
+        try:
+            self._run()
+        except Exception as e:
+            self.exc = e
+            self.stop()
+
+    @abstractmethod
+    def _run(self):
+        pass
+
+    def stop(self):
+        """
+        Stop the event detector.
+        """
+        self.kill_event.set()
+    
+    def join(self, timeout=None):
+        super().join(timeout)
+        self._join(timeout)
+        if self.exc is not None:
+            pytest.fail(f"Exception in event detector {self}: {self.exc}")
+            raise self.exc  # Propagate the exception to the main thread
+    
+    @abstractmethod
+    def _join(self, timeout=None):
+        pass
 
 
 def singleton(cls):

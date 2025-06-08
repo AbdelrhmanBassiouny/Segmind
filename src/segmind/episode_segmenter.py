@@ -32,7 +32,7 @@ class EpisodeSegmenter(ABC):
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start if detectors_to_start else []
         self.initial_detectors: List[Type[AtomicEventDetector]] = initial_detectors if initial_detectors else []
-        self.logger = EventLogger(annotate_events, [detector.event_type() for detector in detectors_to_start + initial_detectors])
+        self.logger = EventLogger(annotate_events, [detector.event_type() for detector in self.detectors_to_start + self.initial_detectors])
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']
         self.starter_event_to_detector_thread_map: Dict[Tuple[Event, Type[DetectorWithStarterEvent]], DetectorWithStarterEvent] = {}
         self.detector_threads_list: List[EventDetectorUnion] = []
@@ -68,11 +68,21 @@ class EpisodeSegmenter(ABC):
         while (not closed_threads) or (self.logger.event_queue.unfinished_tasks > 0):
             if not self.episode_player.is_alive() and not closed_threads:
                 self.episode_player.join()
-                time.sleep(0.01)
+                time.sleep(0.1)
+                # join all motion threads
+                joined = []
                 for detector_thread in self.detector_threads_list:
-                    detector_thread.stop()
-                    logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
-                    detector_thread.join()
+                    if isinstance(detector_thread, MotionDetector):
+                        detector_thread.stop()
+                        logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
+                        detector_thread.join()
+                        joined.append(detector_thread)
+                for detector_thread in self.detector_threads_list:
+                    if detector_thread not in joined:
+                        detector_thread.stop()
+                        logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
+                        detector_thread.join()
+                        joined.append(detector_thread)
                 closed_threads = True
 
             next_event = self.logger.get_next_event()

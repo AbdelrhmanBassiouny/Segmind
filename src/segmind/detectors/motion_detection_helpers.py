@@ -3,53 +3,36 @@ from datetime import timedelta
 
 import numpy as np
 from scipy.signal import butter, sosfilt
-from typing_extensions import List
+from typing_extensions import List, Callable
 
 
-class MotionDetectionMethod(ABC):
+Distances = List[List[float]]
+"""
+Type for lists of distances.
+"""
+MotionDetectionMethod = Callable[[Distances, float], bool]
+"""
+Interface for motion detection methods, it takes a list of distances and a threshold and returns a boolean value.
+"""
+
+def has_consistent_direction(latest_distances: Distances, threshold: float = 1e-4) -> bool:
     """
-    Interface for motion detection methods.
+    Check if the object is moving by checking if the distance between the current and the previous position is
+    consistently positive or negative in at least one axis during the latest steps (the number of latest distances).
     """
-
-    @abstractmethod
-    def is_moving(self, latest_distances: List[List[float]]) -> bool:
-        """
-        Check if the object is moving.
-
-        :param latest_distances: List of the latest distances.
-        :return: True if the object is moving, False if it is not moving.
-        """
-        pass
+    distance_arr = np.array(latest_distances)
+    n_axes = distance_arr.shape[1]
+    return any(np.all(distance_arr[:, i] > threshold) or np.all(distance_arr[:, i] < -threshold)
+                for i in range(n_axes))
 
 
-class ConsistentGradient(MotionDetectionMethod):
-
-    def __init__(self, threshold: float = 1e-4):
-        self.threshold = threshold
-
-    def is_moving(self, latest_distances: List[List[float]]) -> bool:
-        """
-        Check if the object is moving by checking if the distance between the current and the previous position is
-        consistently positive or negative in at least one axis during the latest steps (the number of latest distances).
-        """
-        distance_arr = np.array(latest_distances)
-        n_axes = distance_arr.shape[1]
-        return any(np.all(distance_arr[:, i] > self.threshold) or np.all(distance_arr[:, i] < -self.threshold)
-                   for i in range(n_axes))
-
-
-class Displacement(MotionDetectionMethod):
-
-    def __init__(self, threshold: float = 0.05):
-        self.threshold = threshold
-
-    def is_moving(self, latest_distances: List[List[float]]) -> bool:
-        """
-        Check if the object is moving by checking if the displacement between latest position and the start position is
-        above a certain threshold.
-        """
-        avg_distance = np.linalg.norm(np.sum(np.array(latest_distances)))
-        return avg_distance > self.threshold
+def is_displaced(latest_distances: Distances, threshold: float = 0.05) -> bool:
+    """
+    Check if the object is moving by checking if the displacement between latest position and the start position is
+    above a certain threshold.
+    """
+    avg_distance = np.linalg.norm(np.sum(np.array(latest_distances)))
+    return avg_distance > threshold
 
 
 class DataFilter(ABC):

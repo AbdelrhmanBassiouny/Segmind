@@ -5,13 +5,15 @@ import time
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from math import ceil
-from queue import Queue
+from queue import Queue, Empty, Full
+import os
 
 import numpy as np
 
 from pycram.ros import logdebug
 from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from ..episode_player import EpisodePlayer
+from ..detectors.motion_detection_helpers import is_displaced, has_consistent_direction
 
 try:
     from matplotlib import pyplot as plt
@@ -26,16 +28,17 @@ from pycram.datastructures.pose import Pose
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import PhysicalObject, Agent
+from ripple_down_rules.rdr_decorators import RDRDecorator
 from ..event_logger import EventLogger
 from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
     AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, MotionEvent
-from .motion_detection_helpers import ConsistentGradient, MotionDetectionMethod, DataFilter, Displacement
+from .motion_detection_helpers import MotionDetectionMethod, DataFilter
 from ..utils import calculate_quaternion_difference, \
-    get_support, calculate_translation
+    get_support, calculate_translation, PropagatingThread
 
 
-class AtomicEventDetector(threading.Thread, ABC):
+class AtomicEventDetector(PropagatingThread):
     """
     A thread that detects events in another thread and logs them. The event detector is a function that has no arguments
     and returns an object that represents the event. The event detector is called in a loop until the thread is stopped
@@ -61,17 +64,11 @@ class AtomicEventDetector(threading.Thread, ABC):
         self.world: World = world if world else World.current_world
         self.wait_time = wait_time if wait_time is not None else timedelta(seconds=0.1)
 
-        self.kill_event = threading.Event()
         self.queues: List[Queue] = []
 
         self.run_once = False
         self._pause: bool = False
-
-    def stop(self):
-        """
-        Stop the event detector.
-        """
-        self.kill_event.set()
+        self.is_processing_jobs: bool = False
 
     @property
     def thread_id(self) -> str:
@@ -97,7 +94,7 @@ class AtomicEventDetector(threading.Thread, ABC):
         """
         self._pause: bool = False
 
-    def run(self):
+    def _run(self):
         """
         The main loop of the thread. The event detector is called in a loop until the thread is stopped by setting the
         exit_thread attribute to True. Additionally, there is an optional wait_time attribute that can be set to a float
@@ -105,15 +102,15 @@ class AtomicEventDetector(threading.Thread, ABC):
         """
         while True:
 
-            if self.kill_event.is_set() and self.all_queues_empty:
+            if (self.kill_event.is_set() and self.all_queues_empty and not self.is_processing_jobs) or self.exc is not None:
                 break
 
             self._wait_if_paused()
             if self.fit_mode and self.episode_player:
                 self.episode_player.pause()
 
-            self.detect_and_log_events()
             last_processing_time = time.time()
+            self.detect_and_log_events()
 
             if self.fit_mode and self.episode_player:
                 self.episode_player.resume()
@@ -230,6 +227,9 @@ class NewObjectDetector(AtomicEventDetector):
         World.current_world.remove_callback_on_add_object(self.on_add_object)
         super().stop()
 
+    def _join(self, timeout=None):
+        pass
+
     def __str__(self):
         return self.thread_id
 
@@ -328,6 +328,9 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         """
         pass
 
+    def _join(self, timeout=None):
+        pass
+
 
 class ContactDetector(AbstractContactDetector):
     """
@@ -414,54 +417,74 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     A thread that detects if the object starts or stops moving and logs the TranslationEvent or StopTranslationEvent.
     """
 
-    latest_pose: Optional[Pose]
+    latest_pose: Optional[Pose] = None
     """
     The latest pose of the object.
     """
-    latest_time: Optional[float]
+    latest_time: Optional[float] = None
     """
     The latest time where the latest pose was recorded.
     """
-    event_time: Optional[float]
+    event_time: Optional[float] = None
     """
     The time when the event occurred.
     """
-    start_pose: Optional[Pose]
+    start_pose: Optional[Pose] = None
     """
     The start pose of the object at start of detection.
     """
-    filtered_distances: Optional[np.ndarray]
+    filtered_distances: Optional[np.ndarray] = None
     """
     The filtered distances during the window timeframe.
     """
+    velocity_threshold: float
+    """
+    The threshold for the velocity to detect movement.
+    """
+
+    def _ask_now(case_dict) -> bool:
+        self_ = case_dict["self_"]
+        if any(abs(d) >= 0.001 for d in self_.calculate_distance()):
+            return True
+        return False
+
+    models_path = os.path.join(os.path.dirname(__file__), "models")
+    is_moving_rdr = RDRDecorator(models_path, (bool,), True, package_name="segmind", fit=True, use_generated_classifier=False,
+    ask_now=_ask_now)
 
     def __init__(self, logger: EventLogger, tracked_object: Object,
-                 detection_method: MotionDetectionMethod = Displacement(0.01),
-                 time_between_frames: timedelta = timedelta(milliseconds=500),
-                 window_size: int = 2,
+                 velocity_threshold: Optional[float] = None,
+                 time_between_frames: timedelta = timedelta(milliseconds=50),
+                 window_size: int = 14,
                  distance_filter_method: Optional[DataFilter] = None,
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the NewObjectEvent class that represents the event to start the event.
         :param tracked_object: An optional Object instance that represents the object to track.
-        :param detection_method: The motion detection method that is used to detect if the object is moving.
+        :param velocity_threshold: The threshold for the velocity to detect movement.
         :param time_between_frames: The time between frames of episode player.
         :param window_size: The size of the window that is used to calculate the distances (must be > 1).
         :param distance_filter_method: An optional DataFilter instance that is used to filter the distances.
         """
         DetectorWithTrackedObject.__init__(self, logger, tracked_object, *args, **kwargs)
-        self.time_between_frames: timedelta = time_between_frames
-        self.measure_timestep: timedelta = 2 * time_between_frames
+        self.velocity_threshold: float = velocity_threshold if velocity_threshold is not None else self.velocity_threshold
+        self.data_queue: Queue[Tuple[float, Pose]] = Queue(1)
+        self.queues = [self.data_queue]
+        if self.episode_player is not None:
+            self.episode_player.add_frame_callback(self.update_with_latest_motion_data)
+            self.time_between_frames = self.episode_player.time_between_frames
+        else:
+            self.time_between_frames: timedelta = time_between_frames
+        self.distance_threshold: float = self.velocity_threshold * self.time_between_frames.total_seconds() * window_size
+        self.measure_timestep: timedelta = self.time_between_frames * 2
         self.window_size: int = window_size
         self.filter: Optional[DataFilter] = distance_filter_method
-        self.detection_method: MotionDetectionMethod = detection_method
-
-        self._init_event_data()
 
         self._init_data_holders()
 
         self.was_moving: bool = False
+        self.last_state_change_idx: int = 0
 
         self.plot_distances: bool = False
         self.plot_distance_windows: bool = False
@@ -483,14 +506,6 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :return: The minimum wait time for detecting n successive changes in motion state.
         """
         return self.window_timeframe.total_seconds() * n + self.wait_time.total_seconds()
-
-    def _init_event_data(self):
-        """
-        Initialize the event time and start pose of the object/event.
-        """
-        self.latest_pose, self.latest_time = self.get_current_pose_and_time()
-        self.event_time: float = self.latest_time
-        self.start_pose: Pose = self.latest_pose
 
     @property
     def window_timeframe(self) -> timedelta:
@@ -521,6 +536,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
         # Window data
         self.latest_distances: List[List[float]] = []
+        self.all_distances: List[List[float]] = []
         self.filtered_distances: Optional[np.ndarray] = None
         self.latest_times: List[float] = []
 
@@ -529,22 +545,29 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.all_filtered_distances: List[np.ndarray] = []
         self.all_times: List[List[float]] = []
 
-    def update_with_latest_motion_data(self):
+    def update_with_latest_motion_data(self, current_time: Optional[float] = None) -> Tuple[Pose, float]:
         """
         Update the latest pose and time of the object.
         """
-        self.latest_pose, self.latest_time = self.get_current_pose_and_time()
-        self.poses.append(self.latest_pose)
-        self.times.append(self.latest_time)
-        if len(self.poses) > 1:
-            self.calculate_and_update_latest_distance()
-            self._crop_distances_and_times_to_window_size()
+        latest_pose, latest_time = self.get_current_pose_and_time()
+        # if current_time is not None:
+            # latest_time = current_time
+        if self.start_pose is None:
+            self.event_time: float = latest_time
+            self.start_pose: Pose = latest_pose
+        
+        try:
+            self.data_queue.put_nowait((latest_time, latest_pose))
+        except Full:
+            self.data_queue.get_nowait()
+            self.data_queue.put_nowait((latest_time, latest_pose))
 
     def get_current_pose_and_time(self) -> Tuple[Pose, float]:
         """
         Get the current pose and time of the object.
         """
-        return self.tracked_object.pose, time.time()
+        pose = self.tracked_object.pose
+        return pose, time.time() #pose.header.stamp.timestamp()
 
     def detect_events(self) -> Optional[List[MotionEvent]]:
         """
@@ -552,23 +575,28 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
         :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
+        try:
+            latest_time, latest_pose = self.data_queue.get_nowait()
+            self.data_queue.task_done()
+            self.poses.append(latest_pose)
+            self.times.append(latest_time)
+            if len(self.poses) > 1:
+                self.calculate_and_update_latest_distance()
+                self._crop_distances_and_times_to_window_size()
 
-        if not self.measure_timestep_passed:
-            time.sleep(max(0.0, self.measure_timestep.total_seconds() - self.time_since_last_event))
+            if not self.window_size_reached:
+                return
+            events: Optional[List[MotionEvent]] = None
+            if self.motion_sate_changed:
+                self.last_state_change_idx = len(self.all_distances) - 1
+                events = [self.update_motion_state_and_create_event()]
 
-        self.update_with_latest_motion_data()
+            if self.plot_distances:
+                self.keep_track_of_history()
 
-        if not self.window_size_reached:
+            return events
+        except Empty:
             return
-
-        events: Optional[List[MotionEvent]] = None
-        if self.motion_sate_changed:
-            events = [self.update_motion_state_and_create_event()]
-
-        if self.plot_distances:
-            self.keep_track_of_history()
-
-        return events
 
     def update_motion_state_and_create_event(self) -> MotionEvent:
         """
@@ -608,8 +636,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :param is_moving: A boolean value that represents if the object is moving.
         """
         pass
-
+    
     @property
+    # @EpisodePlayer.pause_resume
+    # @is_moving_rdr.decorator
     def is_moving(self) -> bool:
         """
         Check if the object is moving by using the motion detection method.
@@ -617,14 +647,16 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :return: A boolean value that represents if the object is moving.
         """
         distances = self.filter_data() if self.filter else self.latest_distances
-        return self.detection_method.is_moving(distances)
+        consistent_direction = has_consistent_direction(distances)
+        displaced = is_displaced(self.all_distances[-self.window_size:], self.distance_threshold)
+        return displaced
 
     def calculate_and_update_latest_distance(self):
         """
         Calculate the latest distance and time between the current pose and the previous pose.
         """
         distance = self.calculate_distance()
-        self.latest_distances.append(distance)
+        self.all_distances.append(distance)
 
     @property
     def measure_timestep_passed(self) -> bool:
@@ -638,7 +670,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         return len(self.latest_distances) >= self.window_size
 
     def _crop_distances_and_times_to_window_size(self):
-        self.latest_distances = self.latest_distances[-self.window_size:]
+        self.latest_distances = self.all_distances[-self.window_size:]
         self.latest_times = self.times[-self.window_size:]
 
     def _reset_distances_and_times(self):
@@ -692,6 +724,9 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
             self.plot_and_show_distance_windows()
 
         super().stop()
+    
+    def _join(self, timeout=None):
+        pass
 
     def plot_and_show_distances(self, plot_filtered: bool = True) -> None:
         """
@@ -757,6 +792,8 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
 class TranslationDetector(MotionDetector):
 
+    velocity_threshold: float = (0.5 * 1e-2) # 0.5 cm/s
+
     def update_object_motion_state(self, is_moving: bool) -> None:
         """
         Update the object motion state.
@@ -769,7 +806,6 @@ class TranslationDetector(MotionDetector):
         """
         # return calculate_euclidean_distance(self.latest_pose.position.to_list(), current_pose.position.to_list())
         translation = calculate_translation(self.poses[-2].position.to_list(), self.poses[-1].position.to_list())
-        # logdebug(f"Translation: {translation}")
         return translation
 
     def get_event_type(self):
@@ -777,6 +813,8 @@ class TranslationDetector(MotionDetector):
 
 
 class RotationDetector(MotionDetector):
+
+    velocity_threshold: float = 5 * np.pi / 180  # 5 degrees/s
 
     def update_object_motion_state(self, moving: bool) -> None:
         """

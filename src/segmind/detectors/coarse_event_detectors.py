@@ -226,6 +226,9 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
     def __str__(self):
         return f"{self.thread_id} - {self.tracked_object.name}"
 
+    def _join(self, timeout=None):
+        pass
+
 
 class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
     """
@@ -283,8 +286,10 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
         pass
 
     def __str__(self):
-        if hasattr(self.starter_event, "agent"):
+        if hasattr(self.starter_event, "agent") and self.starter_event.agent is not None:
             return f"{super().__str__()} - Agent: {self.agent.name}"
+        else:
+            return super().__str__()
 
 
 class MotionPickUpDetector(AbstractPickUpDetector):

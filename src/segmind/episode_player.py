@@ -14,17 +14,19 @@ except ImportError:
     Multiverse = None
 
 
-from .utils import singleton
+from .utils import singleton, PropagatingThread
 from .datastructures.enums import PlayerStatus
 
 
-class EpisodePlayer(threading.Thread, ABC):
+
+class EpisodePlayer(PropagatingThread, ABC):
     """
     A class that represents the thread that steps the world.
     """
 
     _instance: Optional[EpisodePlayer] = None
     pause_resume_lock: RLock = RLock()
+    frame_callback_lock: RLock = RLock()
     
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -34,13 +36,19 @@ class EpisodePlayer(threading.Thread, ABC):
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=10)):
+    def __init__(self, time_between_frames: Optional[datetime.timedelta] = None, use_realtime: bool = False):
         if not self._initialized:
             super().__init__()
             self._ready: bool = False
             self._status = PlayerStatus.CREATED
-            self.time_between_frames: datetime.timedelta = time_between_frames
+            self.time_between_frames: datetime.timedelta = time_between_frames if time_between_frames is not None else datetime.timedelta(seconds=0.01)
+            self.use_realtime: bool = use_realtime
+            self.frame_callbacks: List[Callable[[float], None]] = []
             self._initialized = True
+
+    def add_frame_callback(self, callback: Callable):
+        with self.frame_callback_lock:
+            self.frame_callbacks.append(callback)
 
     @property
     def status(self):
@@ -60,14 +68,7 @@ class EpisodePlayer(threading.Thread, ABC):
 
     def run(self):
         self._status = PlayerStatus.PLAYING
-        self._run()
-
-    @abstractmethod
-    def _run(self):
-        """
-        The run method that is called when the thread is started. This should start the episode player thread.
-        """
-        pass
+        super().run()
     
     def pause(self):
         """
@@ -104,15 +105,17 @@ class EpisodePlayer(threading.Thread, ABC):
         while self.status == PlayerStatus.PAUSED:
             time.sleep(0.1)
 
-    def _wait_to_maintain_frame_rate(self, last_processing_time: float):
+    def _wait_to_maintain_frame_rate(self, last_processing_time: float, delta_time: Optional[datetime.timedelta] = None):
         """
         Wait to maintain the frame rate of the episode player.
 
         :param last_processing_time: The time of the last processing.
         """
-        time_diff = time.time() - last_processing_time
-        if time_diff < self.time_between_frames.total_seconds():
-            time.sleep(self.time_between_frames.total_seconds() - time_diff)
+        if delta_time is None:
+            delta_time = self.time_between_frames
+        time_to_wait = datetime.timedelta(seconds=time.time() - last_processing_time)
+        if delta_time < time_to_wait:
+            time.sleep((time_to_wait - delta_time).total_seconds())
 
     @classmethod
     def pause_resume(cls, func: Callable) -> Callable:
@@ -134,3 +137,6 @@ class EpisodePlayer(threading.Thread, ABC):
                 else:
                     return func(*args, **kwargs)
         return wrapper
+    
+    def _join(self, timeout=None):
+        pass
