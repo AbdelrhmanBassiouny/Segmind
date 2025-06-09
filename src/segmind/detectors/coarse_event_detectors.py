@@ -406,7 +406,7 @@ def check_for_supporting_surface(tracked_object: Object,
     :return: An instance of the Object class that represents the supporting surface if found, else None.
     """
     with UseProspectionWorld():
-        dt = 0.1
+        dt = 0.07
         World.current_world.simulate(dt)
         prospection_obj = World.current_world.get_prospection_object_for_object(tracked_object)
         contact_points = prospection_obj.contact_points
