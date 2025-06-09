@@ -29,7 +29,7 @@ def conditions_175987223108804549769623056194939396888(case) -> bool:
         transportable_objects = select_transportable_objects(all_objects)
         if len(transportable_objects) == 0:
             return False
-        return all(obj in cls_.currently_tracked_objects and abs(cls_.currently_tracked_objects[obj].starter_event.timestamp - event.timestamp) < timedelta(milliseconds=100).total_seconds()\
+        return all(obj in cls_.currently_tracked_objects and abs(cls_.currently_tracked_objects[obj].starter_event.timestamp - event.timestamp) < timedelta(milliseconds=500).total_seconds()\
                    for obj in transportable_objects)
     return conditions_for_general_pick_up_detector_start_condition_checker(**case)
 
