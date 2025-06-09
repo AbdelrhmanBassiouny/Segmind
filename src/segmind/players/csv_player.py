@@ -31,6 +31,7 @@ class CSVEpisodePlayer(FilePlayer):
                          stop_after_ready=stop_after_ready)
 
         self._spawn_objects()
+
         
     def _spawn_objects(self):
         directory = Path(self.models_dir)
@@ -39,6 +40,7 @@ class CSVEpisodePlayer(FilePlayer):
             obj_name = Path(file).stem
             pose = PoseStamped()
             if obj_name == "iCub":
+                continue
                 obj_name = "iCub3"
                 file = "iCub3.urdf"
                 obj_type = Robot
