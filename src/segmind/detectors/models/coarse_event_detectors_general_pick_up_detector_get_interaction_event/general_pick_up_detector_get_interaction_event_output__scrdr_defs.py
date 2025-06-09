@@ -3,7 +3,7 @@ from ...coarse_event_detectors import GeneralPickUpDetector, check_for_supportin
 from types import NoneType
 from pycram.ros import logdebug
 from ....utils import get_support
-from ....datastructures.events import AgentContactEvent, LossOfContactEvent, PickUpEvent, PlacingEvent
+from ....datastructures.events import AgentContactEvent, LossOfContactEvent, PickUpEvent, PlacingEvent, InsertionEvent
 
 
 def conditions_87074858769394720739688305292375760638(case) -> bool:
@@ -50,8 +50,9 @@ def conclusion_320416996501934194262144719758568379805(case) -> Optional[PickUpE
         latest_pick_up_event = self_.object_tracker.get_latest_event_of_type(PickUpEvent)
         if latest_pick_up_event is not None:
             any_placing_event_after_pick_up_event = self_.object_tracker.get_first_event_of_type_after_event(PlacingEvent, latest_pick_up_event)
-            if any_placing_event_after_pick_up_event is None:
-                logdebug("Stopping duplicate pickup event")
+            any_insertion_event_after_pick_up_event = self_.object_tracker.get_first_event_of_type_after_event(InsertionEvent, latest_pick_up_event)
+            if any_placing_event_after_pick_up_event is None and any_insertion_event_after_pick_up_event is None:
+                logdebug(f"Stopping duplicate pickup event {self_}")
                 self_.kill_event.set()
                 return None
         return output_
