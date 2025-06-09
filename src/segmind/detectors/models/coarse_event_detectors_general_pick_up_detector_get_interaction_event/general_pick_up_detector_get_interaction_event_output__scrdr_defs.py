@@ -1,7 +1,7 @@
 from typing_extensions import Dict, Optional, Union
 from ...coarse_event_detectors import GeneralPickUpDetector, check_for_supporting_surface
 from types import NoneType
-from pycram.ros.logging import logdebug
+from pycram.ros import logdebug
 from ....utils import get_support
 from ....datastructures.events import AgentContactEvent, LossOfContactEvent, PickUpEvent, PlacingEvent
 

@@ -19,6 +19,11 @@ class NEEMPlayer(EpisodePlayer):
     def ready(self):
         return self.pni.replay_environment_initialized
 
+    def get_frame_data_generator(self):
+        return self.pni.replay_motions_in_query(real_time=self.use_realtime,
+                                                step_time=self.time_between_frames,
+                                                continuous_mode=False)
+
     def _run(self):
         motion_gen = self.pni.replay_motions_in_query(real_time=True,
                                                       step_time=datetime.timedelta(milliseconds=10),

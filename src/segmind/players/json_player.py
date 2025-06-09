@@ -17,11 +17,12 @@ from pycram.datastructures.pose import Header, PoseStamped, Vector3, Quaternion,
 from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import PhysicalObject
 from ..episode_player import EpisodePlayer
+from .data_player import FilePlayer, FrameData
 from ..utils import calculate_quaternion_difference
 
 
-class FileEpisodePlayer(EpisodePlayer):
-    def __init__(self, json_file: str, scene_id: int = 1, world: Optional[World] = None,
+class JSONPlayer(FilePlayer):
+    def __init__(self, file_path: str, scene_id: int = 1, world: Optional[World] = None,
                  mesh_scale: float = 0.001,
                  time_between_frames: datetime.timedelta = datetime.timedelta(milliseconds=50),
                  objects_to_ignore: Optional[List[int]] = None,
@@ -30,30 +31,36 @@ class FileEpisodePlayer(EpisodePlayer):
         """
         Initializes the FAMEEpisodePlayer with the specified json file and scene id.
 
-        :param json_file: The json file that contains the data frames.
+        :param file_path: The json file that contains the data frames.
         :param scene_id: The scene id.
         :param world: The world that is used to replay the episode.
         :param mesh_scale: The scale of the mesh.
         :param time_between_frames: The time between frames.
         :param objects_to_ignore: A list of object ids to ignore.
         """
-        super().__init__(time_between_frames=time_between_frames)
-        self.json_file = json_file
-        with open(self.json_file, 'r') as f:
-            self.data_frames = json.load(f)[str(scene_id)]
-        self.data_frames = {int(frame_id): objects_data for frame_id, objects_data in self.data_frames.items()}
-        if objects_to_ignore is not None:
-            self._remove_ignored_objects(objects_to_ignore)
+        self.objects_to_ignore: Optional[List[int]] = objects_to_ignore
+        self.scene_id = scene_id
+
+        super().__init__(time_between_frames=time_between_frames, world=world, stop_after_ready=False, use_realtime=False,
+                         file_path=file_path)
+        
+        self.mesh_scale = mesh_scale
         self.obj_id_to_name: Optional[Dict[int, str]] = obj_id_to_name
         self.obj_id_to_type: Optional[Dict[int, Type[PhysicalObject]]] = obj_id_to_type
-        self.data_frames = dict(sorted(self.data_frames.items(), key=lambda x: x[0]))
-        self.world = world if world is not None else World.current_world
-        self.mesh_scale = mesh_scale
         self.object_meshes: Dict[Object, Geometry] = {}
         self.correction_quaternions: Dict[Object, np.ndarray] = {}
         self.base_origin_of_objects: Dict[Object, np.ndarray] = {}
         self.average_rotation_correction_matrix: Optional[np.ndarray] = None
-        self.copy_model_files_to_world_data_dir()
+
+    def get_frame_data_generator(self):
+        with open(self.file_path, 'r') as f:
+            self.data_frames = json.load(f)[str(self.scene_id)]
+        self.data_frames = {int(frame_id): objects_data for frame_id, objects_data in self.data_frames.items()}
+        if self.objects_to_ignore is not None:
+            self._remove_ignored_objects(self.objects_to_ignore)
+        self.data_frames = dict(sorted(self.data_frames.items(), key=lambda x: x[0]))
+        for i, (frame_id, objects_data) in enumerate(self.data_frames.items()):
+            yield FrameData(i * self.time_between_frames.total_seconds(), objects_data, frame_idx=i)
 
     def _remove_ignored_objects(self, objects_to_ignore: List[int]):
         """
@@ -65,34 +72,15 @@ class FileEpisodePlayer(EpisodePlayer):
                                        if int(obj_id) not in objects_to_ignore}
                             for frame_id, objects_data in self.data_frames.items()}
 
-    def copy_model_files_to_world_data_dir(self):
-        """
-        Copy the model files to the world data directory.
-        """
-        parent_dir_of_json_file = os.path.abspath(os.path.dirname(self.json_file))
-        models_path = os.path.join(parent_dir_of_json_file, "models")
-        # Copy the entire folder and its contents
-        shutil.copytree(models_path, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
-
-    def _run(self):
-        for i,(frame_id, objects_data) in enumerate(self.data_frames.items()):
-            self._wait_if_paused()
-            last_processing_time = time.time()
-            self.process_objects_data(objects_data)
-            with self.frame_callback_lock:
-                for cb in self.frame_callbacks:
-                    cb(i * self.time_between_frames.total_seconds())
-            self._wait_to_maintain_frame_rate(last_processing_time)
-            self._ready = True
-
     def _pause(self):
         ...
 
     def _resume(self):
         ...
 
-    def process_objects_data(self, objects_data: dict):
+    def get_objects_poses(self, frame_data: FrameData) -> Dict[Object, Pose]:
         objects_poses: Dict[Object, Pose] = {}
+        objects_data = frame_data.objects_data
         for object_id, object_poses_data in objects_data.items():
 
             # Get the object pose in the map frame
@@ -114,8 +102,7 @@ class FileEpisodePlayer(EpisodePlayer):
             else:
                 obj = self.world.get_object_by_name(obj_name)
                 objects_poses[obj] = self.apply_orientation_correction_to_object_pose(obj, pose)
-        if len(objects_poses):
-            self.world.reset_multiple_objects_base_poses(objects_poses)
+        return objects_poses
 
     def apply_orientation_correction_to_object_pose(self, obj: Object, obj_pose: PoseStamped) -> Pose:
         """

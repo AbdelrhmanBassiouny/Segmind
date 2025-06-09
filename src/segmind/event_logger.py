@@ -197,6 +197,20 @@ class EventLogger:
         min_start = min(data_dict['start'])
         data_dict['start'] = [x - min_start for x in data_dict['start']]
         data_dict['end'] = [x - min_start for x in data_dict['end']]
+        tickvals = []
+        prev_val = None
+        range_val = max(data_dict['end']) - min(data_dict['start'])
+        per_tick_range = range_val / 10
+        for val in sorted(data_dict['start']):
+            if prev_val is None:
+                tickvals.append(val)
+                prev_val = val
+                continue
+            if abs(val - prev_val) > per_tick_range:
+                tickvals.append(val)
+                prev_val = val
+            else:
+                tickvals.append("")
         df = pd.DataFrame(data_dict)
 
         fig = go.Figure()
@@ -208,7 +222,9 @@ class EventLogger:
                           hover_data={'object': True, 'obj_type': True, 'with_object': True, 'with_obj_type': True},
                           # text=f'object',
                           title=f"Events Timeline")
-        fig.update_xaxes(tickvals=pd.to_datetime(df[f'start'], unit='s'), tickformat='%S')
+        tick_vals = [pd.to_datetime(x, unit='s') if x != "" else x for x in tickvals]
+        fig.update_xaxes(tickvals=tick_vals, tickformat='%S')
+        # fig.update_xaxes(tickvals=pd.to_datetime(df[f'start'], unit='s'), tickformat='%S')
         fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='LightPink')
         fig.update_layout(
             font_family="Courier New",

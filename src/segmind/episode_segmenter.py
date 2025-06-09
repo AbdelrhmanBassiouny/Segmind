@@ -221,7 +221,7 @@ class EpisodeSegmenter(ABC):
         :param obj: The Object instance for which the motion detection threads are started.
         :param event: The NewObjectEvent instance that represents the creation of the object.
         """
-        for detector in (TranslationDetector, RotationDetector):
+        for detector in (TranslationDetector,): #RotationDetector):
             self.create_detector_and_start_it(detector, tracked_object=obj, starter_event=event,
                                               time_between_frames=self.time_between_frames)
 

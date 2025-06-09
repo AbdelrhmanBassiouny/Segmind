@@ -19,7 +19,8 @@ from pycram.worlds.bullet_world import BulletWorld
 from pycram.ros import set_logger_level
 
 
-@pytest.mark.skipif(PyCRAMNEEMInterface is None, reason="PyCRAMNEEMInterface not available")
+# @pytest.mark.skipif(PyCRAMNEEMInterface is None, reason="PyCRAMNEEMInterface not available")
+@pytest.mark.skip(reason="PyCRAMNEEMInterface needs to be updated")
 class TestNEEMSegmentor(TestCase):
     pni: PyCRAMNEEMInterface
     viz_mark_publisher: VizMarkerPublisher

@@ -33,7 +33,7 @@ from ..event_logger import EventLogger
 from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
     AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, MotionEvent
-from .motion_detection_helpers import MotionDetectionMethod, DataFilter
+from .motion_detection_helpers import MotionDetectionMethod, DataFilter, LowPassFilter
 from ..utils import calculate_quaternion_difference, \
     get_support, calculate_translation, PropagatingThread
 
@@ -455,7 +455,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  velocity_threshold: Optional[float] = None,
                  time_between_frames: timedelta = timedelta(milliseconds=50),
-                 window_size: int = 14,
+                 window_size_in_seconds: int = 0.5,
                  distance_filter_method: Optional[DataFilter] = None,
                  *args, **kwargs):
         """
@@ -468,17 +468,17 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :param distance_filter_method: An optional DataFilter instance that is used to filter the distances.
         """
         DetectorWithTrackedObject.__init__(self, logger, tracked_object, *args, **kwargs)
-        self.velocity_threshold: float = velocity_threshold if velocity_threshold is not None else self.velocity_threshold
-        self.data_queue: Queue[Tuple[float, Pose]] = Queue(1)
-        self.queues = [self.data_queue]
         if self.episode_player is not None:
-            self.episode_player.add_frame_callback(self.update_with_latest_motion_data)
+            # self.episode_player.add_frame_callback(self.update_with_latest_motion_data)
             self.time_between_frames = self.episode_player.time_between_frames
         else:
             self.time_between_frames: timedelta = time_between_frames
-        self.distance_threshold: float = self.velocity_threshold * self.time_between_frames.total_seconds() * window_size
+        self.window_size: int = round(window_size_in_seconds / self.time_between_frames.total_seconds())
+        self.velocity_threshold: float = velocity_threshold if velocity_threshold is not None else self.velocity_threshold
+        self.data_queue: Queue[Tuple[float, Pose]] = Queue(1)
+        self.queues = [self.data_queue]
+        self.distance_threshold: float = self.velocity_threshold * self.window_size_in_seconds
         self.measure_timestep: timedelta = self.time_between_frames * 2
-        self.window_size: int = window_size
         self.filter: Optional[DataFilter] = distance_filter_method
 
         self._init_data_holders()
@@ -489,6 +489,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.plot_distances: bool = False
         self.plot_distance_windows: bool = False
         self.plot_frequencies: bool = False
+
+    @property
+    def window_size_in_seconds(self) -> int:
+        return self.window_size * self.time_between_frames.total_seconds()
 
     @property
     def window_size(self) -> int:
@@ -576,6 +580,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
         try:
+            self.update_with_latest_motion_data()
             latest_time, latest_pose = self.data_queue.get_nowait()
             self.data_queue.task_done()
             self.poses.append(latest_pose)
@@ -792,7 +797,8 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
 class TranslationDetector(MotionDetector):
 
-    velocity_threshold: float = (0.5 * 1e-2) # 0.5 cm/s
+    cm_per_second: float = 0.5
+    velocity_threshold: float = (cm_per_second * 1e-2)
 
     def update_object_motion_state(self, is_moving: bool) -> None:
         """
@@ -814,7 +820,8 @@ class TranslationDetector(MotionDetector):
 
 class RotationDetector(MotionDetector):
 
-    velocity_threshold: float = 5 * np.pi / 180  # 5 degrees/s
+    degrees_per_second: float = 10
+    velocity_threshold: float = degrees_per_second * np.pi / 180
 
     def update_object_motion_state(self, moving: bool) -> None:
         """

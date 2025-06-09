@@ -5,8 +5,10 @@ import threading
 from threading import RLock
 import time
 from abc import ABC, abstractmethod
-from typing_extensions import Callable, Any, Optional
+from dataclasses import dataclass
+from typing_extensions import Callable, Any, Optional, Dict, Generator
 from pycram.ros import logdebug
+from pycram.datastructures.world import World
 
 try:
     from pycram.worlds.multiverse import Multiverse
@@ -18,7 +20,6 @@ from .utils import singleton, PropagatingThread
 from .datastructures.enums import PlayerStatus
 
 
-
 class EpisodePlayer(PropagatingThread, ABC):
     """
     A class that represents the thread that steps the world.
@@ -26,7 +27,6 @@ class EpisodePlayer(PropagatingThread, ABC):
 
     _instance: Optional[EpisodePlayer] = None
     pause_resume_lock: RLock = RLock()
-    frame_callback_lock: RLock = RLock()
     
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -36,19 +36,17 @@ class EpisodePlayer(PropagatingThread, ABC):
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, time_between_frames: Optional[datetime.timedelta] = None, use_realtime: bool = False):
+    def __init__(self, time_between_frames: Optional[datetime.timedelta] = None, use_realtime: bool = False,
+                 stop_after_ready: bool = False, world: Optional[World] = None):
         if not self._initialized:
             super().__init__()
+            self.stop_after_ready: bool = stop_after_ready
+            self.world: World = world if world is not None else World.current_world
             self._ready: bool = False
             self._status = PlayerStatus.CREATED
             self.time_between_frames: datetime.timedelta = time_between_frames if time_between_frames is not None else datetime.timedelta(seconds=0.01)
             self.use_realtime: bool = use_realtime
-            self.frame_callbacks: List[Callable[[float], None]] = []
             self._initialized = True
-
-    def add_frame_callback(self, callback: Callable):
-        with self.frame_callback_lock:
-            self.frame_callbacks.append(callback)
 
     @property
     def status(self):
@@ -65,6 +63,8 @@ class EpisodePlayer(PropagatingThread, ABC):
     @ready.setter
     def ready(self, value: bool):
         self._ready = value
+        if value and self.stop_after_ready:
+            self._status = PlayerStatus.STOPPED
 
     def run(self):
         self._status = PlayerStatus.PLAYING

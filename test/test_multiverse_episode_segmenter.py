@@ -54,10 +54,10 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             cls.world: Multiverse = Multiverse(WorldMode.GUI, scene_file_path=scene_file_path,
                                                simulator_config=simulator_conf)
         else:
-            cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
+            cls.world: BulletWorld = BulletWorld(WorldMode.DIRECT)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.INFO)
-        # cls.viz_marker_publisher = VizMarkerPublisher()
-        cls.file_player = CSVEpisodePlayer(csv_file, models_dir, world=cls.world)
+        cls.viz_marker_publisher = VizMarkerPublisher()
+        cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world, time_between_frames=datetime.timedelta(milliseconds=4))
         # scene = Object("scene", Location, f"{Path(scene_file_path).stem}.urdf")
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
@@ -67,7 +67,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # cls.viz_marker_publisher._stop_publishing()
+        cls.viz_marker_publisher._stop_publishing()
         cls.world.exit()
         cls.episode_segmenter.join()
 
