@@ -68,7 +68,7 @@ class EpisodeSegmenter(ABC):
         while (not closed_threads) or (self.logger.event_queue.unfinished_tasks > 0):
             if not self.episode_player.is_alive() and not closed_threads:
                 self.episode_player.join()
-                time.sleep(0.1)
+                time.sleep(0.5)
                 # join all motion threads
                 joined = []
                 for detector_thread in self.detector_threads_list:
