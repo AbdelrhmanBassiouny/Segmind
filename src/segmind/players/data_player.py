@@ -1,0 +1,161 @@
+from __future__ import annotations
+
+import os
+import shutil
+import datetime
+import threading
+from threading import RLock
+import time
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing_extensions import Callable, Any, Optional, Dict, Generator
+from pycram.ros import logdebug
+from pycram.datastructures.world import World
+
+try:
+    from pycram.worlds.multiverse import Multiverse
+except ImportError:
+    Multiverse = None
+
+
+from ..utils import singleton, PropagatingThread
+from ..datastructures.enums import PlayerStatus
+from ..episode_player import EpisodePlayer
+
+
+
+@dataclass
+class FrameData:
+    """
+    A dataclass to store the frame data.
+    """
+    time: float
+    """
+    The time of the frame.
+    """
+    objects_data: Dict
+    """
+    The objects data which contains the poses of the objects.
+    """
+    frame_idx: int
+    """
+    The frame index.
+    """
+
+FrameDataGenerator = Generator[FrameData]
+
+
+class DataPlayer(EpisodePlayer, ABC):
+    """
+    A class that represents the thread that steps the world from a data generator.
+    """
+
+    frame_callback_lock: RLock = RLock()
+
+    def __init__(self, time_between_frames: Optional[datetime.timedelta] = None, use_realtime: bool = False,
+                 stop_after_ready: bool = False, world: Optional[World] = None):
+        super().__init__(time_between_frames=time_between_frames, use_realtime=use_realtime,
+         stop_after_ready=stop_after_ready, world=world)
+        self.frame_callbacks: List[Callable[[float], None]] = []
+        self.frame_data_generator: FrameDataGenerator = self.get_frame_data_generator()
+    
+    @abstractmethod
+    def get_frame_data_generator(self) -> FrameDataGenerator:
+        """
+        :return: the frame data generator.
+        """
+        pass
+
+    def add_frame_callback(self, callback: Callable):
+        """
+        Add a callback that is called when a frame is processed.
+
+        :param callback: The callback.
+        """
+        with self.frame_callback_lock:
+            self.frame_callbacks.append(callback)
+
+    def _run(self):
+        is_first_frame = True
+        start_time: float = 0.0
+        for frame_data in self.frame_data_generator:
+
+            self._wait_if_paused()
+
+            last_processing_time = time.time()
+            
+            time.sleep(self.time_between_frames.total_seconds())
+
+            current_time = frame_data.time
+            objects_data = frame_data.objects_data
+            if is_first_frame:
+                start_time = current_time
+            dt = current_time - start_time
+            self.process_objects_data(frame_data)
+
+            self.ready = True
+
+            with self.frame_callback_lock:
+                for cb in self.frame_callbacks:
+                    cb(dt)
+
+            if self._status == PlayerStatus.STOPPED:
+                break
+
+            if self.use_realtime:
+                wait_time = timedelta(seconds=dt)
+                self._wait_to_maintain_frame_rate(last_processing_time, wait_time)
+
+            is_first_frame = False
+
+
+    def process_objects_data(self, frame_data: Dict):
+        """
+        Process the objects data, by extracting and setting the poses of objects.
+
+        :param frame_data: The frame data.
+        """
+        objects_poses = self.get_objects_poses(frame_data)
+        if len(objects_poses):
+            self.world.reset_multiple_objects_base_poses(objects_poses)
+
+    @abstractmethod
+    def get_objects_poses(self, frame_data: FrameData) -> Dict[Object, Pose]:
+        """
+        Get the poses of the objects.
+
+        :param frame_data: The frame data.
+        :return: The poses of the objects.
+        """
+        pass
+
+
+class FilePlayer(DataPlayer, ABC):
+    file_path: str
+    models_dir: Optional[str]
+
+    def __init__(self, file_path: str, models_dir: Optional[str] = None, world: Optional[World] = None,
+                 time_between_frames: Optional[timedelta] = None, use_realtime: bool = False,
+                 stop_after_ready: bool = False):
+        """
+        Initializes the FAMEEpisodePlayer with the specified file.
+
+        :param file_path: The file that contains the data frames.
+        :param world: The world that is used to replay the episode.
+        :param time_between_frames: The time between frames.
+        :param use_realtime: Whether to use realtime.
+        """
+        self.file_path = file_path        
+        super().__init__(time_between_frames=time_between_frames, use_realtime=use_realtime, world=world,
+                         stop_after_ready=stop_after_ready)
+
+        self.models_dir = models_dir or os.path.join(os.path.dirname(self.file_path), "models")
+
+        self.copy_model_files_to_world_data_dir()
+
+    def copy_model_files_to_world_data_dir(self):
+        """
+        Copy the model files to the world data directory.
+        """
+        # Copy the entire folder and its contents
+        shutil.copytree(self.models_dir, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
