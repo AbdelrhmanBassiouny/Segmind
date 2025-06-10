@@ -236,11 +236,13 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
     def __init__(self,
                  contact_points: ContactPointsList,
                  of_object: Object,
+                 latest_contact_points: Optional[ContactPointsList] = None,
                  with_object: Optional[Object] = None,
                  timestamp: Optional[float] = None):
 
         EventWithTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
         self.contact_points = contact_points
+        self.latest_contact_points = latest_contact_points
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
@@ -297,14 +299,11 @@ class ContactEvent(AbstractContactEvent):
         return self.contact_points.get_all_bodies()
 
 
+class InterferenceEvent(ContactEvent):
+    ...
+
+
 class LossOfContactEvent(AbstractContactEvent):
-    def __init__(self, contact_points: ContactPointsList,
-                 latest_contact_points: ContactPointsList,
-                 of_object: Object,
-                 with_object: Optional[Object] = None,
-                 timestamp: Optional[float] = None):
-        self.latest_contact_points = latest_contact_points
-        super().__init__(contact_points, of_object, with_object, timestamp)
 
     @property
     def latest_objects_that_got_removed(self):
@@ -328,6 +327,10 @@ class LossOfContactEvent(AbstractContactEvent):
     @property
     def objects(self):
         return self.contact_points.get_objects_that_got_removed(self.latest_contact_points)
+
+
+class LossOfInterferenceEvent(LossOfContactEvent):
+    ...
 
 
 class AbstractAgentContact(AbstractContactEvent, ABC):
@@ -359,6 +362,10 @@ class AgentContactEvent(ContactEvent, AbstractAgentContact):
             return self.contact_points[0].link_b
 
 
+class AgentInterferenceEvent(InterferenceEvent, AgentContactEvent):
+    ...
+
+
 class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
@@ -367,6 +374,10 @@ class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
             return self.with_object_contact_link()
         else:
             return self.latest_contact_points[0].link_b
+
+
+class AgentLossOfInterferenceEvent(LossOfInterferenceEvent, AgentLossOfContactEvent):
+    ...
 
 
 class LossOfSurfaceEvent(LossOfContactEvent):

@@ -8,7 +8,7 @@ from pycram.datastructures.world_entity import abstractmethod, PhysicalBody
 from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import AtomicEventDetector
 from ..datastructures.events import MotionEvent, EventUnion, StopMotionEvent, NewObjectEvent, InsertionEvent, Event, \
-    ContainmentEvent, ContactEvent
+    ContainmentEvent, ContactEvent, InterferenceEvent
 from ..datastructures.object_tracker import ObjectTrackerFactory
 
 EventCondition = Callable[[EventUnion], bool]
@@ -125,10 +125,10 @@ class ContainmentDetector(SpatialRelationDetector):
 class InsertionDetector(SpatialRelationDetector):
 
     @staticmethod
-    def event_condition(event: ContactEvent) -> bool:
+    def event_condition(event: InterferenceEvent) -> bool:
         logdebug(f"Checking bodies {event.link_names} with tracked object {event.tracked_object.name}")
         return any(['hole' in body.name for body in event.links])
-    check_on_events = {ContactEvent: event_condition}
+    check_on_events = {InterferenceEvent: event_condition}
 
     def update_body_state(self, body: PhysicalBody):
         """
@@ -153,8 +153,7 @@ class InsertionDetector(SpatialRelationDetector):
                     continue
                 while True:
                     hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
-                    obj_tracker = ObjectTrackerFactory.get_tracker(event.tracked_object)
-                    if event.tracked_object.get_closest_points_with_body(hole, 0.).get_all_bodies():
+                    if len(event.tracked_object.get_contact_points_with_body(hole)) > 0:
                         logdebug(f"hole {hole.name} not in contact {event.tracked_object.name}")
                         break
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")

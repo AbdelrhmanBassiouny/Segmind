@@ -250,8 +250,21 @@ class EpisodeSegmenter(ABC):
                 logdebug(f"new placing detector for object {starter_event.tracked_object.name}")
             self.create_detector_and_start_it(detector_type, starter_event=starter_event)
 
+    @staticmethod
+    def ask_now(case_dict):
+        detector_type = case_dict['detector_type']
+        starter_event = case_dict['starter_event']
+        self_ = case_dict['self_']
+        output_ = case_dict['output_']
+        if issubclass(detector_type, GeneralPickUpDetector):
+            if isinstance(starter_event, LossOfContactEvent):
+                pick_up_detectors = [detector for (_, _), detector in self_.starter_event_to_detector_thread_map.items()
+                                     if isinstance(detector, GeneralPickUpDetector)]
+                if len(pick_up_detectors) > 0 and not output_:
+                    return True
+        return False
     redundant_detector_rdr = RDRDecorator(f"{dirname(__file__)}/rdrs", (bool,), True,
-                                          fit=False, fitting_decorator=EpisodePlayer.pause_resume)
+                                          fit=True, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     @redundant_detector_rdr.decorator
     def is_detector_redundant(self, detector_type: TypeEventDetectorUnion, starter_event: EventUnion) -> bool:
         """
