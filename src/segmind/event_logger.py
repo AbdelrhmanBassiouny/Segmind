@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     from .detectors.coarse_event_detectors import DetectorWithStarterEvent
 
 
-ConditionFunction = Callable[[Event], bool]
-CallbackFunction = Callable[[Event], None]
+ConditionFunction = Callable[[EventUnion], bool]
+CallbackFunction = Callable[[EventUnion], None]
 
 
 class EventCallbacks(UserDict):

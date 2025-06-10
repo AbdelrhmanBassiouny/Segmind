@@ -472,6 +472,28 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         return Color(1, 0, 1, 1)
 
 
+class ContainmentEvent(AbstractAgentObjectInteractionEvent):
+    def __init__(self, inserted_object: Object,
+                 inserted_into_objects: List[Object],
+                 agent: Optional[Object] = None,
+                 timestamp: Optional[float] = None,
+                 end_timestamp: Optional[float] = None):
+        super().__init__(inserted_object, agent, timestamp, end_timestamp)
+        self.inserted_into_objects: List[Object] = inserted_into_objects
+
+    def hash_tuple(self):
+        hash_tuple = (*super().hash_tuple, *(obj.name for obj in self.inserted_into_objects))
+        return hash_tuple
+
+    def __str__(self):
+        with_object_name = " - " + f" - ".join([obj.name for obj in self.inserted_into_objects])
+        return f"{self.__class__.__name__}: {self.tracked_object.name}{with_object_name} - {self.timestamp}"
+
+    @property
+    def color(self) -> Color:
+        return Color(1, 0, 1, 1)
+
+
 # Create a type that is the union of all event types
 EventUnion = Union[NewObjectEvent,
                    MotionEvent,
