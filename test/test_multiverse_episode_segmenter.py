@@ -5,6 +5,7 @@ from datetime import timedelta
 from pathlib import Path
 from unittest import TestCase
 from os.path import dirname
+import pytest
 
 
 import pycram.ros
@@ -23,7 +24,10 @@ from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Container, Bowl, Cup, Location, PhysicalObject
-from segmind.players.multiverse_player import MultiversePlayer
+try:
+    from segmind.players.multiverse_player import MultiversePlayer
+except ImportError:
+    MultiversePlayer = None
 
 try:
     from pycram.worlds.multiverse2 import Multiverse
@@ -31,6 +35,7 @@ except ImportError:
     Multiverse = None
 
 
+@pytest.mark.skipif(MultiversePlayer is None, reason="MultiversePlayer not available")
 class TestMultiverseEpisodeSegmenter(TestCase):
     world: World
     player: MultiversePlayer
