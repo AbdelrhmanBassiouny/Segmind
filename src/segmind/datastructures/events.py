@@ -399,22 +399,17 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         EventWithTwoTrackedObjects.__init__(self, participating_object, agent, timestamp)
         self.end_timestamp: Optional[float] = end_timestamp
         self.text_id: Optional[int] = None
+        self.agent: Optional[Object] = agent
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
         return self.tracked_objects
 
     @property
-    def agent(self) -> Optional[Object]:
-        return self.with_object
-
-    @agent.setter
-    def agent(self, agent: Object):
-        self.with_object = agent
-
-    @property
     def agent_state(self) -> Optional[ObjectState]:
-        return self.with_object_state
+        if self.agent is None:
+            return None
+        return self.agent.state
 
     def __eq__(self, other):
         if self.end_timestamp is None:
@@ -464,11 +459,14 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
 class InsertionEvent(AbstractAgentObjectInteractionEvent):
     def __init__(self, inserted_object: Object,
                  inserted_into_objects: List[Object],
+                 through_hole: PhysicalBody,
                  agent: Optional[Object] = None,
                  timestamp: Optional[float] = None,
                  end_timestamp: Optional[float] = None):
         super().__init__(inserted_object, agent, timestamp, end_timestamp)
         self.inserted_into_objects: List[Object] = inserted_into_objects
+        self.through_hole: PhysicalBody = through_hole
+        self.with_object: Optional[Object] = through_hole
 
     def hash_tuple(self):
         hash_tuple = (*super().hash_tuple, *(obj.name for obj in self.inserted_into_objects))

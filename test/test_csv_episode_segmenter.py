@@ -54,7 +54,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
                                                simulator_config=simulator_conf)
         else:
             cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
-        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
+        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.INFO)
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world, time_between_frames=datetime.timedelta(milliseconds=4))
         # scene = Object("scene", Location, f"{Path(scene_file_path).stem}.urdf")
