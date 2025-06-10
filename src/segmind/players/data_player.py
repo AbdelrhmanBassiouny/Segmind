@@ -1,27 +1,26 @@
 from __future__ import annotations
 
+from datetime import timedelta
 import os
 import shutil
-import datetime
-import threading
-from threading import RLock
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing_extensions import Callable, Any, Optional, Dict, Generator
-from pycram.ros import logdebug
+from threading import RLock
+
+from typing_extensions import Callable, Optional, Dict, Generator, List
+
+from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import World
+from pycram.world_concepts.world_object import Object
 
 try:
     from pycram.worlds.multiverse import Multiverse
 except ImportError:
     Multiverse = None
 
-
-from ..utils import singleton, PropagatingThread
 from ..datastructures.enums import PlayerStatus
 from ..episode_player import EpisodePlayer
-
 
 
 @dataclass
@@ -42,6 +41,7 @@ class FrameData:
     The frame index.
     """
 
+
 FrameDataGenerator = Generator[FrameData]
 
 
@@ -52,13 +52,13 @@ class DataPlayer(EpisodePlayer, ABC):
 
     frame_callback_lock: RLock = RLock()
 
-    def __init__(self, time_between_frames: Optional[datetime.timedelta] = None, use_realtime: bool = False,
+    def __init__(self, time_between_frames: Optional[timedelta] = None, use_realtime: bool = False,
                  stop_after_ready: bool = False, world: Optional[World] = None):
         super().__init__(time_between_frames=time_between_frames, use_realtime=use_realtime,
-         stop_after_ready=stop_after_ready, world=world)
+                         stop_after_ready=stop_after_ready, world=world)
         self.frame_callbacks: List[Callable[[float], None]] = []
         self.frame_data_generator: FrameDataGenerator = self.get_frame_data_generator()
-    
+
     @abstractmethod
     def get_frame_data_generator(self) -> FrameDataGenerator:
         """
@@ -83,11 +83,10 @@ class DataPlayer(EpisodePlayer, ABC):
             self._wait_if_paused()
 
             last_processing_time = time.time()
-            
+
             time.sleep(self.time_between_frames.total_seconds())
 
             current_time = frame_data.time
-            objects_data = frame_data.objects_data
             if is_first_frame:
                 start_time = current_time
             dt = current_time - start_time
@@ -108,8 +107,7 @@ class DataPlayer(EpisodePlayer, ABC):
 
             is_first_frame = False
 
-
-    def process_objects_data(self, frame_data: Dict):
+    def process_objects_data(self, frame_data: FrameData):
         """
         Process the objects data, by extracting and setting the poses of objects.
 
@@ -145,7 +143,7 @@ class FilePlayer(DataPlayer, ABC):
         :param time_between_frames: The time between frames.
         :param use_realtime: Whether to use realtime.
         """
-        self.file_path = file_path        
+        self.file_path = file_path
         super().__init__(time_between_frames=time_between_frames, use_realtime=use_realtime, world=world,
                          stop_after_ready=stop_after_ready)
 
