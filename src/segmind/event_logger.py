@@ -13,6 +13,7 @@ from owlready2_optimized import defaultdict
 from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable, Tuple
 
 from pycram.datastructures.dataclasses import TextAnnotation
+from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
 from pycram.ros import loginfo, logdebug
 from pycram.world_concepts.world_object import Object, Link
@@ -71,7 +72,7 @@ class EventLogger:
         self.event_callbacks_lock: RLock = RLock()
         self.annotate_events = annotate_events
         self.events_to_annotate = events_to_annotate
-        if annotate_events:
+        if annotate_events and World.current_world.mode == WorldMode.GUI:
             self.annotation_queue = queue.Queue()
             self.annotation_thread = EventAnnotationThread(self)
             self.annotation_thread.start()
@@ -116,7 +117,8 @@ class EventLogger:
 
         :param event: The event to annotate the scene with.
         """
-        if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)):
+        if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)) \
+            and World.current_world.mode == WorldMode.GUI:
             self.annotation_queue.put(event)
 
     @staticmethod
@@ -346,7 +348,7 @@ class EventLogger:
         """
         Wait for all events to be processed and all annotations to be added.
         """
-        if self.annotate_events:
+        if self.annotate_events and World.current_world is not None and World.current_world.mode == WorldMode.GUI:
             self.annotation_thread.stop()
             self.annotation_thread.join()
             self.annotation_queue.join()
@@ -358,9 +360,9 @@ class EventLogger:
 
 class EventAnnotationThread(threading.Thread):
     def __init__(self, logger: EventLogger,
-                 initial_z_offset: float = 2,
+                 initial_z_offset: float = 3,
                  step_z_offset: float = 0.2,
-                 max_annotations: int = 5):
+                 max_annotations: int = 3):
         super().__init__()
         self.logger = logger
         self.initial_z_offset = initial_z_offset
@@ -377,7 +379,7 @@ class EventAnnotationThread(threading.Thread):
             try:
                 event = self.logger.annotation_queue.get(block=False)
             except queue.Empty:
-                time.sleep(0.01)
+                time.sleep(0.1)
                 continue
             self.logger.annotation_queue.task_done()
             if len(self.current_annotations) >= self.max_annotations:

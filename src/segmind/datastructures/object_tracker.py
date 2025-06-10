@@ -29,6 +29,8 @@ class ObjectTracker:
     def add_event(self, event: Event):
         with self._lock:
             self._event_history.append(event)
+        if isinstance(self.obj, Link):
+            ObjectTrackerFactory.get_tracker(self.obj.parent_entity).add_event(event)
 
     def get_event_history(self) -> List[Event]:
         with self._lock:
@@ -156,10 +158,10 @@ class ObjectTrackerFactory:
     @classmethod
     def get_tracker(cls, obj: Object) -> ObjectTracker:
         with cls._lock:
-            if isinstance(obj, Link) and obj.parent_entity in cls._trackers:
-                return cls._trackers[obj.parent_entity]
-            elif isinstance(obj, RootLink) and len(obj.parent_entity.links) == 1:
-                obj = obj.parent_entity
+            # if isinstance(obj, Link) and obj.parent_entity in cls._trackers:
+                # return cls._trackers[obj.parent_entity]
+            # elif isinstance(obj, RootLink) and len(obj.parent_entity.links) == 1:
+                # obj = obj.parent_entity
             if obj not in cls._trackers:
                 cls._trackers[obj] = ObjectTracker(obj)
             return cls._trackers[obj]

@@ -16,7 +16,7 @@ except ImportError:
     Multiverse = None
 
 
-from .utils import singleton, PropagatingThread
+from .utils import PropagatingThread
 from .datastructures.enums import PlayerStatus
 
 

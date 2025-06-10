@@ -24,7 +24,8 @@ from pycram.datastructures.world import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world_entity import PhysicalBody
-from pycram.world_concepts.world_object import Object
+from pycram.world_concepts.world_object import Object, Link
+from pycram.ros import logdebug
 from pycrap.ontologies import PhysicalObject, Agent
 from ripple_down_rules.rdr_decorators import RDRDecorator
 from ..event_logger import EventLogger
@@ -292,7 +293,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         self.latest_contact_points: Optional[ContactPointsList] = ContactPointsList([])
         self.latest_interference_points: Optional[ContactPointsList] = ContactPointsList([])
 
-    def get_events(self, new_objects_contact: List[Object], new_objects_interference: List[Object],
+    def get_events(self, new_objects_contact: List[Object], new_bodies_interference: List[Object],
                    contact_points: ContactPointsList, interference_points: ContactPointsList,
                    event_type: Type[AbstractContactEvent]):
         if event_type is ContactEvent:
@@ -308,23 +309,23 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         else:
             raise NotImplementedError(f"Invalid event type {event_type}")
         events = []
-        for obj in new_objects_interference:
+        for body in new_bodies_interference:
             if issubclass(self.obj_type, Agent):
                 event_type = agent_interference_event_type
             else:
                 event_type = interference_event_type
-            events.append(event_type(interference_points.get_points_of_body(obj),
+            events.append(event_type(interference_points.get_points_of_body(body),
                                         latest_contact_points=self.latest_interference_points,
-                                        of_object=self.tracked_object, with_object=obj))
+                                        of_object=self.tracked_object, with_object=body))
         for obj in new_objects_contact:
-            if obj in new_objects_interference:
+            if obj in new_bodies_interference or (len(obj.links) == 1 and obj.root_link in new_bodies_interference):
                 continue
             else:
                 if issubclass(self.obj_type, Agent):
                     event_type = agent_contact_event_type
                 else:
                     event_type = contact_event_type
-                events.append(event_type(contact_points.get_points_of_body(obj),
+                events.append(event_type(contact_points.get_points_of_object(obj),
                                          latest_contact_points=self.latest_contact_points,
                                          of_object=self.tracked_object, with_object=obj))
         return events
@@ -389,14 +390,14 @@ class ContactDetector(AbstractContactDetector):
         :return: An instance of the ContactEvent/AgentContactEvent class that represents the event if the object got
          into contact, else None.
         """
-        new_bodies_in_contact = contact_points.get_new_bodies(self.latest_contact_points)
+        new_objects_in_contact = contact_points.get_new_objects(self.latest_contact_points)
         new_bodies_in_interference = interference_points.get_new_bodies(self.latest_interference_points)
         if self.with_object is not None:
-            new_bodies_in_contact = [obj for obj in new_bodies_in_contact if obj == self.with_object]
-            new_bodies_in_interference = [obj for obj in new_bodies_in_interference if obj == self.with_object]
-        if len(new_bodies_in_contact) == 0 and len(new_bodies_in_interference) == 0:
+            new_objects_in_contact = [obj for obj in new_objects_in_contact if obj == self.with_object]
+            new_bodies_in_interference = [body for body in new_bodies_in_interference if body.parent_entity == self.with_object]
+        if len(new_objects_in_contact) == 0 and len(new_bodies_in_interference) == 0:
             return []
-        return self.get_events(new_bodies_in_contact, new_bodies_in_interference,
+        return self.get_events(new_objects_in_contact, new_bodies_in_interference,
                                contact_points, interference_points, ContactEvent)
 
 
@@ -415,11 +416,11 @@ class LossOfContactDetector(AbstractContactDetector):
         :return: An instance of the LossOfContactEvent/AgentLossOfContactEvent class that represents the event if the
          object lost contact, else None.
         """
-        bodies_that_lost_contact, bodies_that_lost_interference = self.get_bodies_that_lost_contact(contact_points,
+        objects_that_lost_contact, bodies_that_lost_interference = self.get_bodies_that_lost_contact(contact_points,
                                                                                                     interference_points)
-        if len(bodies_that_lost_contact) == 0 and len(bodies_that_lost_interference) == 0:
+        if len(objects_that_lost_contact) == 0 and len(bodies_that_lost_interference) == 0:
             return []
-        return self.get_events(bodies_that_lost_contact, bodies_that_lost_interference,
+        return self.get_events(objects_that_lost_contact, bodies_that_lost_interference,
                                contact_points, interference_points, LossOfContactEvent)
 
     def get_bodies_that_lost_contact(self, contact_points: ContactPointsList, interference_points: ContactPointsList)\
@@ -431,14 +432,14 @@ class LossOfContactDetector(AbstractContactDetector):
         :param interference_points: The current interference points.
         :return: A list of Object instances that represent the objects that lost contact with the object to track.
         """
-        bodies_that_lost_contact = contact_points.get_bodies_that_got_removed(self.latest_contact_points)
+        objects_that_lost_contact = contact_points.get_objects_that_got_removed(self.latest_contact_points)
         bodies_that_lost_interference = interference_points.get_bodies_that_got_removed(self.latest_interference_points)
         if self.with_object is not None:
-            bodies_that_lost_contact = [body for body in bodies_that_lost_contact
-                                        if body.parent_entity == self.with_object]
+            objects_that_lost_contact = [obj for obj in objects_that_lost_contact
+                                        if obj == self.with_object]
             bodies_that_lost_interference = [body for body in bodies_that_lost_interference
                                              if body.parent_entity == self.with_object]
-        return bodies_that_lost_contact, bodies_that_lost_interference
+        return objects_that_lost_contact, bodies_that_lost_interference
 
 
 class LossOfSurfaceDetector(LossOfContactDetector):

@@ -150,11 +150,8 @@ class InsertionDetector(SpatialRelationDetector):
                     logdebug(f"tracked object {event.tracked_object.name} is already checked")
                     continue
                 while True:
-                    # time.sleep(self.wait_time.total_seconds())
+                    time.sleep(self.wait_time.total_seconds())
                     hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
-                    # if len(event.tracked_object.get_contact_points_with_body(hole)) > 0:
-                    #     logdebug(f"hole {hole.name} not in contact {event.tracked_object.name}")
-                    #     break
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
                     self.update_body_state(event.tracked_object)
                     if hole not in event.tracked_object.contained_in_bodies:
@@ -168,7 +165,7 @@ class InsertionDetector(SpatialRelationDetector):
                                                          agent=agent, timestamp=event.timestamp,
                                                          end_timestamp=end_timestamp))
                     break
-                # time.sleep(self.wait_time.total_seconds())
+                time.sleep(self.wait_time.total_seconds())
         except Empty:
             pass
 

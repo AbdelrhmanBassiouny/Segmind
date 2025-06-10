@@ -22,14 +22,11 @@ from pycram.ros import logdebug
 
 class PropagatingThread(threading.Thread, ABC):
     kill_event = threading.Event()
+    exc: Optional[Exception] = None
 
     def run(self):
         self.exc = None
-        try:
-            self._run()
-        except Exception as e:
-            self.exc = e
-            self.stop()
+        self._run()
 
     @abstractmethod
     def _run(self):
@@ -51,17 +48,6 @@ class PropagatingThread(threading.Thread, ABC):
     @abstractmethod
     def _join(self, timeout=None):
         pass
-
-
-def singleton(cls):
-    instances = {}
-    
-    def get_instance(*args, **kwargs):
-        if cls not in instances:
-            instances[cls] = cls(*args, **kwargs)
-        return instances[cls]
-    
-    return get_instance
 
 
 def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
