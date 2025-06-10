@@ -264,7 +264,7 @@ class EpisodeSegmenter(ABC):
                     return True
         return False
     redundant_detector_rdr = RDRDecorator(f"{dirname(__file__)}/rdrs", (bool,), True,
-                                          fit=True, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
+                                          fit=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     @redundant_detector_rdr.decorator
     def is_detector_redundant(self, detector_type: TypeEventDetectorUnion, starter_event: EventUnion) -> bool:
         """

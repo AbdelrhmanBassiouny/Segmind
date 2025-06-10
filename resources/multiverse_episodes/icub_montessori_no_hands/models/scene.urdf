@@ -288,7 +288,7 @@
     <collision name="square_hole_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.03 0.03 0.03"/>
+        <box size="0.036 0.036 0.036"/>
       </geometry>
       <material name="MontessoriDrawer2_material">
         <color rgba="0.99 0.0 0.0 1.0"/>
@@ -309,7 +309,7 @@
     <collision name="circular_hole_1_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder radius="0.015" length="0.01"/>
+        <cylinder radius="0.019" length="0.025"/>
       </geometry>
       <material name="MontessoriDrawer2_material">
         <color rgba="0.99 0.0 0.0 1.0"/>
@@ -330,7 +330,7 @@
     <collision name="MontessoriObject2">
       <origin xyz="-0.005819993559271097 1.2720914664890083e-19 3.725290298461914e-09" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="file://montessori_object_1/meshes/stl/montessori_object_2_MontessoriObject_002.stl" scale="1.0 1.0 1.0"/>
+        <mesh filename="file://montessori_object_1/meshes/stl/montessori_object_2_MontessoriObject_002.stl" scale="1.2 1.2 1.2"/>
       </geometry>
     </collision>
   </link>
@@ -348,7 +348,7 @@
     <collision name="rectangular_hole_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.019999999552965164 0.03999999910593033 0.029999999329447746"/>
+        <box size="0.023 0.043 0.033"/>
       </geometry>
     </collision>
   </link>
@@ -366,7 +366,7 @@
     <collision name="circular_hole_2_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder radius="0.02" length="0.01"/>
+        <cylinder radius="0.024" length="0.025"/>
       </geometry>
       <material name="MontessoriDrawer2_material">
         <color rgba="0.99 0.0 0.0 1.0"/>

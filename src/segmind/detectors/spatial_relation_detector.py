@@ -144,18 +144,17 @@ class InsertionDetector(SpatialRelationDetector):
         try:
             checked_bodies: List[PhysicalBody] = []
             while True:
-                if self.exc is not None:
-                    break
                 event = self.event_queue.get_nowait()
                 self.event_queue.task_done()
                 if event.tracked_object in checked_bodies:
                     logdebug(f"tracked object {event.tracked_object.name} is already checked")
                     continue
                 while True:
+                    # time.sleep(self.wait_time.total_seconds())
                     hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
-                    if len(event.tracked_object.get_contact_points_with_body(hole)) > 0:
-                        logdebug(f"hole {hole.name} not in contact {event.tracked_object.name}")
-                        break
+                    # if len(event.tracked_object.get_contact_points_with_body(hole)) > 0:
+                    #     logdebug(f"hole {hole.name} not in contact {event.tracked_object.name}")
+                    #     break
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
                     self.update_body_state(event.tracked_object)
                     if hole not in event.tracked_object.contained_in_bodies:
@@ -168,8 +167,8 @@ class InsertionDetector(SpatialRelationDetector):
                     self.logger.log_event(InsertionEvent(event.tracked_object, [hole],
                                                          agent=agent, timestamp=event.timestamp,
                                                          end_timestamp=end_timestamp))
-                    time.sleep(self.wait_time.total_seconds())
-                time.sleep(self.wait_time.total_seconds())
+                    break
+                # time.sleep(self.wait_time.total_seconds())
         except Empty:
             pass
 

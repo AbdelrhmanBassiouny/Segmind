@@ -61,7 +61,7 @@ class AtomicEventDetector(PropagatingThread):
         self.fit_mode = fit_mode
         self.logger: EventLogger = logger if logger else EventLogger.current_logger
         self.world: World = world if world else World.current_world
-        self.wait_time = wait_time if wait_time is not None else timedelta(seconds=0.1)
+        self.wait_time = wait_time if wait_time is not None else timedelta(seconds=0.05)
 
         self.queues: List[Queue] = []
 
@@ -308,15 +308,17 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         else:
             raise NotImplementedError(f"Invalid event type {event_type}")
         events = []
+        for obj in new_objects_interference:
+            if issubclass(self.obj_type, Agent):
+                event_type = agent_interference_event_type
+            else:
+                event_type = interference_event_type
+            events.append(event_type(interference_points.get_points_of_body(obj),
+                                        latest_contact_points=self.latest_interference_points,
+                                        of_object=self.tracked_object, with_object=obj))
         for obj in new_objects_contact:
             if obj in new_objects_interference:
-                if issubclass(self.obj_type, Agent):
-                    event_type = agent_interference_event_type
-                else:
-                    event_type = interference_event_type
-                events.append(event_type(interference_points.get_points_of_body(obj),
-                                         latest_contact_points=self.latest_interference_points,
-                                         of_object=self.tracked_object, with_object=obj))
+                continue
             else:
                 if issubclass(self.obj_type, Agent):
                     event_type = agent_contact_event_type
@@ -387,13 +389,14 @@ class ContactDetector(AbstractContactDetector):
         :return: An instance of the ContactEvent/AgentContactEvent class that represents the event if the object got
          into contact, else None.
         """
-        new_objects_in_contact = contact_points.get_new_objects(self.latest_contact_points)
-        new_objects_in_interference = interference_points.get_new_objects(self.latest_interference_points)
+        new_bodies_in_contact = contact_points.get_new_bodies(self.latest_contact_points)
+        new_bodies_in_interference = interference_points.get_new_bodies(self.latest_interference_points)
         if self.with_object is not None:
-            new_objects_in_contact = [obj for obj in new_objects_in_contact if obj == self.with_object]
-        if len(new_objects_in_contact) == 0:
+            new_bodies_in_contact = [obj for obj in new_bodies_in_contact if obj == self.with_object]
+            new_bodies_in_interference = [obj for obj in new_bodies_in_interference if obj == self.with_object]
+        if len(new_bodies_in_contact) == 0 and len(new_bodies_in_interference) == 0:
             return []
-        return self.get_events(new_objects_in_contact, new_objects_in_interference,
+        return self.get_events(new_bodies_in_contact, new_bodies_in_interference,
                                contact_points, interference_points, ContactEvent)
 
 
@@ -414,7 +417,7 @@ class LossOfContactDetector(AbstractContactDetector):
         """
         bodies_that_lost_contact, bodies_that_lost_interference = self.get_bodies_that_lost_contact(contact_points,
                                                                                                     interference_points)
-        if len(bodies_that_lost_contact) == 0:
+        if len(bodies_that_lost_contact) == 0 and len(bodies_that_lost_interference) == 0:
             return []
         return self.get_events(bodies_that_lost_contact, bodies_that_lost_interference,
                                contact_points, interference_points, LossOfContactEvent)
