@@ -1,9 +1,10 @@
+from segmind.datastructures.events import AbstractContactEvent, AgentContactEvent, Event, InsertionEvent, LossOfContactEvent, PickUpEvent, PlacingEvent
 from typing_extensions import Dict, Optional, Type, Union
-from ...coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
-from ....datastructures.events import AbstractContactEvent, AgentContactEvent, Event, LossOfContactEvent
-from types import NoneType
-from ....utils import get_support
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
 from datetime import timedelta
+from segmind.utils import get_support
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
+from types import NoneType
 
 
 def conditions_79409294830217498801042528243955850723(case) -> bool:
@@ -29,8 +30,11 @@ def conditions_175987223108804549769623056194939396888(case) -> bool:
         transportable_objects = select_transportable_objects(all_objects)
         if len(transportable_objects) == 0:
             return False
-        return all(obj in cls_.currently_tracked_objects and abs(cls_.currently_tracked_objects[obj].starter_event.timestamp - event.timestamp) < timedelta(milliseconds=500).total_seconds()\
-                   for obj in transportable_objects)
+        obj_in_currently_tracked_objects = all(obj in cls_.currently_tracked_objects
+                                               and abs(cls_.currently_tracked_objects[obj].starter_event.timestamp
+                                                       - event.timestamp) < timedelta(milliseconds=500).total_seconds()
+                                               for obj in transportable_objects)
+        return obj_in_currently_tracked_objects
     return conditions_for_general_pick_up_detector_start_condition_checker(**case)
 
 

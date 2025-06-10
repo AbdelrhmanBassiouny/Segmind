@@ -256,13 +256,8 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     The path to the directory where the Ripple Down Rules models are stored.
     """
-    def ask_now(case_dict) -> bool:
-        self_ = case_dict["self_"]
-        if self_.object_tracker.get_latest_event_of_type(PickUpEvent) is not None:
-            return True
-        return False
     interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind",
-     fit=False, update_existing_rules=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
+     fit=False, update_existing_rules=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
@@ -271,6 +266,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
+
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
      fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
     """
@@ -438,7 +434,7 @@ def check_for_supporting_surface(tracked_object: Object,
             smallest_angle = angle
             supporting_surface = obj
     if supporting_surface is not None:
-        print("found surface ", supporting_surface.name)
+        logdebug(f"found surface {supporting_surface.name}")
     return supporting_surface
 
 

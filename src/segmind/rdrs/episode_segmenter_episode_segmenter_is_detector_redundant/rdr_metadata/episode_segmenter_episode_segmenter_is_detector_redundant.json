@@ -1,0 +1,127 @@
+{
+    "_type": "ripple_down_rules.rdr.GeneralRDR",
+    "start_rules": {
+        "output_": {
+            "_type": "ripple_down_rules.rdr.SingleClassRDR",
+            "start_rule": {
+                "_type": "ripple_down_rules.rules.SingleClassRule",
+                "conditions": {
+                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                    "user_input": "def _get_value(case):\n    def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[MotionPickUpDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        return issubclass(detector_type, AbstractInteractionDetector)\n    return conditions_for_episode_segmenter_is_detector_redundant(**case)\n    ",
+                    "conclusion_type": [
+                        "builtins.bool"
+                    ],
+                    "scope": {
+                        "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "AgentLossOfContactEvent": "segmind.datastructures.events.AgentLossOfContactEvent",
+                        "ContactEvent": "segmind.datastructures.events.ContactEvent",
+                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                        "LossOfSurfaceEvent": "segmind.datastructures.events.LossOfSurfaceEvent",
+                        "MotionEvent": "segmind.datastructures.events.MotionEvent",
+                        "NewObjectEvent": "segmind.datastructures.events.NewObjectEvent",
+                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                        "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
+                        "StopMotionEvent": "segmind.datastructures.events.StopMotionEvent",
+                        "ContactDetector": "segmind.detectors.atomic_event_detectors.ContactDetector",
+                        "LossOfContactDetector": "segmind.detectors.atomic_event_detectors.LossOfContactDetector",
+                        "LossOfSurfaceDetector": "segmind.detectors.atomic_event_detectors.LossOfSurfaceDetector",
+                        "MotionDetector": "segmind.detectors.atomic_event_detectors.MotionDetector",
+                        "NewObjectDetector": "segmind.detectors.atomic_event_detectors.NewObjectDetector",
+                        "RotationDetector": "segmind.detectors.atomic_event_detectors.RotationDetector",
+                        "TranslationDetector": "segmind.detectors.atomic_event_detectors.TranslationDetector",
+                        "AbstractInteractionDetector": "segmind.detectors.coarse_event_detectors.AbstractInteractionDetector",
+                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "MotionPickUpDetector": "segmind.detectors.coarse_event_detectors.MotionPickUpDetector",
+                        "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
+                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                        "Dict": "typing.Dict",
+                        "Optional": "typing.Optional",
+                        "Type": "typing.Type",
+                        "Union": "typing.Union",
+                        "Case": "ripple_down_rules.datastructures.case.Case",
+                        "NoAgentEpisodeSegmenter": "segmind.episode_segmenter.NoAgentEpisodeSegmenter",
+                        "timedelta": "datetime.timedelta",
+                        "NoneType": "builtins.NoneType"
+                    },
+                    "conclusion": {
+                        "_type": "builtins.NoneType",
+                        "value": null
+                    },
+                    "mutually_exclusive": true
+                },
+                "conclusion": {
+                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                    "user_input": "def _get_value(case):\n    def episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[MotionPickUpDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get possible value(s) for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        similar_detectors = [(se, de, de_inst) for (se, de), de_inst in self_.starter_event_to_detector_thread_map.items()\n        if isinstance(se, starter_event.__class__) and issubclass(de, detector_type)]\n    \n        for prev_start_event, _, prev_detector in similar_detectors:\n            candidate_objects = starter_event.tracked_objects\n            if isinstance(starter_event, AbstractContactEvent):\n                candidate_objects.extend(starter_event.objects)\n            pickable_objects = select_transportable_objects(candidate_objects)\n            new_pickable_objects = [obj for obj in pickable_objects if obj in prev_detector.currently_tracked_objects]\n            if len(new_pickable_objects) > 0:\n                return False\n            common_pickable_objects = [obj for obj in pickable_objects if obj not in new_pickable_objects]\n            for obj in common_pickable_objects:\n                if starter_event.timestamp - prev_start_event.timestamp < timedelta(milliseconds=200).total_seconds():\n                    return True\n        return False\n    return episode_segmenter_is_detector_redundant(**case)\n    ",
+                    "conclusion_type": [
+                        "builtins.bool"
+                    ],
+                    "scope": {
+                        "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                        "AgentLossOfContactEvent": "segmind.datastructures.events.AgentLossOfContactEvent",
+                        "ContactEvent": "segmind.datastructures.events.ContactEvent",
+                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                        "LossOfSurfaceEvent": "segmind.datastructures.events.LossOfSurfaceEvent",
+                        "MotionEvent": "segmind.datastructures.events.MotionEvent",
+                        "NewObjectEvent": "segmind.datastructures.events.NewObjectEvent",
+                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                        "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
+                        "StopMotionEvent": "segmind.datastructures.events.StopMotionEvent",
+                        "ContactDetector": "segmind.detectors.atomic_event_detectors.ContactDetector",
+                        "LossOfContactDetector": "segmind.detectors.atomic_event_detectors.LossOfContactDetector",
+                        "LossOfSurfaceDetector": "segmind.detectors.atomic_event_detectors.LossOfSurfaceDetector",
+                        "MotionDetector": "segmind.detectors.atomic_event_detectors.MotionDetector",
+                        "NewObjectDetector": "segmind.detectors.atomic_event_detectors.NewObjectDetector",
+                        "RotationDetector": "segmind.detectors.atomic_event_detectors.RotationDetector",
+                        "TranslationDetector": "segmind.detectors.atomic_event_detectors.TranslationDetector",
+                        "AbstractInteractionDetector": "segmind.detectors.coarse_event_detectors.AbstractInteractionDetector",
+                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "MotionPickUpDetector": "segmind.detectors.coarse_event_detectors.MotionPickUpDetector",
+                        "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
+                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                        "Dict": "typing.Dict",
+                        "Optional": "typing.Optional",
+                        "Type": "typing.Type",
+                        "Union": "typing.Union",
+                        "Case": "ripple_down_rules.datastructures.case.Case",
+                        "NoAgentEpisodeSegmenter": "segmind.episode_segmenter.NoAgentEpisodeSegmenter",
+                        "timedelta": "datetime.timedelta",
+                        "NoneType": "builtins.NoneType"
+                    },
+                    "conclusion": {
+                        "_type": "builtins.NoneType",
+                        "value": null
+                    },
+                    "mutually_exclusive": true
+                },
+                "parent": null,
+                "corner_case": {
+                    "_type": "ripple_down_rules.datastructures.case.Case",
+                    "self_": null,
+                    "detector_type": {
+                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                    },
+                    "starter_event": null,
+                    "output_": false,
+                    "_id": 140146060501056,
+                    "_obj_type": "builtins.dict",
+                    "_name": "EpisodeSegmenter_is_detector_redundant"
+                },
+                "conclusion_name": "output_",
+                "weight": null,
+                "uid": "318535409151373315477142163500790537263",
+                "refinement": null,
+                "alternative": null
+            },
+            "generated_python_file_name": "episode_segmenter_is_detector_redundant_output__scrdr",
+            "name": "output_",
+            "case_type": "typing.Dict",
+            "case_name": "EpisodeSegmenter_is_detector_redundant"
+        }
+    },
+    "generated_python_file_name": "episode_segmenter_is_detector_redundant_rdr",
+    "name": "output_",
+    "case_type": "typing.Dict",
+    "case_name": "EpisodeSegmenter_is_detector_redundant"
+}

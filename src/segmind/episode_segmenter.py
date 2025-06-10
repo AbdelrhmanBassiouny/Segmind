@@ -1,4 +1,5 @@
 import datetime
+from os.path import dirname
 
 from typing_extensions import List, Optional, Dict
 
@@ -249,6 +250,9 @@ class EpisodeSegmenter(ABC):
                 logdebug(f"new placing detector for object {starter_event.tracked_object.name}")
             self.create_detector_and_start_it(detector_type, starter_event=starter_event)
 
+    redundant_detector_rdr = RDRDecorator(f"{dirname(__file__)}/rdrs", (bool,), True,
+                                          fit=False, fitting_decorator=EpisodePlayer.pause_resume)
+    @redundant_detector_rdr.decorator
     def is_detector_redundant(self, detector_type: TypeEventDetectorUnion, starter_event: EventUnion) -> bool:
         """
         Check if the detector is redundant.
@@ -281,6 +285,7 @@ class EpisodeSegmenter(ABC):
         detector_kwargs['episode_player'] = self.episode_player
         detector_kwargs['logger'] = self.logger
         detector = detector_type(**detector_kwargs)
+        self.starter_event_to_detector_thread_map[(starter_event, detector_type)] = detector
         self.start_and_add_detector(detector)
 
     def start_and_add_detector(self, detector: EventDetectorUnion) -> None:
