@@ -114,8 +114,11 @@ class DataPlayer(EpisodePlayer, ABC):
         :param frame_data: The frame data.
         """
         objects_poses = self.get_objects_poses(frame_data)
+        joint_states = self.get_joint_states(frame_data)
         if len(objects_poses):
             self.world.reset_multiple_objects_base_poses(objects_poses)
+        if len(joint_states):
+            self.world.robot.set_multiple_joint_positions(joint_states)
 
     @abstractmethod
     def get_objects_poses(self, frame_data: FrameData) -> Dict[Object, Pose]:
@@ -125,6 +128,9 @@ class DataPlayer(EpisodePlayer, ABC):
         :param frame_data: The frame data.
         :return: The poses of the objects.
         """
+        pass
+
+    def get_joint_states(self):
         pass
 
 

@@ -10,7 +10,7 @@ import pytest
 
 import pycram.ros
 from pycram.config.multiverse_conf import SimulatorConfig, MultiverseConfig
-from pycram.datastructures.pose import PoseStamped
+from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from pycram.robot_description import RobotDescriptionManager
@@ -23,7 +23,8 @@ from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.worlds.bullet_world import BulletWorld
-from pycrap.ontologies import Container, Bowl, Cup, Location, PhysicalObject
+from pycrap.ontologies import Container, Bowl, Cup, Location, PhysicalObject, Robot
+
 try:
     from segmind.players.multiverse_player import MultiversePlayer
 except ImportError:
@@ -54,8 +55,8 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         episode_name = "icub_montessori_no_hands"
         cls.spawn_objects(f"{dirname(__file__)}/../resources/multiverse_episodes/{episode_name}/models")
 
-        cls.player = MultiversePlayer(simulation_name="replay",
-                                      world=cls.world, time_between_frames=datetime.timedelta(milliseconds=4))
+        cls.player = MultiversePlayer(world=cls.world,
+                                      time_between_frames=datetime.timedelta(milliseconds=4))
 
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.player, annotate_events=True,
                                                         plot_timeline=True,
@@ -72,7 +73,6 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             obj_name = Path(file).stem
             pose = PoseStamped()
             if obj_name == "iCub":
-                continue
                 obj_name = "iCub3"
                 file = "iCub3.urdf"
                 obj_type = Robot
