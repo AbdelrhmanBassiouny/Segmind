@@ -42,7 +42,7 @@ class FrameData:
     """
 
 
-FrameDataGenerator = Generator[FrameData]
+FrameDataGenerator = Generator[FrameData, None, None]
 
 
 class DataPlayer(EpisodePlayer, ABC):
@@ -130,7 +130,7 @@ class DataPlayer(EpisodePlayer, ABC):
         """
         pass
 
-    def get_joint_states(self):
+    def get_joint_states(self, frame_data: FrameData) -> Dict[str, float]:
         pass
 
 

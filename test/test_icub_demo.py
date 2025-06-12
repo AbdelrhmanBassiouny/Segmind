@@ -1,20 +1,28 @@
 import datetime
 import os
 import shutil
+import threading
 import time
 from os.path import dirname
 from pathlib import Path
 
 import pytest
+from typing_extensions import Tuple
+
+from segmind.datastructures.events import AbstractAgentObjectInteractionEvent
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
+from segmind.detectors.spatial_relation_detector import InsertionDetector
+from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.multiverse_player import MultiversePlayer
 
 import pycram
 from pycram.datastructures.enums import WorldMode, Arms, Grasp
 from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.pose import PoseStamped, Pose, Vector3
+from pycram.datastructures.pose import PoseStamped, Pose, Vector3, Quaternion
 from pycram.datastructures.world import World
 from pycram.designator import ObjectDesignatorDescription
-from pycram.designators.action_designator import PickUpActionDescription, ParkArmsActionDescription
+from pycram.designators.action_designator import PickUpActionDescription, ParkArmsActionDescription, PlaceAction, \
+    PlaceActionDescription
 from pycram.external_interfaces import giskard
 from pycram.failures import ObjectNotGraspedError
 from pycram.language import SequentialPlan
@@ -27,13 +35,13 @@ from pycrap.ontologies import Location, PhysicalObject, Robot
 
 
 @pytest.fixture(scope="module")
-def set_up_demo(episode_name: str = "icub_montessori_no_hands"):
+def set_up_demo_fixture(episode_name: str = "icub_montessori_no_hands"):
     rdm = RobotDescriptionManager()
     rdm.load_description("iCub3")
 
     world: BulletWorld = BulletWorld(WorldMode.GUI)
     # viz_marker_publisher = VizMarkerPublisher()
-    pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
+    pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
 
     multiverse_episodes_dir = f"{dirname(__file__)}/../resources/multiverse_episodes"
     episode_dir = os.path.join(multiverse_episodes_dir, episode_name)
@@ -45,12 +53,18 @@ def set_up_demo(episode_name: str = "icub_montessori_no_hands"):
     multiverse_player = MultiversePlayer(world=world,
                                          time_between_frames=datetime.timedelta(milliseconds=4),
                                          stop_after_ready=False)
-    multiverse_player.start()
+    # multiverse_player.start()
+    episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
+                                                    plot_timeline=True,
+                                                    plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
+                                                    detectors_to_start=[GeneralPickUpDetector],
+                                                    initial_detectors=[InsertionDetector])
+    # episode_segmenter.start()
 
-    while not multiverse_player.ready:
-        time.sleep(0.1)
+    # while not multiverse_player.ready:
+    #     time.sleep(0.1)
 
-    yield world
+    yield episode_segmenter
     # viz_marker_publisher._stop_publishing()
 
 
@@ -62,7 +76,7 @@ def spawn_objects(models_dir):
         obj_name = Path(file).stem
         pose = PoseStamped()
         if obj_name == "iCub":
-            file = "iCub3.urdf"
+            file = "iCub.urdf"
             obj_type = Robot
             pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
         elif obj_name == "scene":
@@ -80,32 +94,53 @@ def copy_model_files_to_world_data_dir(models_dir):
     shutil.copytree(models_dir, World.current_world.conf.cache_dir + "/objects", dirs_exist_ok=True)
 
 
-def test_icub_pick_up(set_up_demo):
-    object_description = ObjectDesignatorDescription(names=["montessori_object_2"])
-    grasp_idx = 0
-    grasps = [GraspDescription(Grasp.FRONT),
-              # GraspDescription(Grasp.LEFT, Grasp.TOP),
-              # GraspDescription(Grasp.RIGHT, Grasp.TOP),
-              # GraspDescription(Grasp.FRONT, Grasp.TOP),
-              # GraspDescription(Grasp.BACK, Grasp.BOTTOM),
-              # GraspDescription(Grasp.LEFT, Grasp.BOTTOM),
-              # GraspDescription(Grasp.RIGHT, Grasp.BOTTOM),
-              # GraspDescription(Grasp.FRONT, Grasp.BOTTOM)
-              ]
-    giskard.achieve_translation_goal([0.2, 0.25, 1.3], "l_gripper_tool_frame", "root_link")
-    # while grasp_idx < len(grasps):
-    #     grasp = grasps[grasp_idx]
-    #     try:
-    #         with real_robot:
-    #         # with simulated_robot:
-    #             plan = SequentialPlan(#ParkArmsActionDescription(Arms.BOTH),
-    #                                   PickUpActionDescription(object_description, [Arms.LEFT],
-    #                                                           [grasp]))
-    #             plan.perform()
-    #         print(grasp)
-    #         break
-    #     except ObjectNotGraspedError as e:
-    #         print(e)
-    #         grasp_idx += 1
+def test_icub_demo(set_up_demo_fixture):
+    episode_segmenter = set_up_demo_fixture
+    # Create a thread
+    thread = threading.Thread(target=episode_segmenter.start)
+    # Start the thread
+    thread.start()
 
-    plan.plot()
+    input("Press Enter to continue...")
+
+    all_events = episode_segmenter.logger.get_events()
+    actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]
+    for actionable_event in actionable_events:
+        print(next(actionable_event.action_description.__iter__()))
+
+    thread.join()
+
+
+def test_icub_pick_up_and_insert(set_up_demo_fixture):
+    obj_name = "montessori_object_3"
+    obj = World.current_world.get_object_by_root_link_name(obj_name)
+    arm, grasp = get_arm_and_grasp_description_for_object(obj)
+
+    scene_obj = World.current_world.get_object_by_name("scene")
+    square_hole_pose = scene_obj.get_link_pose("square_hole")
+    object_description = ObjectDesignatorDescription(names=["montessori_object_3"])
+    square_hole_pose.orientation = obj.orientation
+    with real_robot:
+        plan = SequentialPlan(ParkArmsActionDescription(Arms.BOTH),
+                              PickUpActionDescription(object_description,arm=arm,
+                                                      grasp_description=grasp),
+                              PlaceActionDescription(object_description, square_hole_pose, arm, insert=True)
+                              )
+        plan.perform()
+
+    # plan.plot()
+
+
+def get_arm_and_grasp_description_for_object(obj: Object) -> Tuple[Arms, GraspDescription]:
+    obj_pose = obj.pose
+    left_arm_pose = World.current_world.robot.get_link_pose("l_gripper_tool_frame")
+    right_arm_pose = World.current_world.robot.get_link_pose("r_gripper_tool_frame")
+    obj_distance_from_left_arm = left_arm_pose.position.euclidean_distance(obj_pose.position)
+    obj_distance_from_right_arm = right_arm_pose.position.euclidean_distance(obj_pose.position)
+    if obj_distance_from_left_arm < obj_distance_from_right_arm:
+        arm = Arms.LEFT
+        grasp = GraspDescription(Grasp.LEFT, Grasp.TOP)
+    else:
+        arm = Arms.RIGHT
+        grasp = GraspDescription(Grasp.RIGHT, Grasp.TOP)
+    return arm, grasp

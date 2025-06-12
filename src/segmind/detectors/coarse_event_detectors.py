@@ -82,7 +82,7 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
     A type of event detector that requires an event to occur as a start condition and has one tracked object.
     """
 
-    currently_tracked_objects: Optional[Dict[str, Object]] = None
+    currently_tracked_objects: Optional[Dict[Object, DetectorWithTrackedObjectAndStarterEvent]] = None
     """
     All the objects that are currently tracked by a detector with a starter event.
     """
@@ -193,7 +193,7 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
             if not interaction_event:
                 time.sleep(0.01)
                 continue
-
+            interaction_event.update_action_description()
             self.currently_tracked_objects.pop(self.tracked_object, None)
             event = interaction_event
             break
@@ -266,9 +266,13 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
-
+    @staticmethod
+    def ask_now(case_dict):
+        cls_ = case_dict["cls_"]
+        event = case_dict["event"]
+        return isinstance(event, LossOfContactEvent) and "object_4" in event.tracked_object.name
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """

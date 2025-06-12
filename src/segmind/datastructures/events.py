@@ -3,12 +3,15 @@ from abc import abstractmethod, ABC
 
 from typing_extensions import Optional, List, Union
 
+from pycram.datastructures.partial_designator import PartialDesignator
+from pycram.designator import ActionDescription, ObjectDesignatorDescription
+from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription
 from pycram.ros import logwarn
 from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState
 from pycram.datastructures.dataclasses import Color
-from pycram.datastructures.pose import Pose
+from pycram.datastructures.pose import Pose, PoseStamped
 from pycram.datastructures.world import World
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object, Link
@@ -392,6 +395,8 @@ class LossOfSurfaceEvent(LossOfContactEvent):
 
 class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
 
+    _action_description: Optional[PartialDesignator[ActionDescription]] = None
+
     def __init__(self, participating_object: Object,
                  agent: Optional[Object] = None,
                  timestamp: Optional[float] = None,
@@ -441,22 +446,48 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
             self.agent.set_color(color)
         self.tracked_object.set_color(color)
 
+    @property
+    def action_description(self) -> PartialDesignator[ActionDescription]:
+        return self._action_description
+
+    def update_action_description(self) -> None:
+        self._action_description = self.instantiate_action_description()
+
+    @abstractmethod
+    def instantiate_action_description(self) -> PartialDesignator[ActionDescription]:
+        pass
+
 
 class PickUpEvent(AbstractAgentObjectInteractionEvent):
+
+    _action_description: Optional[PickUpActionDescription] = None
 
     @property
     def color(self) -> Color:
         return Color(0, 1, 0, 1)
 
+    def instantiate_action_description(self) -> PickUpActionDescription:
+        return PickUpActionDescription(self.tracked_object)
+
 
 class PlacingEvent(AbstractAgentObjectInteractionEvent):
+
+    _action_description: Optional[PlaceActionDescription] = None
 
     @property
     def color(self) -> Color:
         return Color(1, 0, 1, 1)
 
+    def instantiate_action_description(self, pose: Optional[PoseStamped] = None) -> PlaceActionDescription:
+        if pose is None:
+            pose = self.tracked_object.pose
+        return PlaceActionDescription(self.tracked_object, pose)
+
 
 class InsertionEvent(AbstractAgentObjectInteractionEvent):
+
+    _action_description: Optional[PlaceActionDescription] = None
+
     def __init__(self, inserted_object: Object,
                  inserted_into_objects: List[Object],
                  through_hole: PhysicalBody,
@@ -467,6 +498,9 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         self.inserted_into_objects: List[Object] = inserted_into_objects
         self.through_hole: PhysicalBody = through_hole
         self.with_object: Optional[Object] = through_hole
+
+    def instantiate_action_description(self) -> PlaceActionDescription:
+        return PlaceActionDescription(self.tracked_object, self.through_hole.pose)
 
     def hash_tuple(self):
         hash_tuple = (*super().hash_tuple, *(obj.name for obj in self.inserted_into_objects))
@@ -481,18 +515,28 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         return Color(1, 0, 1, 1)
 
 
-class ContainmentEvent(AbstractAgentObjectInteractionEvent):
+class ContainmentEvent(EventWithOneTrackedObject):
+
     def __init__(self, inserted_object: Object,
-                 inserted_into_objects: List[Object],
-                 agent: Optional[Object] = None,
-                 timestamp: Optional[float] = None,
-                 end_timestamp: Optional[float] = None):
-        super().__init__(inserted_object, agent, timestamp, end_timestamp)
-        self.inserted_into_objects: List[Object] = inserted_into_objects
+                 contained_in_bodies: List[PhysicalBody],
+                 timestamp: Optional[float] = None):
+        super().__init__(inserted_object, timestamp)
+        self.contained_in_bodies: List[PhysicalBody] = contained_in_bodies
+
+    @property
+    def involved_bodies(self) -> List[PhysicalBody]:
+        return self.tracked_objects + self.contained_in_bodies
+
+    def set_color(self, color: Optional[Color] = None):
+        pass
 
     def hash_tuple(self):
-        hash_tuple = (*super().hash_tuple, *(obj.name for obj in self.inserted_into_objects))
+        hash_tuple = (self.__class__.__name__,
+                      self.tracked_object.name, *(obj.name for obj in self.contained_in_bodies))
         return hash_tuple
+
+    def __hash__(self):
+        return hash(self.hash_tuple())
 
     def __str__(self):
         with_object_name = " - " + f" - ".join([obj.name for obj in self.inserted_into_objects])

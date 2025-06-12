@@ -161,9 +161,11 @@ class InsertionDetector(SpatialRelationDetector):
                             break
                     agent = event.agent if hasattr(event, "agent") else None
                     end_timestamp = event.end_timestamp if hasattr(event, "end_timestamp") else None
-                    self.logger.log_event(InsertionEvent(event.tracked_object, [hole], hole,
+                    insertion_event = InsertionEvent(event.tracked_object, [hole], hole,
                                                          agent=agent, timestamp=event.timestamp,
-                                                         end_timestamp=end_timestamp))
+                                                         end_timestamp=end_timestamp)
+                    insertion_event.update_action_description()
+                    self.logger.log_event(insertion_event)
                     break
                 time.sleep(self.wait_time.total_seconds())
         except Empty:

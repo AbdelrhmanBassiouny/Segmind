@@ -30,6 +30,9 @@ class CSVEpisodePlayer(FilePlayer):
         for i, (frame_id, objects_data) in enumerate(self.data_frames.iterrows()):
             yield FrameData(time=float(objects_data["time"]), objects_data=objects_data.to_dict(), frame_idx=i)
 
+    def get_joint_states(self, frame_data: FrameData) -> Dict[str, float]:
+        return {}
+
     def _pause(self):
         ...
 

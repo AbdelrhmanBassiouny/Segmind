@@ -46,7 +46,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
     @classmethod
     def setUpClass(cls):
         rdm = RobotDescriptionManager()
-        rdm.load_description("iCub3")
+        rdm.load_description("iCub")
 
         cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
