@@ -80,6 +80,9 @@ class DataPlayer(EpisodePlayer, ABC):
         start_time: float = 0.0
         for frame_data in self.frame_data_generator:
 
+            if self.kill_event.is_set():
+                break
+
             self._wait_if_paused()
 
             last_processing_time = time.time()

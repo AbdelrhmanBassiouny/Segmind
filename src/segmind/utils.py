@@ -11,6 +11,8 @@ from typing_extensions import List, Optional
 
 from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
 from pycram.datastructures.dataclasses import Color
+from pycram.datastructures.grasp import GraspDescription
+from pycram.datastructures.enums import Arms, Grasp
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
@@ -20,9 +22,27 @@ from pycrap.ontologies import Supporter, Floor, Location
 from pycram.ros import logdebug
 
 
+def get_arm_and_grasp_description_for_object(obj: Object) -> Tuple[Arms, GraspDescription]:
+    obj_pose = obj.pose
+    left_arm_pose = World.current_world.robot.get_link_pose("l_gripper_tool_frame")
+    right_arm_pose = World.current_world.robot.get_link_pose("r_gripper_tool_frame")
+    obj_distance_from_left_arm = left_arm_pose.position.euclidean_distance(obj_pose.position)
+    obj_distance_from_right_arm = right_arm_pose.position.euclidean_distance(obj_pose.position)
+    if obj_distance_from_left_arm < obj_distance_from_right_arm:
+        arm = Arms.LEFT
+        grasp = GraspDescription(Grasp.LEFT, Grasp.TOP)
+    else:
+        arm = Arms.RIGHT
+        grasp = GraspDescription(Grasp.RIGHT, Grasp.TOP)
+    return arm, grasp
+
+
 class PropagatingThread(threading.Thread, ABC):
-    kill_event = threading.Event()
     exc: Optional[Exception] = None
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.kill_event = threading.Event()
 
     def run(self):
         self.exc = None
@@ -38,12 +58,12 @@ class PropagatingThread(threading.Thread, ABC):
         """
         self.kill_event.set()
     
-    def join(self, timeout=None):
-        super().join(timeout)
-        self._join(timeout)
-        if self.exc is not None:
-            pytest.fail(f"Exception in event detector {self}: {self.exc}")
-            raise self.exc  # Propagate the exception to the main thread
+    # def join(self, timeout=None):
+    #     self._join(timeout)
+    #     super().join(timeout)
+    #     if self.exc is not None:
+    #         pytest.fail(f"Exception in event detector {self}: {self.exc}")
+    #         raise self.exc  # Propagate the exception to the main thread
     
     @abstractmethod
     def _join(self, timeout=None):

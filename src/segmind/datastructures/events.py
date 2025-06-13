@@ -473,6 +473,7 @@ class PickUpEvent(AbstractAgentObjectInteractionEvent):
 class PlacingEvent(AbstractAgentObjectInteractionEvent):
 
     _action_description: Optional[PlaceActionDescription] = None
+    placement_pose: Optional[PoseStamped] = None
 
     @property
     def color(self) -> Color:
@@ -481,6 +482,7 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
     def instantiate_action_description(self, pose: Optional[PoseStamped] = None) -> PlaceActionDescription:
         if pose is None:
             pose = self.tracked_object.pose
+        self.placement_pose = pose
         return PlaceActionDescription(self.tracked_object, pose)
 
 
@@ -500,7 +502,7 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         self.with_object: Optional[Object] = through_hole
 
     def instantiate_action_description(self) -> PlaceActionDescription:
-        return PlaceActionDescription(self.tracked_object, self.through_hole.pose)
+        return PlaceActionDescription(self.tracked_object, self.through_hole.pose, insert=True)
 
     def hash_tuple(self):
         hash_tuple = (*super().hash_tuple, *(obj.name for obj in self.inserted_into_objects))
