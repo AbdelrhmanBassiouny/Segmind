@@ -26,7 +26,12 @@ from pycram.ros import logerr
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Location, PhysicalObject
+from semantic_world.world import World as SemanticWorld
+from semantic_world.adapters.multi_parser import MultiParser
 
+
+# semantic_world: SemanticWorld = SemanticWorld()
+objects_dir = World.conf.cache_dir + "/objects"
 
 def spawn_objects(models_dir: str):
     copy_model_files_to_world_data_dir(models_dir)
@@ -44,6 +49,7 @@ def spawn_objects(models_dir: str):
         else:
             obj_type = PhysicalObject
         obj = Object(obj_name, obj_type, path=file, pose=pose)
+        # semantic_world.merge_world(MultiParser(f"{objects_dir}/{file}").parse())
 
 
 def copy_model_files_to_world_data_dir(models_dir: str):
@@ -51,13 +57,14 @@ def copy_model_files_to_world_data_dir(models_dir: str):
     Copy the model files to the world data directory.
     """
     # Copy the entire folder and its contents
-    shutil.copytree(models_dir, World.current_world.conf.cache_dir + "/objects", dirs_exist_ok=True)
+    shutil.copytree(models_dir, objects_dir, dirs_exist_ok=True)
 
 
 rdm = RobotDescriptionManager()
 rdm.load_description("iCub3")
 
 world: BulletWorld = BulletWorld(WorldMode.GUI)
+
 # viz_marker_publisher = VizMarkerPublisher()
 pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
 
@@ -67,16 +74,19 @@ episode_dir = os.path.join(multiverse_episodes_dir, episode_name)
 models_dir = os.path.join(episode_dir, "models")
 
 spawn_objects(models_dir)
+World.current_world.update_views()
 
 csv_file = os.path.join(episode_dir, f"data.csv")
-multiverse_player = MultiversePlayer(world=world,
-                                     time_between_frames=datetime.timedelta(milliseconds=4),
-                                     stop_after_ready=False)
+
 
 while True:
     user_input = input("Continue? (y/n) ")
     if user_input == "n":
         break
+
+    multiverse_player = MultiversePlayer(world=world,
+                                         time_between_frames=datetime.timedelta(milliseconds=4),
+                                         stop_after_ready=False)
 
     episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
                                                 plot_timeline=True,
@@ -104,7 +114,7 @@ while True:
     object_pick_up_actions: Dict[Object, PickUpActionDescription] = {}
     object_picked_arm: Dict[Object, Arms] = {}
     mapped_objects: Dict[Object, Object] = {}
-    # logerr(str(actionable_events))
+    logerr(str(actionable_events))
 
     for i, actionable_event in enumerate(actionable_events):
         action_descriptions.append(actionable_event.action_description)
@@ -133,7 +143,7 @@ while True:
             else:
                 raise ValueError("Placing a not picked object")
             place_pose = actionable_event.tracked_object.pose
-            place_pose.position.z += 0.05
+            place_pose.orientation = object_to_place.orientation
             logerr(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = PlaceActionDescription(object_to_place, target_location=place_pose,
                                                              arm=object_picked_arm[object_to_place],
@@ -147,3 +157,6 @@ while True:
         plan = SequentialPlan(*action_descriptions)
         plan.plot()
         plan.perform()
+
+    multiverse_player.stop()
+    multiverse_player.join()

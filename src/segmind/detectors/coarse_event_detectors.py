@@ -19,7 +19,7 @@ from pycram.datastructures.world import UseProspectionWorld
 from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import *
 from ..datastructures.events import *
-from ..utils import get_angle_between_vectors, get_support
+from ..utils import get_angle_between_vectors, get_support, is_object_supported_by_container_body
 from ..episode_player import EpisodePlayer
 
 
@@ -267,12 +267,13 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
     @staticmethod
-    def ask_now(case_dict):
+    def ask_now(case_dict, output_):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        return isinstance(event, LossOfContactEvent) and "object_4" in event.tracked_object.name
+        output_ = output_["output_"]
+        return isinstance(event, LossOfContactEvent) and "object_4" in event.tracked_object.name and output_
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
+     fit=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
@@ -418,7 +419,8 @@ def check_for_supporting_surface(tracked_object: Object,
         World.current_world.simulate(dt)
         prospection_obj = World.current_world.get_prospection_object_for_object(tracked_object)
         contact_points = prospection_obj.contact_points
-        contacted_bodies = contact_points.get_objects_that_have_points()
+        contacted_bodies = contact_points.get_all_bodies()
+        contacted_bodies = [body for body in contacted_bodies if body.name != tracked_object.name]
         contacted_body_names = [body.name for body in contacted_bodies]
         contacted_bodies = dict(zip(contacted_body_names, contacted_bodies))
         if possible_surfaces is None:
@@ -468,9 +470,8 @@ def select_transportable_objects(objects: List[Object], not_contained: bool = Fa
     transportable_objects = [obj for obj in objects
                              if not issubclass(obj.ontology_concept, (Agent, Location, Supporter, Floor))]
     if not_contained:
-        for obj in transportable_objects:
-            obj.update_containment(intersection_ratio=0.5)
-        transportable_objects = [obj for obj in transportable_objects if len(obj.contained_in_bodies) == 1]
+        transportable_objects = [obj for obj in transportable_objects
+                                 if not is_object_supported_by_container_body(obj)]
     return transportable_objects
 
 

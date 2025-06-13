@@ -158,8 +158,6 @@ class InsertionDetector(SpatialRelationDetector):
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
                     self.update_body_state(event.tracked_object, with_bodies=[hole])
                     if not self.hole_insertion_verifier(hole, event):
-                        if not hole in event.tracked_object.contact_points.get_all_bodies():
-                            break
                         if event.tracked_object.is_moving:
                             continue
                         else:

@@ -7,7 +7,7 @@ import pytest
 
 import numpy as np
 from pycram.tf_transformations import quaternion_inverse, quaternion_multiply
-from typing_extensions import List, Optional
+from typing_extensions import List, Optional, Tuple
 
 from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
 from pycram.datastructures.dataclasses import Color
@@ -20,6 +20,15 @@ from pycram.object_descriptors.generic import ObjectDescription as GenericObject
 from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import Supporter, Floor, Location
 from pycram.ros import logdebug
+
+from semantic_world.views import Container
+
+
+def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07) -> bool:
+    containers = [v for v in obj.world.views['views'] if isinstance(v, Container)]
+    container_bodies = [c.body for c in containers]
+    container_body_names = [c.name.name for c in container_bodies]
+    return any(body.name in container_body_names for body in obj.contact_points.get_all_bodies())
 
 
 def get_arm_and_grasp_description_for_object(obj: Object) -> Tuple[Arms, GraspDescription]:
@@ -115,9 +124,9 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
     for body in contact_bodies:
         if issubclass(body.parent_entity.obj_type, (Supporter, Location)):
             body_aabb = body.get_axis_aligned_bounding_box()
-            surface_z = body_aabb.max_z
+            surface_z = body_aabb.max_z - 0.001
             tracked_object_base = obj.position
-            if tracked_object_base.z >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
+            if tracked_object_base.z + 0.001 >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
                     body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
                 logdebug(f"Object {obj.name} IS supported by {body.name}")
                 return body
@@ -230,7 +239,10 @@ def get_angle_between_vectors(vector_1: List[float], vector_2: List[float]) -> f
     :param vector_2: A list of float values that represent the second vector.
     :return: A float value that represents the angle between the two vectors.
     """
-    return np.arccos(np.dot(vector_1, vector_2) / (np.linalg.norm(vector_1) * np.linalg.norm(vector_2)))
+    angle = np.arccos(np.dot(vector_1, vector_2) / (np.linalg.norm(vector_1) * np.linalg.norm(vector_2)))
+    if isinstance(angle, np.ndarray):
+        angle = float(angle.squeeze())
+    return angle
 
 
 def calculate_transform_difference_and_check_if_small(transform_1: Transform, transform_2: Transform,

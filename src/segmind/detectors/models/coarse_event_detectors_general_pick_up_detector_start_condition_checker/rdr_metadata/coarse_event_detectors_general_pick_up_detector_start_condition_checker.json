@@ -32,6 +32,7 @@
                         "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                         "timedelta": "datetime.timedelta",
                         "get_support": "segmind.utils.get_support",
+                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                         "NoneType": "builtins.NoneType"
                     },
                     "conclusion": {
@@ -67,6 +68,7 @@
                         "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                         "timedelta": "datetime.timedelta",
                         "get_support": "segmind.utils.get_support",
+                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                         "NoneType": "builtins.NoneType"
                     },
                     "conclusion": {
@@ -119,6 +121,7 @@
                             "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                             "timedelta": "datetime.timedelta",
                             "get_support": "segmind.utils.get_support",
+                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                             "NoneType": "builtins.NoneType"
                         },
                         "conclusion": {
@@ -154,6 +157,7 @@
                             "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                             "timedelta": "datetime.timedelta",
                             "get_support": "segmind.utils.get_support",
+                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                             "NoneType": "builtins.NoneType"
                         },
                         "conclusion": {
@@ -206,6 +210,7 @@
                                 "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                 "timedelta": "datetime.timedelta",
                                 "get_support": "segmind.utils.get_support",
+                                "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                 "NoneType": "builtins.NoneType"
                             },
                             "conclusion": {
@@ -241,6 +246,7 @@
                                 "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                 "timedelta": "datetime.timedelta",
                                 "get_support": "segmind.utils.get_support",
+                                "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                 "NoneType": "builtins.NoneType"
                             },
                             "conclusion": {
@@ -294,6 +300,7 @@
                                     "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                     "timedelta": "datetime.timedelta",
                                     "get_support": "segmind.utils.get_support",
+                                    "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                     "NoneType": "builtins.NoneType"
                                 },
                                 "conclusion": {
@@ -329,6 +336,7 @@
                                     "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                     "timedelta": "datetime.timedelta",
                                     "get_support": "segmind.utils.get_support",
+                                    "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                     "NoneType": "builtins.NoneType"
                                 },
                                 "conclusion": {
@@ -382,6 +390,7 @@
                                         "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                         "timedelta": "datetime.timedelta",
                                         "get_support": "segmind.utils.get_support",
+                                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                         "NoneType": "builtins.NoneType"
                                     },
                                     "conclusion": {
@@ -417,6 +426,7 @@
                                         "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                         "timedelta": "datetime.timedelta",
                                         "get_support": "segmind.utils.get_support",
+                                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                         "NoneType": "builtins.NoneType"
                                     },
                                     "conclusion": {
@@ -445,7 +455,7 @@
                                     "_type": "ripple_down_rules.rules.SingleClassRule",
                                     "conditions": {
                                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return any(issubclass(obj.obj_type, Location) for obj in event.tracked_object.contact_points.get_objects_that_have_points())\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        contact_points = event.tracked_object.contact_points\n        return (any(issubclass(obj.obj_type, Location) for obj in contact_points.get_objects_that_have_points())\n                or is_object_supported_by_container_body(event.tracked_object))\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
                                         "conclusion_type": [
                                             "builtins.bool"
                                         ],
@@ -470,6 +480,7 @@
                                             "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                             "timedelta": "datetime.timedelta",
                                             "get_support": "segmind.utils.get_support",
+                                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                             "NoneType": "builtins.NoneType"
                                         },
                                         "conclusion": {
@@ -505,6 +516,7 @@
                                             "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                             "timedelta": "datetime.timedelta",
                                             "get_support": "segmind.utils.get_support",
+                                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                             "NoneType": "builtins.NoneType"
                                         },
                                         "conclusion": {
