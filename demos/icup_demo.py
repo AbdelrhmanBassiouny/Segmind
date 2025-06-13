@@ -79,8 +79,12 @@ input("Press Enter to continue...")
 all_events = episode_segmenter.logger.get_events()
 actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]
 actionable_events = sorted(actionable_events, key=lambda event: event.timestamp)
+action_descriptions = []
 for actionable_event in actionable_events:
-    print(next(actionable_event.action_description.__iter__()))
+    action_descriptions.append(actionable_event.action_description)
+    print(next(action_descriptions[-1].__iter__()))
+
+
 
 multiverse_player.join()
 thread.join()

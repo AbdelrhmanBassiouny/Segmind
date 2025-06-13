@@ -1,11 +1,12 @@
 from ripple_down_rules.datastructures.case import Case
 from segmind.datastructures.events import AbstractContactEvent, AgentContactEvent, Event, InsertionEvent, LossOfContactEvent, LossOfInterferenceEvent, PickUpEvent, PlacingEvent
-from segmind.utils import get_support
 from typing_extensions import Dict, Optional, Type, Union
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, check_for_supporting_surface, select_transportable_objects
-from datetime import timedelta
-from types import NoneType
+from pycrap.ontologies.crax.classes import Location
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
+from datetime import timedelta
+from segmind.utils import get_support
+from types import NoneType
 
 
 def conditions_79409294830217498801042528243955850723(case) -> bool:
@@ -68,6 +69,20 @@ def conditions_127762420515884983148248561408247495267(case) -> bool:
 
 
 def conclusion_127762420515884983148248561408247495267(case) -> bool:
+    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
+        """Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
+        return False
+    return general_pick_up_detector_start_condition_checker(**case)
+
+
+def conditions_199058987582084612752317307773823561830(case) -> bool:
+    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
+        """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
+        return any(issubclass(obj.obj_type, Location) for obj in event.tracked_object.contact_points.get_objects_that_have_points())
+    return conditions_for_general_pick_up_detector_start_condition_checker(**case)
+
+
+def conclusion_199058987582084612752317307773823561830(case) -> bool:
     def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
         """Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
         return False
