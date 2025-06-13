@@ -100,8 +100,8 @@ def test_icub_demo(set_up_demo_fixture):
     thread = threading.Thread(target=episode_segmenter.start)
     # Start the thread
     thread.start()
-
-    input("Press Enter to continue...")
+    time.sleep(10000)
+    # input("Press Enter to continue...")
 
     all_events = episode_segmenter.logger.get_events()
     actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]

@@ -1,7 +1,10 @@
 from copy import copy
 from queue import Queue, Empty
 import time
+from os.path import dirname
 
+from ripple_down_rules.rdr_decorators import RDRDecorator
+from segmind.episode_player import EpisodePlayer
 from typing_extensions import Any, Dict, List, Optional, Type, Callable
 
 from pycram.datastructures.world_entity import abstractmethod, PhysicalBody
@@ -126,15 +129,15 @@ class InsertionDetector(SpatialRelationDetector):
 
     @staticmethod
     def event_condition(event: InterferenceEvent) -> bool:
-        logdebug(f"Checking bodies {event.link_names} with tracked object {event.tracked_object.name}")
+        # logdebug(f"Checking bodies {event.link_names} with tracked object {event.tracked_object.name}")
         return any(['hole' in body.name for body in event.links])
     check_on_events = {InterferenceEvent: event_condition}
 
-    def update_body_state(self, body: PhysicalBody):
+    def update_body_state(self, body: PhysicalBody, with_bodies: Optional[List[PhysicalBody]] = None):
         """
         Update the state of a body.
         """
-        body.update_containment(intersection_ratio=0.5)
+        body.update_containment(intersection_ratio=0.5, only_bodies=with_bodies)
         self.bodies_states[body] = copy(body.contained_in_bodies)
 
     def detect_events(self) -> None:
@@ -150,11 +153,13 @@ class InsertionDetector(SpatialRelationDetector):
                     logdebug(f"tracked object {event.tracked_object.name} is already checked")
                     continue
                 while True:
-                    # time.sleep(self.wait_time.total_seconds())
+                    time.sleep(self.wait_time.total_seconds())
                     hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
-                    self.update_body_state(event.tracked_object)
-                    if hole not in event.tracked_object.contained_in_bodies:
+                    self.update_body_state(event.tracked_object, with_bodies=[hole])
+                    if not self.hole_insertion_verifier(hole, event):
+                        if not hole in event.tracked_object.contact_points.get_all_bodies():
+                            break
                         if event.tracked_object.is_moving:
                             continue
                         else:
@@ -167,9 +172,26 @@ class InsertionDetector(SpatialRelationDetector):
                     insertion_event.update_action_description()
                     self.logger.log_event(insertion_event)
                     break
-                # time.sleep(self.wait_time.total_seconds())
+                time.sleep(self.wait_time.total_seconds())
         except Empty:
             pass
+
+    @staticmethod
+    def ask_now(case_dict):
+        self_ = case_dict['self_']
+        hole = case_dict['hole']
+        event = case_dict['event']
+        return "object_3" in event.tracked_object.name
+    hole_insertion_verifier_rdr = RDRDecorator(f"{dirname(__file__)}/models", (bool,),
+                                               True, fit=False,
+                                               fitting_decorator=EpisodePlayer.pause_resume,
+                                               package_name="segmind",
+                                               ask_now=ask_now)
+
+    @hole_insertion_verifier_rdr.decorator
+    def hole_insertion_verifier(self, hole: PhysicalBody, event: InterferenceEvent) -> bool:
+        pass
+        # return hole not in event.tracked_object.contained_in_bodies
 
     @classmethod
     def event_type(cls) -> Type[InsertionEvent]:
