@@ -150,7 +150,7 @@ class InsertionDetector(SpatialRelationDetector):
                     logdebug(f"tracked object {event.tracked_object.name} is already checked")
                     continue
                 while True:
-                    time.sleep(self.wait_time.total_seconds())
+                    # time.sleep(self.wait_time.total_seconds())
                     hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
                     self.update_body_state(event.tracked_object)
@@ -167,7 +167,7 @@ class InsertionDetector(SpatialRelationDetector):
                     insertion_event.update_action_description()
                     self.logger.log_event(insertion_event)
                     break
-                time.sleep(self.wait_time.total_seconds())
+                # time.sleep(self.wait_time.total_seconds())
         except Empty:
             pass
 

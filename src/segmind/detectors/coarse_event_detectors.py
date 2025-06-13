@@ -459,7 +459,7 @@ def select_transportable_objects_from_loss_of_contact_event(event: LossOfContact
     return select_transportable_objects([event.tracked_object])
 
 
-def select_transportable_objects(objects: List[Object]) -> List[Object]:
+def select_transportable_objects(objects: List[Object], not_contained: bool = False) -> List[Object]:
     """
     Select the objects that can be transported
 
@@ -467,6 +467,10 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
     """
     transportable_objects = [obj for obj in objects
                              if not issubclass(obj.ontology_concept, (Agent, Location, Supporter, Floor))]
+    if not_contained:
+        for obj in transportable_objects:
+            obj.update_containment(intersection_ratio=0.5)
+        transportable_objects = [obj for obj in transportable_objects if len(obj.contained_in_bodies) == 1]
     return transportable_objects
 
 

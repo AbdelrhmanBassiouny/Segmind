@@ -53,6 +53,7 @@ def copy_model_files_to_world_data_dir(models_dir: str):
     # Copy the entire folder and its contents
     shutil.copytree(models_dir, World.current_world.conf.cache_dir + "/objects", dirs_exist_ok=True)
 
+
 rdm = RobotDescriptionManager()
 rdm.load_description("iCub3")
 
@@ -96,7 +97,7 @@ while True:
     all_events = episode_segmenter.logger.get_events()
     actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]
     actionable_events = sorted(actionable_events, key=lambda event: event.timestamp)
-    pickable_objects = select_transportable_objects(World.current_world.objects)
+    pickable_objects = select_transportable_objects(World.current_world.objects, not_contained=True)
     action_descriptions = []
     all_inserted_objects = [event.tracked_object for event in actionable_events if isinstance(event, InsertionEvent)]
     pickable_objects = [obj for obj in pickable_objects if obj not in all_inserted_objects]
@@ -119,13 +120,13 @@ while True:
             else:
                 to_pick_object = actionable_event.tracked_object
                 pickable_objects.remove(actionable_event.tracked_object)
-
+            logerr(f"Object to Pick is {to_pick_object.name}")
             mapped_objects[actionable_event.tracked_object] = to_pick_object
             arm, grasp = get_arm_and_grasp_description_for_object(to_pick_object)
             object_picked_arm[to_pick_object] = arm
             action_descriptions[-1] = PickUpActionDescription(to_pick_object, arm=arm, grasp_description=grasp)
             # logerr("Finished pickup action")
-        elif isinstance(actionable_event, PlacingEvent):
+        elif isinstance(actionable_event, (PlacingEvent, InsertionEvent)):
             # logerr("Constructing placing action")
             if actionable_event.tracked_object in mapped_objects:
                 object_to_place = mapped_objects[actionable_event.tracked_object]
@@ -133,8 +134,10 @@ while True:
                 raise ValueError("Placing a not picked object")
             place_pose = actionable_event.tracked_object.pose
             place_pose.position.z += 0.05
+            logerr(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = PlaceActionDescription(object_to_place, target_location=place_pose,
-                                                             arm=object_picked_arm[object_to_place])
+                                                             arm=object_picked_arm[object_to_place],
+                                                             insert=isinstance(actionable_event, InsertionEvent))
             # logerr("Finished placing action")
             # action_descriptions.append(ParkArmsActionDescription(Arms.BOTH))
 
@@ -142,6 +145,5 @@ while True:
 
     with real_robot:
         plan = SequentialPlan(*action_descriptions)
-        print(plan)
         plan.plot()
         plan.perform()
