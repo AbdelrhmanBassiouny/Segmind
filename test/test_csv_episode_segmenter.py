@@ -57,7 +57,6 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.INFO)
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world, time_between_frames=datetime.timedelta(milliseconds=4))
-        # scene = Object("scene", Location, f"{Path(scene_file_path).stem}.urdf")
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
                                                         plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}',
