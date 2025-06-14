@@ -84,12 +84,12 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     pip install -r ripple_down_rules/requirements.txt && \
     pip install lark && \
     cd $LIBSDIR/giskardpy && \
-    pip install -r requirements.txt &&  pip install -e . && \
+    pip install -r requirements.txt && pip install -e . && \
     cd $LIBSDIR/Multiverse-Parser && \
     pip install -r requirements.txt && pip install -e . && \
     cd $LIBSDIR/qpSWIFT/python && \
     sudo python3 setup.py install && \
-    && source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    source /opt/ros/${ROS_DISTRO}/setup.bash && \
     cd $HOME/workspace && \
     vcs import src < src/giskardpy_ros/$ROS_DISTRO.repos && \
     rosdep update --rosdistro=$ROS_DISTRO && \
@@ -119,10 +119,7 @@ RUN code-server \
     --install-extension Codeium.codeium \
     && code-server \
     --user-data-dir=$USER_DATA_DIR \
-    --install-extension PKief.material-icon-theme \
-    && code-server \
-    --user-data-dir=$USER_DATA_DIR \
-    --install-extension virgilsisoe.python-auto-import
+    --install-extension PKief.material-icon-theme
 
 COPY start-code-server.sh /usr/local/bin/start-code-server.sh
 RUN sudo chmod +x /usr/local/bin/start-code-server.sh
