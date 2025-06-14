@@ -12,11 +12,13 @@
                         "builtins.bool"
                     ],
                     "scope": {
+                        "Case": "ripple_down_rules.datastructures.case.Case",
                         "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
                         "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                         "Event": "segmind.datastructures.events.Event",
                         "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                         "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                        "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                         "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
                         "Dict": "typing.Dict",
@@ -24,10 +26,13 @@
                         "Type": "typing.Type",
                         "Union": "typing.Union",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
                         "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                        "Location": "pycrap.ontologies.crax.classes.Location",
+                        "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                         "timedelta": "datetime.timedelta",
                         "get_support": "segmind.utils.get_support",
-                        "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                         "NoneType": "builtins.NoneType"
                     },
                     "conclusion": {
@@ -43,11 +48,13 @@
                         "builtins.bool"
                     ],
                     "scope": {
+                        "Case": "ripple_down_rules.datastructures.case.Case",
                         "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
                         "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                         "Event": "segmind.datastructures.events.Event",
                         "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                         "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                        "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                         "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
                         "Dict": "typing.Dict",
@@ -55,10 +62,13 @@
                         "Type": "typing.Type",
                         "Union": "typing.Union",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                        "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
                         "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                        "Location": "pycrap.ontologies.crax.classes.Location",
+                        "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                         "timedelta": "datetime.timedelta",
                         "get_support": "segmind.utils.get_support",
-                        "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                         "NoneType": "builtins.NoneType"
                     },
                     "conclusion": {
@@ -91,11 +101,13 @@
                             "builtins.bool"
                         ],
                         "scope": {
+                            "Case": "ripple_down_rules.datastructures.case.Case",
                             "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
                             "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                             "Event": "segmind.datastructures.events.Event",
                             "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                             "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                            "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
                             "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                             "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
                             "Dict": "typing.Dict",
@@ -103,10 +115,13 @@
                             "Type": "typing.Type",
                             "Union": "typing.Union",
                             "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                            "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
                             "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                            "Location": "pycrap.ontologies.crax.classes.Location",
+                            "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                             "timedelta": "datetime.timedelta",
                             "get_support": "segmind.utils.get_support",
-                            "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                             "NoneType": "builtins.NoneType"
                         },
                         "conclusion": {
@@ -122,11 +137,13 @@
                             "builtins.bool"
                         ],
                         "scope": {
+                            "Case": "ripple_down_rules.datastructures.case.Case",
                             "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
                             "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                             "Event": "segmind.datastructures.events.Event",
                             "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                             "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                            "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
                             "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                             "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
                             "Dict": "typing.Dict",
@@ -134,10 +151,13 @@
                             "Type": "typing.Type",
                             "Union": "typing.Union",
                             "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                            "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
                             "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                            "Location": "pycrap.ontologies.crax.classes.Location",
+                            "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                             "timedelta": "datetime.timedelta",
                             "get_support": "segmind.utils.get_support",
-                            "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                             "NoneType": "builtins.NoneType"
                         },
                         "conclusion": {
@@ -170,11 +190,13 @@
                                 "builtins.bool"
                             ],
                             "scope": {
+                                "Case": "ripple_down_rules.datastructures.case.Case",
                                 "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
                                 "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                                 "Event": "segmind.datastructures.events.Event",
                                 "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                                 "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
                                 "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                                 "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
                                 "Dict": "typing.Dict",
@@ -182,10 +204,13 @@
                                 "Type": "typing.Type",
                                 "Union": "typing.Union",
                                 "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
                                 "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                "Location": "pycrap.ontologies.crax.classes.Location",
+                                "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                 "timedelta": "datetime.timedelta",
                                 "get_support": "segmind.utils.get_support",
-                                "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                                "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                 "NoneType": "builtins.NoneType"
                             },
                             "conclusion": {
@@ -201,11 +226,13 @@
                                 "builtins.bool"
                             ],
                             "scope": {
+                                "Case": "ripple_down_rules.datastructures.case.Case",
                                 "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
                                 "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
                                 "Event": "segmind.datastructures.events.Event",
                                 "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                                 "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
                                 "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                                 "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
                                 "Dict": "typing.Dict",
@@ -213,10 +240,13 @@
                                 "Type": "typing.Type",
                                 "Union": "typing.Union",
                                 "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
                                 "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                "Location": "pycrap.ontologies.crax.classes.Location",
+                                "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
                                 "timedelta": "datetime.timedelta",
                                 "get_support": "segmind.utils.get_support",
-                                "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                                "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
                                 "NoneType": "builtins.NoneType"
                             },
                             "conclusion": {
@@ -241,7 +271,280 @@
                         "weight": "except if",
                         "uid": "175987223108804549769623056194939396888",
                         "refinement": null,
-                        "alternative": null
+                        "alternative": {
+                            "_type": "ripple_down_rules.rules.SingleClassRule",
+                            "conditions": {
+                                "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                                "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return isinstance(event, LossOfInterferenceEvent)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                "conclusion_type": [
+                                    "builtins.bool"
+                                ],
+                                "scope": {
+                                    "Case": "ripple_down_rules.datastructures.case.Case",
+                                    "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                                    "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                                    "Event": "segmind.datastructures.events.Event",
+                                    "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
+                                    "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                    "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
+                                    "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                                    "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
+                                    "Dict": "typing.Dict",
+                                    "Optional": "typing.Optional",
+                                    "Type": "typing.Type",
+                                    "Union": "typing.Union",
+                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                    "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
+                                    "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                    "Location": "pycrap.ontologies.crax.classes.Location",
+                                    "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                                    "timedelta": "datetime.timedelta",
+                                    "get_support": "segmind.utils.get_support",
+                                    "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
+                                    "NoneType": "builtins.NoneType"
+                                },
+                                "conclusion": {
+                                    "_type": "builtins.NoneType",
+                                    "value": null
+                                },
+                                "mutually_exclusive": true
+                            },
+                            "conclusion": {
+                                "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                                "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                "conclusion_type": [
+                                    "builtins.bool"
+                                ],
+                                "scope": {
+                                    "Case": "ripple_down_rules.datastructures.case.Case",
+                                    "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                                    "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                                    "Event": "segmind.datastructures.events.Event",
+                                    "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
+                                    "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                    "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
+                                    "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                                    "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
+                                    "Dict": "typing.Dict",
+                                    "Optional": "typing.Optional",
+                                    "Type": "typing.Type",
+                                    "Union": "typing.Union",
+                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                    "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
+                                    "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                    "Location": "pycrap.ontologies.crax.classes.Location",
+                                    "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                                    "timedelta": "datetime.timedelta",
+                                    "get_support": "segmind.utils.get_support",
+                                    "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
+                                    "NoneType": "builtins.NoneType"
+                                },
+                                "conclusion": {
+                                    "_type": "builtins.NoneType",
+                                    "value": null
+                                },
+                                "mutually_exclusive": true
+                            },
+                            "parent": null,
+                            "corner_case": {
+                                "_type": "ripple_down_rules.datastructures.case.Case",
+                                "cls_": {
+                                    "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                                },
+                                "event": null,
+                                "output_": true,
+                                "_id": 140348661970048,
+                                "_obj_type": "builtins.dict",
+                                "_name": "GeneralPickUpDetector_start_condition_checker"
+                            },
+                            "conclusion_name": null,
+                            "weight": "else if",
+                            "uid": "137657377818990651652995783903795984105",
+                            "refinement": null,
+                            "alternative": {
+                                "_type": "ripple_down_rules.rules.SingleClassRule",
+                                "conditions": {
+                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return check_for_supporting_surface(event.tracked_object) is not None\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                    "conclusion_type": [
+                                        "builtins.bool"
+                                    ],
+                                    "scope": {
+                                        "Case": "ripple_down_rules.datastructures.case.Case",
+                                        "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                                        "Event": "segmind.datastructures.events.Event",
+                                        "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
+                                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                        "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
+                                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                                        "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
+                                        "Dict": "typing.Dict",
+                                        "Optional": "typing.Optional",
+                                        "Type": "typing.Type",
+                                        "Union": "typing.Union",
+                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                        "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
+                                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                        "Location": "pycrap.ontologies.crax.classes.Location",
+                                        "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                                        "timedelta": "datetime.timedelta",
+                                        "get_support": "segmind.utils.get_support",
+                                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
+                                        "NoneType": "builtins.NoneType"
+                                    },
+                                    "conclusion": {
+                                        "_type": "builtins.NoneType",
+                                        "value": null
+                                    },
+                                    "mutually_exclusive": true
+                                },
+                                "conclusion": {
+                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                    "conclusion_type": [
+                                        "builtins.bool"
+                                    ],
+                                    "scope": {
+                                        "Case": "ripple_down_rules.datastructures.case.Case",
+                                        "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                                        "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                                        "Event": "segmind.datastructures.events.Event",
+                                        "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
+                                        "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                        "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
+                                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                                        "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
+                                        "Dict": "typing.Dict",
+                                        "Optional": "typing.Optional",
+                                        "Type": "typing.Type",
+                                        "Union": "typing.Union",
+                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                        "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
+                                        "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                        "Location": "pycrap.ontologies.crax.classes.Location",
+                                        "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                                        "timedelta": "datetime.timedelta",
+                                        "get_support": "segmind.utils.get_support",
+                                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
+                                        "NoneType": "builtins.NoneType"
+                                    },
+                                    "conclusion": {
+                                        "_type": "builtins.NoneType",
+                                        "value": null
+                                    },
+                                    "mutually_exclusive": true
+                                },
+                                "parent": null,
+                                "corner_case": {
+                                    "_type": "ripple_down_rules.datastructures.case.Case",
+                                    "cls_": {
+                                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                                    },
+                                    "event": null,
+                                    "output_": true,
+                                    "_id": 140346406994240,
+                                    "_obj_type": "builtins.dict",
+                                    "_name": "GeneralPickUpDetector_start_condition_checker"
+                                },
+                                "conclusion_name": null,
+                                "weight": "else if",
+                                "uid": "127762420515884983148248561408247495267",
+                                "refinement": null,
+                                "alternative": {
+                                    "_type": "ripple_down_rules.rules.SingleClassRule",
+                                    "conditions": {
+                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        contact_points = event.tracked_object.contact_points\n        return (any(issubclass(obj.obj_type, Location) for obj in contact_points.get_objects_that_have_points())\n                or is_object_supported_by_container_body(event.tracked_object))\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                        "conclusion_type": [
+                                            "builtins.bool"
+                                        ],
+                                        "scope": {
+                                            "Case": "ripple_down_rules.datastructures.case.Case",
+                                            "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                                            "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                                            "Event": "segmind.datastructures.events.Event",
+                                            "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
+                                            "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                            "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
+                                            "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                                            "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
+                                            "Dict": "typing.Dict",
+                                            "Optional": "typing.Optional",
+                                            "Type": "typing.Type",
+                                            "Union": "typing.Union",
+                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                            "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
+                                            "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                            "Location": "pycrap.ontologies.crax.classes.Location",
+                                            "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                                            "timedelta": "datetime.timedelta",
+                                            "get_support": "segmind.utils.get_support",
+                                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
+                                            "NoneType": "builtins.NoneType"
+                                        },
+                                        "conclusion": {
+                                            "_type": "builtins.NoneType",
+                                            "value": null
+                                        },
+                                        "mutually_exclusive": true
+                                    },
+                                    "conclusion": {
+                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                        "conclusion_type": [
+                                            "builtins.bool"
+                                        ],
+                                        "scope": {
+                                            "Case": "ripple_down_rules.datastructures.case.Case",
+                                            "AbstractContactEvent": "segmind.datastructures.events.AbstractContactEvent",
+                                            "AgentContactEvent": "segmind.datastructures.events.AgentContactEvent",
+                                            "Event": "segmind.datastructures.events.Event",
+                                            "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
+                                            "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
+                                            "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
+                                            "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                                            "PlacingEvent": "segmind.datastructures.events.PlacingEvent",
+                                            "Dict": "typing.Dict",
+                                            "Optional": "typing.Optional",
+                                            "Type": "typing.Type",
+                                            "Union": "typing.Union",
+                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                            "check_for_supporting_surface": "segmind.detectors.coarse_event_detectors.check_for_supporting_surface",
+                                            "select_transportable_objects": "segmind.detectors.coarse_event_detectors.select_transportable_objects",
+                                            "Location": "pycrap.ontologies.crax.classes.Location",
+                                            "ObjectTrackerFactory": "segmind.datastructures.object_tracker.ObjectTrackerFactory",
+                                            "timedelta": "datetime.timedelta",
+                                            "get_support": "segmind.utils.get_support",
+                                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body",
+                                            "NoneType": "builtins.NoneType"
+                                        },
+                                        "conclusion": {
+                                            "_type": "builtins.NoneType",
+                                            "value": null
+                                        },
+                                        "mutually_exclusive": true
+                                    },
+                                    "parent": null,
+                                    "corner_case": {
+                                        "_type": "ripple_down_rules.datastructures.case.Case",
+                                        "cls_": {
+                                            "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                                        },
+                                        "event": null,
+                                        "output_": true,
+                                        "_id": 140541371436800,
+                                        "_obj_type": "builtins.dict",
+                                        "_name": "GeneralPickUpDetector_start_condition_checker"
+                                    },
+                                    "conclusion_name": null,
+                                    "weight": "else if",
+                                    "uid": "199058987582084612752317307773823561830",
+                                    "refinement": null,
+                                    "alternative": null
+                                }
+                            }
+                        }
                     },
                     "alternative": null
                 },

@@ -3,7 +3,9 @@ from typing import Dict
 
 from typing_extensions import Optional, List
 
+from pycram.datastructures.enums import JointType
 from pycram.datastructures.pose import Pose, Quaternion, Vector3, PoseStamped, Header
+from pycram.failures import ObjectNotFound
 from pycram.ros import logwarn, logdebug
 from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import Floor
@@ -17,6 +19,8 @@ class MultiversePlayer(DataPlayer):
         super().__init__(**kwargs)
         self.objects_names: Optional[List[str]] = objects_names if objects_names is not None else\
             [obj.root_link.name for obj in self.world.objects if not issubclass(obj.obj_type, Floor)]
+        self.joints_names: List[str] = [joint.name for joint in self.world.robot.joints.values()
+                                        if joint.type in [JointType.REVOLUTE, JointType.CONTINUOUS]]
         self.multiverse_meta_data = MultiverseMetaData(
             world_name=world_name,
             simulation_name=simulation_name,
@@ -40,6 +44,8 @@ class MultiversePlayer(DataPlayer):
         else:
             for object_name in self.objects_names:
                 self.multiverse_connector.request_meta_data["receive"][object_name] = ["position", "quaternion"]
+            for joint_name in self.joints_names:
+                self.multiverse_connector.request_meta_data["receive"][joint_name] = ["joint_rvalue"]
 
         self.object_data_dict = {}
         self.multiverse_connector.send_and_receive_meta_data()
@@ -66,12 +72,21 @@ class MultiversePlayer(DataPlayer):
             world_time = self.multiverse_connector.world_time
             yield FrameData(world_time, self.object_data_dict, i)
 
+    def get_joint_states(self, frame_data: FrameData) -> Dict[str, float]:
+        joint_state = {}
+        for joint_name, object_attributes in frame_data.objects_data.items():
+            for attribute_name, attribute_values in object_attributes.items():
+                if attribute_name in ["joint_rvalue"]:
+                    joint_state[joint_name] = attribute_values[0]
+        return joint_state
+
     def get_objects_poses(self, frame_data: FrameData) -> Dict[Object, PoseStamped]:
         objects_poses: Dict[Object, PoseStamped] = {}
         for object_name, object_attributes in frame_data.objects_data.items():
-            obj = self.world.get_object_by_root_link_name(object_name)
-            if obj is None:
-                logdebug(f"Object {object_name} not found")
+            try:
+                obj = self.world.get_object_by_root_link_name(object_name)
+            except ObjectNotFound as e:
+                # logdebug(f"Object {object_name} not found: {e}")
                 continue
             position = object_attributes["position"]
             quaternion = object_attributes["quaternion"]

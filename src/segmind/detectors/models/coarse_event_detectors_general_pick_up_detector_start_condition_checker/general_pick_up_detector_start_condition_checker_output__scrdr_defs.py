@@ -1,9 +1,11 @@
-from segmind.datastructures.events import AbstractContactEvent, AgentContactEvent, Event, InsertionEvent, LossOfContactEvent, PickUpEvent, PlacingEvent
+from ripple_down_rules.datastructures.case import Case
+from segmind.datastructures.events import AbstractContactEvent, AgentContactEvent, Event, InsertionEvent, LossOfContactEvent, LossOfInterferenceEvent, PickUpEvent, PlacingEvent
 from typing_extensions import Dict, Optional, Type, Union
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
-from datetime import timedelta
-from segmind.utils import get_support
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, check_for_supporting_surface, select_transportable_objects
+from pycrap.ontologies.crax.classes import Location
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
+from datetime import timedelta
+from segmind.utils import get_support, is_object_supported_by_container_body
 from types import NoneType
 
 
@@ -39,6 +41,50 @@ def conditions_175987223108804549769623056194939396888(case) -> bool:
 
 
 def conclusion_175987223108804549769623056194939396888(case) -> bool:
+    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
+        """Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
+        return False
+    return general_pick_up_detector_start_condition_checker(**case)
+
+
+def conditions_137657377818990651652995783903795984105(case) -> bool:
+    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
+        """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
+        return isinstance(event, LossOfInterferenceEvent)
+    return conditions_for_general_pick_up_detector_start_condition_checker(**case)
+
+
+def conclusion_137657377818990651652995783903795984105(case) -> bool:
+    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
+        """Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
+        return False
+    return general_pick_up_detector_start_condition_checker(**case)
+
+
+def conditions_127762420515884983148248561408247495267(case) -> bool:
+    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
+        """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
+        return check_for_supporting_surface(event.tracked_object) is not None
+    return conditions_for_general_pick_up_detector_start_condition_checker(**case)
+
+
+def conclusion_127762420515884983148248561408247495267(case) -> bool:
+    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
+        """Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
+        return False
+    return general_pick_up_detector_start_condition_checker(**case)
+
+
+def conditions_199058987582084612752317307773823561830(case) -> bool:
+    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
+        """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
+        contact_points = event.tracked_object.contact_points
+        return (any(issubclass(obj.obj_type, Location) for obj in contact_points.get_objects_that_have_points())
+                or is_object_supported_by_container_body(event.tracked_object))
+    return conditions_for_general_pick_up_detector_start_condition_checker(**case)
+
+
+def conclusion_199058987582084612752317307773823561830(case) -> bool:
     def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
         """Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
         return False

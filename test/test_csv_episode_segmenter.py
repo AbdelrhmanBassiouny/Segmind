@@ -1,5 +1,6 @@
 import datetime
 import os
+import shutil
 from datetime import timedelta
 from pathlib import Path
 from unittest import TestCase
@@ -8,6 +9,7 @@ from os.path import dirname
 
 import pycram.ros
 from pycram.config.multiverse_conf import SimulatorConfig, MultiverseConfig
+from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from pycram.robot_description import RobotDescriptionManager
@@ -20,7 +22,7 @@ from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.worlds.bullet_world import BulletWorld
-from pycrap.ontologies import Container, Bowl, Cup, Location
+from pycrap.ontologies import Container, Bowl, Cup, Location, Robot, PhysicalObject
 
 try:
     from pycram.worlds.multiverse2 import Multiverse
@@ -47,13 +49,15 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         simulator_conf.integrator = "IMPLICITFAST"
         simulator_conf.cone = "ELLIPTIC"
         rdm = RobotDescriptionManager()
-        rdm.load_description("iCub3")
+        rdm.load_description("iCub")
         simulator = BulletWorld
         if simulator is Multiverse:
             cls.world: Multiverse = Multiverse(WorldMode.GUI, scene_file_path=scene_file_path,
                                                simulator_config=simulator_conf)
         else:
             cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
+
+        cls.spawn_objects(models_dir)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.INFO)
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world, time_between_frames=datetime.timedelta(milliseconds=4))
@@ -62,6 +66,33 @@ class TestMultiverseEpisodeSegmenter(TestCase):
                                                         plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}',
                                                         detectors_to_start=[GeneralPickUpDetector],
                                                         initial_detectors=[InsertionDetector])
+
+    @classmethod
+    def spawn_objects(cls, models_dir):
+        cls.copy_model_files_to_world_data_dir(models_dir)
+        directory = Path(models_dir)
+        urdf_files = [f.name for f in directory.glob('*.urdf')]
+        for file in urdf_files:
+            obj_name = Path(file).stem
+            pose = PoseStamped()
+            if obj_name == "iCub":
+                obj_name = "iCub3"
+                file = "iCub3.urdf"
+                obj_type = Robot
+                pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
+            elif obj_name == "scene":
+                obj_type = Location
+            else:
+                obj_type = PhysicalObject
+            obj = Object(obj_name, obj_type, path=file, pose=pose)
+
+    @classmethod
+    def copy_model_files_to_world_data_dir(cls, models_dir):
+        """
+        Copy the model files to the world data directory.
+        """
+        # Copy the entire folder and its contents
+        shutil.copytree(models_dir, cls.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
 
     @classmethod
     def tearDownClass(cls):

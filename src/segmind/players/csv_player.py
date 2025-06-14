@@ -24,38 +24,14 @@ class CSVEpisodePlayer(FilePlayer):
     data_frames: pd.DataFrame
     data_object_names: Set[str]
 
-    def __init__(self, file_path: str, models_dir: Optional[str] = None, world: Optional[World] = None,
-                 time_between_frames: Optional[timedelta] = None, use_realtime: bool = False,
-                 stop_after_ready: bool = False):
-        super().__init__(file_path=file_path, models_dir=models_dir, time_between_frames=time_between_frames, use_realtime=use_realtime, world=world,
-                         stop_after_ready=stop_after_ready)
-
-        self._spawn_objects()
-
-        
-    def _spawn_objects(self):
-        directory = Path(self.models_dir)
-        urdf_files = [f.name for f in directory.glob('*.urdf')]
-        for file in urdf_files:
-            obj_name = Path(file).stem
-            pose = PoseStamped()
-            if obj_name == "iCub":
-                continue
-                obj_name = "iCub3"
-                file = "iCub3.urdf"
-                obj_type = Robot
-                pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
-            elif obj_name == "scene":
-                obj_type = Location
-            else:
-                obj_type = PhysicalObject
-            obj = Object(obj_name, obj_type, path=file, pose=pose)
-
     def get_frame_data_generator(self):
         self.data_frames = pd.read_csv(self.file_path)
         self.data_object_names = {v.split(':')[0] for v in self.data_frames.columns if ':' in v}
         for i, (frame_id, objects_data) in enumerate(self.data_frames.iterrows()):
             yield FrameData(time=float(objects_data["time"]), objects_data=objects_data.to_dict(), frame_idx=i)
+
+    def get_joint_states(self, frame_data: FrameData) -> Dict[str, float]:
+        return {}
 
     def _pause(self):
         ...

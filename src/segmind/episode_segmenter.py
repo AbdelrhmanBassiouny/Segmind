@@ -1,4 +1,5 @@
 import datetime
+import threading
 from os.path import dirname
 
 from typing_extensions import List, Optional, Dict
@@ -41,6 +42,7 @@ class EpisodeSegmenter(ABC):
         self.plot_timeline = plot_timeline
         self.show_plots = show_plots
         self.plot_save_path = plot_save_path
+        self.kill_event: threading.Event = threading.Event()
 
     def start(self) -> None:
         """
@@ -48,6 +50,9 @@ class EpisodeSegmenter(ABC):
         """
         self.start_episode_player_and_wait_till_ready()
         self.run_event_detectors()
+
+    def stop(self) -> None:
+        self.kill_event.set()
 
     def start_episode_player_and_wait_till_ready(self) -> None:
         """
@@ -67,8 +72,7 @@ class EpisodeSegmenter(ABC):
         closed_threads = False
 
         while (not closed_threads) or (self.logger.event_queue.unfinished_tasks > 0):
-            if not self.episode_player.is_alive() and not closed_threads:
-                self.episode_player.join()
+            if (not self.episode_player.is_alive() or self.kill_event.is_set()) and not closed_threads:
                 time.sleep(0.5)
                 # join all motion threads
                 joined = []

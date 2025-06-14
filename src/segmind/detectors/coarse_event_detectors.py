@@ -19,7 +19,7 @@ from pycram.datastructures.world import UseProspectionWorld
 from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import *
 from ..datastructures.events import *
-from ..utils import get_angle_between_vectors, get_support
+from ..utils import get_angle_between_vectors, get_support, is_object_supported_by_container_body
 from ..episode_player import EpisodePlayer
 
 
@@ -82,7 +82,7 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
     A type of event detector that requires an event to occur as a start condition and has one tracked object.
     """
 
-    currently_tracked_objects: Optional[Dict[str, Object]] = None
+    currently_tracked_objects: Optional[Dict[Object, DetectorWithTrackedObjectAndStarterEvent]] = None
     """
     All the objects that are currently tracked by a detector with a starter event.
     """
@@ -193,7 +193,7 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
             if not interaction_event:
                 time.sleep(0.01)
                 continue
-
+            interaction_event.update_action_description()
             self.currently_tracked_objects.pop(self.tracked_object, None)
             event = interaction_event
             break
@@ -266,9 +266,14 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
-
+    @staticmethod
+    def ask_now(case_dict, output_):
+        cls_ = case_dict["cls_"]
+        event = case_dict["event"]
+        output_ = output_["output_"]
+        return isinstance(event, LossOfContactEvent) and "object_4" in event.tracked_object.name and output_
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+     fit=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
@@ -414,7 +419,8 @@ def check_for_supporting_surface(tracked_object: Object,
         World.current_world.simulate(dt)
         prospection_obj = World.current_world.get_prospection_object_for_object(tracked_object)
         contact_points = prospection_obj.contact_points
-        contacted_bodies = contact_points.get_objects_that_have_points()
+        contacted_bodies = contact_points.get_all_bodies()
+        contacted_bodies = [body for body in contacted_bodies if body.name != tracked_object.name]
         contacted_body_names = [body.name for body in contacted_bodies]
         contacted_bodies = dict(zip(contacted_body_names, contacted_bodies))
         if possible_surfaces is None:
@@ -455,7 +461,7 @@ def select_transportable_objects_from_loss_of_contact_event(event: LossOfContact
     return select_transportable_objects([event.tracked_object])
 
 
-def select_transportable_objects(objects: List[Object]) -> List[Object]:
+def select_transportable_objects(objects: List[Object], not_contained: bool = False) -> List[Object]:
     """
     Select the objects that can be transported
 
@@ -463,6 +469,9 @@ def select_transportable_objects(objects: List[Object]) -> List[Object]:
     """
     transportable_objects = [obj for obj in objects
                              if not issubclass(obj.ontology_concept, (Agent, Location, Supporter, Floor))]
+    if not_contained:
+        transportable_objects = [obj for obj in transportable_objects
+                                 if not is_object_supported_by_container_body(obj)]
     return transportable_objects
 
 
