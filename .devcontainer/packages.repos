@@ -12,11 +12,7 @@ repositories:
     type: git
     url: https://github.com/AbdelrhmanBassiouny/semantic_world.git
     version: icub_demo
-  Multiverse-Parser:
+  giskardpy_ros:
     type: git
-    url: https://github.com/AbdelrhmanBassiouny/Multiverse-Parser.git
-    version: main
-  Multiverse-Resources:
-    type: git
-    url: https://github.com/Multiverse-Framework/Multiverse-Resources.git
-    version: main
+    url: https://github.com/SemRoCo/giskardpy_ros.git
+    version: ros2-jazzy-main

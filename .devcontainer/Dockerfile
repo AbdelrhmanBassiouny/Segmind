@@ -30,6 +30,17 @@ ENV HOME=/root
 # Create overlay workspace
 WORKDIR $HOME/workspace/src
 COPY packages.repos .
+
+ARG LIBSDIR=$HOME/libs
+
+RUN mkdir -p $LIBSDIR && \
+    cd $LIBSDIR && \
+    git clone -b giskard_library https://github.com/SemRoCo/giskardpy.git && \
+    git clone https://github.com/AbdelrhmanBassiouny/Multiverse-Parser.git && \
+    git clone https://github.com/Multiverse-Framework/Multiverse-Resources.git && \
+    git clone https://github.com/qpSWIFT/qpSWIFT
+
+
 ARG BRANCH_NAME=icub_demo
 
 RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/${BRANCH_NAME}/rosinstall/pycram-ros2.rosinstall \
@@ -56,7 +67,7 @@ RUN echo "export WORKON_HOME=$HOME/.virtualenvs" >> $HOME/.bashrc && \
     echo "export VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.virtualenvs/venv/bin/virtualenv" >> $HOME/.bashrc && \
     echo "source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh" >> $HOME/.bashrc \
 
-RUN echo "export PYTHONPATH=\$PYTHONPATH:$HOME/workspace/src/Multiverse-Parser/USD/linux/lib/python/pxr" >> $HOME/.bashrc
+RUN echo "export PYTHONPATH=\$PYTHONPATH:$HOME/workspace/src/Multiverse-Parser/USD/linux" >> $HOME/.bashrc
 
 
 ENV WORKON_HOME=$HOME/.virtualenvs
@@ -71,7 +82,22 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     pip install -r pycram/requirements.txt && \
     pip install -U setuptools && \
     pip install -r ripple_down_rules/requirements.txt && \
-    pip install lark
+    pip install lark && \
+    cd $LIBSDIR/giskardpy && \
+    pip install -r requirements.txt &&  pip install -e . && \
+    cd $LIBSDIR/Multiverse-Parser && \
+    pip install -r requirements.txt && pip install -e . && \
+    cd $LIBSDIR/qpSWIFT/python && \
+    sudo python3 setup.py install && \
+    && source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    cd $HOME/workspace && \
+    vcs import src < src/giskardpy_ros/$ROS_DISTRO.repos && \
+    rosdep update --rosdistro=$ROS_DISTRO && \
+    sudo apt-get update && \
+    rosdep install --from-paths ./ -i -y --rosdistro ${ROS_DISTRO} && \
+    sudo apt-get install ros-jazzy-rclpy-message-converter -y && \
+    colcon build --symlink-install && \
+    source $HOME/workspace/install/setup.bash
 
 # Install code-server
 RUN sudo apt-get update && sudo apt-get install -y \
