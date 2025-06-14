@@ -36,12 +36,12 @@ ARG LIBSDIR=$HOME/libs
 RUN mkdir -p $LIBSDIR && \
     cd $LIBSDIR && \
     git clone -b giskard_library https://github.com/SemRoCo/giskardpy.git && \
-    git clone https://github.com/AbdelrhmanBassiouny/Multiverse-Parser.git && \
-    git clone https://github.com/Multiverse-Framework/Multiverse-Resources.git && \
+    git clone -b main https://github.com/AbdelrhmanBassiouny/Multiverse-Parser.git && \
+    git clone -b main https://github.com/Multiverse-Framework/Multiverse-Resources.git && \
     git clone https://github.com/qpSWIFT/qpSWIFT
 
 
-ARG BRANCH_NAME=icub_demo
+ARG BRANCH_NAME=icub_demo_ros2
 
 RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/${BRANCH_NAME}/rosinstall/pycram-ros2.rosinstall \
     && cd .. \
