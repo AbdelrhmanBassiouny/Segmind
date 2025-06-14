@@ -8,7 +8,6 @@ from os.path import dirname
 
 
 import pycram.ros
-from pycram.config.multiverse_conf import SimulatorConfig, MultiverseConfig
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
@@ -44,18 +43,9 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         csv_file = os.path.join(episode_dir, f"data.csv")
         models_dir = os.path.join(episode_dir, "models")
         scene_file_path = os.path.join(models_dir, f"scene.xml")
-        simulator_conf = MultiverseConfig.simulator_config
-        simulator_conf.step_size = timedelta(milliseconds=4)
-        simulator_conf.integrator = "IMPLICITFAST"
-        simulator_conf.cone = "ELLIPTIC"
         rdm = RobotDescriptionManager()
         rdm.load_description("iCub")
-        simulator = BulletWorld
-        if simulator is Multiverse:
-            cls.world: Multiverse = Multiverse(WorldMode.GUI, scene_file_path=scene_file_path,
-                                               simulator_config=simulator_conf)
-        else:
-            cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
+        cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
 
         cls.spawn_objects(models_dir)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.INFO)
@@ -76,15 +66,19 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             obj_name = Path(file).stem
             pose = PoseStamped()
             if obj_name == "iCub":
-                obj_name = "iCub3"
-                file = "iCub3.urdf"
+                file = "iCub.urdf"
                 obj_type = Robot
                 pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
             elif obj_name == "scene":
                 obj_type = Location
             else:
                 obj_type = PhysicalObject
-            obj = Object(obj_name, obj_type, path=file, pose=pose)
+            try:
+                obj = Object(obj_name, obj_type, path=file, pose=pose)
+            except Exception as e:
+                import pdb; pdb.set_trace()
+                print(e)
+                continue
 
     @classmethod
     def copy_model_files_to_world_data_dir(cls, models_dir):

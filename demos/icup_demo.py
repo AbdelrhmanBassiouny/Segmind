@@ -143,7 +143,10 @@ while True:
             else:
                 raise ValueError("Placing a not picked object")
             place_pose = actionable_event.tracked_object.pose
-            place_pose.orientation = object_to_place.orientation
+            if isinstance(actionable_event, PlacingEvent):
+                place_pose.orientation = object_to_place.orientation
+            elif isinstance(actionable_event, InsertionEvent):
+                place_pose.orientation = actionable_event.through_hole.orientation
             logerr(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = PlaceActionDescription(object_to_place, target_location=place_pose,
                                                              arm=object_picked_arm[object_to_place],

@@ -137,7 +137,7 @@ class InsertionDetector(SpatialRelationDetector):
         """
         Update the state of a body.
         """
-        body.update_containment(intersection_ratio=0.5, only_bodies=with_bodies)
+        body.update_containment(intersection_ratio=0.2, only_bodies=with_bodies)
         self.bodies_states[body] = copy(body.contained_in_bodies)
 
     def detect_events(self) -> None:

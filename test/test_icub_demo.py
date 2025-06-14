@@ -13,8 +13,12 @@ from segmind.datastructures.events import AbstractAgentObjectInteractionEvent
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
-from segmind.players.multiverse_player import MultiversePlayer
 
+try:
+    from segmind.players.multiverse_player import MultiversePlayer
+except ImportError:
+    MultiversePlayer = None
+    
 import pycram
 from pycram.datastructures.enums import WorldMode, Arms, Grasp
 from pycram.datastructures.grasp import GraspDescription

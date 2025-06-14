@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <robot name="iCub_with_montessori_toys_2" version="1.0">
   <link name="world"/>
-  <joint name="table_joint" type="floating">
+  <joint name="table_joint" type="fixed">
     <origin xyz="0.0 0.0 1.0" rpy="0.0 0.0 0.0"/>
     <parent link="world"/>
     <child link="table"/>
@@ -43,7 +43,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="small_table_joint" type="floating">
+  <joint name="small_table_joint" type="fixed">
     <origin xyz="-0.35 0.0 1.0" rpy="0.0 0.0 0.0"/>
     <parent link="world"/>
     <child link="small_table"/>
@@ -85,7 +85,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="montessori_box_joint" type="floating">
+  <joint name="montessori_box_joint" type="fixed">
     <origin xyz="-0.4 0.0 1.39" rpy="0.0 0.0 0.0"/>
     <parent link="world"/>
     <child link="montessori_box"/>

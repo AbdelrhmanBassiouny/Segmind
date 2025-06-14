@@ -4,8 +4,19 @@ repositories:
     type: git
     url: https://github.com/AbdelrhmanBassiouny/ripple_down_rules.git
     version: main
-  external_robots:
+  external-robots:
     type: git
     url: https://github.com/AbdelrhmanBassiouny/external-robots.git
-    version: icub_ro2_jazzy
-
+    version: icub_ros2_jazzy
+  semantic_world:
+    type: git
+    url: https://github.com/AbdelrhmanBassiouny/semantic_world.git
+    version: icub_demo
+  Multiverse-Parser:
+    type: git
+    url: https://github.com/AbdelrhmanBassiouny/Multiverse-Parser.git
+    version: main
+  Multiverse-Resources:
+    type: git
+    url: https://github.com/Multiverse-Framework/Multiverse-Resources.git
+    version: main

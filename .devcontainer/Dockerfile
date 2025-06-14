@@ -30,9 +30,9 @@ ENV HOME=/root
 # Create overlay workspace
 WORKDIR $HOME/workspace/src
 COPY packages.repos .
+ARG BRANCH_NAME=icub_demo
 
-
-RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/dev/rosinstall/pycram-ros2.rosinstall \
+RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/${BRANCH_NAME}/rosinstall/pycram-ros2.rosinstall \
     && cd .. \
     && source /opt/ros/${ROS_DISTRO}/setup.bash \
     && colcon build --symlink-install
@@ -54,7 +54,9 @@ RUN python3 -m venv $HOME/.virtualenvs/venv && \
 RUN echo "export WORKON_HOME=$HOME/.virtualenvs" >> $HOME/.bashrc && \
     echo "export VIRTUALENVWRAPPER_PYTHON=$HOME/.virtualenvs/venv/bin/python" >> $HOME/.bashrc && \
     echo "export VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.virtualenvs/venv/bin/virtualenv" >> $HOME/.bashrc && \
-    echo "source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh" >> $HOME/.bashrc
+    echo "source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh" >> $HOME/.bashrc \
+
+RUN echo "export PYTHONPATH=\$PYTHONPATH:$HOME/workspace/src/Multiverse-Parser/USD/linux/lib/python/pxr" >> $HOME/.bashrc
 
 
 ENV WORKON_HOME=$HOME/.virtualenvs

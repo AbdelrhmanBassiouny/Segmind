@@ -9,7 +9,6 @@ import pytest
 
 
 import pycram.ros
-from pycram.config.multiverse_conf import SimulatorConfig, MultiverseConfig
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
