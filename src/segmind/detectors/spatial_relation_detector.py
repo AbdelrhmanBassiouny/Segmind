@@ -156,7 +156,7 @@ class InsertionDetector(SpatialRelationDetector):
                     time.sleep(self.wait_time.total_seconds())
                     hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
-                    self.update_body_state(event.tracked_object, with_bodies=[hole])
+                    # self.update_body_state(event.tracked_object, with_bodies=[hole])
                     if not self.hole_insertion_verifier(hole, event):
                         if event.tracked_object.is_moving:
                             continue

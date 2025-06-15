@@ -309,7 +309,7 @@
     <collision name="circular_hole_1_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder radius="0.017" length="0.01"/>
+        <cylinder radius="0.019" length="0.005"/>
       </geometry>
       <material name="MontessoriDrawer2_material">
         <color rgba="0.99 0.0 0.0 1.0"/>
@@ -335,7 +335,7 @@
     </collision>
   </link>
   <joint name="montessori_rectangular_hole_joint" type="fixed">
-    <origin xyz="-0.027 0.0 0.025" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.027 0.0 0.035" rpy="0.0 0.0 0.0"/>
     <parent link="montessori_box"/>
     <child link="rectangular_hole"/>
   </joint>
@@ -348,7 +348,7 @@
     <collision name="rectangular_hole_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.02 0.04 0.01"/>
+        <box size="0.02 0.04 0.005"/>
       </geometry>
     </collision>
   </link>

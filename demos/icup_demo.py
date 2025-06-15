@@ -3,8 +3,12 @@ import logging
 import os
 import shutil
 import threading
+import time
 from os.path import dirname
 from pathlib import Path
+from typing import Tuple
+
+from pycram.datastructures.grasp import GraspDescription
 
 from segmind.datastructures.events import AbstractAgentObjectInteractionEvent, PlacingEvent, PickUpEvent, InsertionEvent
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
@@ -21,7 +25,7 @@ from pycram.datastructures.world import World
 from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription
 from pycram.language import SequentialPlan
 from pycram.process_module import real_robot
-from pycram.robot_description import RobotDescriptionManager
+from pycram.robot_description import RobotDescriptionManager, RobotDescription
 from pycram.ros import logerr
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
@@ -38,7 +42,6 @@ def spawn_objects(models_dir: str):
         obj_name = Path(file).stem
         pose = PoseStamped()
         if obj_name == "iCub":
-            file = "iCub.urdf"
             obj_type = Robot
             pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
         elif obj_name == "scene":
@@ -57,7 +60,7 @@ def copy_model_files_to_world_data_dir(models_dir: str):
 
 
 rdm = RobotDescriptionManager()
-rdm.load_description("iCub3")
+rdm.load_description("iCub")
 
 world: BulletWorld = BulletWorld(WorldMode.GUI)
 
@@ -88,12 +91,22 @@ while True:
                                                 plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
                                                 detectors_to_start=[GeneralPickUpDetector],
                                                 initial_detectors=[InsertionDetector])
+
+    multiverse_player.start()
+
+    time.sleep(1)
+
     # Create a thread
     thread = threading.Thread(target=episode_segmenter.start)
     # Start the thread
     thread.start()
 
     input("Press Enter to continue...")
+
+    # while True:
+        # time.sleep(1)
+        # if any(isinstance(event, InsertionEvent) for event in episode_segmenter.logger.get_events()):
+            # break
 
     episode_segmenter.stop()
     thread.join()
@@ -107,7 +120,7 @@ while True:
     all_inserted_objects = [event.tracked_object for event in actionable_events if isinstance(event, InsertionEvent)]
     pickable_objects = [obj for obj in pickable_objects if obj not in all_inserted_objects]
     object_pick_up_actions: Dict[Object, PickUpActionDescription] = {}
-    object_picked_arm: Dict[Object, Arms] = {}
+    object_picked_arm_and_grasp: Dict[Object, Tuple[Arms, GraspDescription, PoseStamped]] = {}
     mapped_objects: Dict[Object, Object] = {}
     logerr(str(actionable_events))
 
@@ -128,7 +141,9 @@ while True:
             logerr(f"Object to Pick is {to_pick_object.name}")
             mapped_objects[actionable_event.tracked_object] = to_pick_object
             arm, grasp = get_arm_and_grasp_description_for_object(to_pick_object)
-            object_picked_arm[to_pick_object] = arm
+            end_effector = RobotDescription.current_robot_description.get_arm_chain(arm).end_effector
+            pose = to_pick_object.get_grasp_pose(end_effector, grasp)
+            object_picked_arm_and_grasp[to_pick_object] = (arm, grasp, pose)
             action_descriptions[-1] = PickUpActionDescription(to_pick_object, arm=arm, grasp_description=grasp)
             # logerr("Finished pickup action")
         elif isinstance(actionable_event, (PlacingEvent, InsertionEvent)):
@@ -136,15 +151,18 @@ while True:
             if actionable_event.tracked_object in mapped_objects:
                 object_to_place = mapped_objects[actionable_event.tracked_object]
             else:
+                action_descriptions.remove(action_descriptions[-1])
+                continue
                 raise ValueError("Placing a not picked object")
             place_pose = actionable_event.tracked_object.pose
+            arm, grasp, pose = object_picked_arm_and_grasp[object_to_place]
             if isinstance(actionable_event, PlacingEvent):
                 place_pose.orientation = object_to_place.orientation
             elif isinstance(actionable_event, InsertionEvent):
-                place_pose.orientation = actionable_event.through_hole.orientation
+                place_pose.orientation = pose.orientation
             logerr(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = PlaceActionDescription(object_to_place, target_location=place_pose,
-                                                             arm=object_picked_arm[object_to_place],
+                                                             arm=arm,
                                                              insert=isinstance(actionable_event, InsertionEvent))
             # logerr("Finished placing action")
             # action_descriptions.append(ParkArmsActionDescription(Arms.BOTH))
