@@ -91,11 +91,6 @@ while True:
                                                 plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
                                                 detectors_to_start=[GeneralPickUpDetector],
                                                 initial_detectors=[InsertionDetector])
-
-    multiverse_player.start()
-
-    time.sleep(1)
-
     # Create a thread
     thread = threading.Thread(target=episode_segmenter.start)
     # Start the thread
@@ -159,11 +154,13 @@ while True:
             if isinstance(actionable_event, PlacingEvent):
                 place_pose.orientation = object_to_place.orientation
             elif isinstance(actionable_event, InsertionEvent):
+                place_pose = actionable_event.through_hole.pose
                 place_pose.orientation = pose.orientation
             logerr(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = PlaceActionDescription(object_to_place, target_location=place_pose,
                                                              arm=arm,
-                                                             insert=isinstance(actionable_event, InsertionEvent))
+                                                             insert=isinstance(actionable_event, InsertionEvent),
+                                                             pre_place_vertical_distance=0.05)
             # logerr("Finished placing action")
             # action_descriptions.append(ParkArmsActionDescription(Arms.BOTH))
 

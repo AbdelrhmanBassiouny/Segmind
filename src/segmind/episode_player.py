@@ -139,4 +139,4 @@ class EpisodePlayer(PropagatingThread, ABC):
         return wrapper
     
     def _join(self, timeout=None):
-        pass
+        self._instance = None

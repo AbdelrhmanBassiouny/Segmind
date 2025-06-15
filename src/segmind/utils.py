@@ -69,6 +69,7 @@ class PropagatingThread(threading.Thread, ABC):
         Stop the event detector.
         """
         self.kill_event.set()
+        self._join()
     
     # def join(self, timeout=None):
     #     self._join(timeout)
