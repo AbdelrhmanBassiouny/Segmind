@@ -62,7 +62,7 @@ class AtomicEventDetector(PropagatingThread):
         self.fit_mode = fit_mode
         self.logger: EventLogger = logger if logger else EventLogger.current_logger
         self.world: World = world if world else World.current_world
-        self.wait_time = wait_time if wait_time is not None else timedelta(seconds=0.05)
+        self.wait_time = wait_time if wait_time is not None else timedelta(milliseconds=50)
 
         self.queues: List[Queue] = []
 
@@ -279,7 +279,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05,
-                 wait_time: Optional[timedelta] = timedelta(seconds=0.01),
+                 wait_time: Optional[timedelta] = timedelta(milliseconds=50),
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.

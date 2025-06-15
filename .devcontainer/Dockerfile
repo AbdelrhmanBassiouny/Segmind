@@ -1,5 +1,4 @@
-FROM osrf/ros:jazzy-desktop-full-noble
-
+ok
 SHELL [ "/bin/bash" , "-c" ]
 
 # Remove old ROS key and install updated one

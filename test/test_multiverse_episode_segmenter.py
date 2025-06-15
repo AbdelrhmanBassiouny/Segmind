@@ -48,7 +48,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         rdm.load_description("iCub")
 
         cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
-        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
+        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
         cls.viz_marker_publisher = VizMarkerPublisher()
 
         episode_name = "icub_montessori_no_hands"
@@ -72,8 +72,6 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             obj_name = Path(file).stem
             pose = PoseStamped()
             if obj_name == "iCub":
-                obj_name = "iCub3"
-                file = "iCub3.urdf"
                 obj_type = Robot
                 pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
             elif obj_name == "scene":
