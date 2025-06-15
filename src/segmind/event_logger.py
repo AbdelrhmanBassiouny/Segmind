@@ -79,6 +79,13 @@ class EventLogger:
         if EventLogger.current_logger is None:
             EventLogger.current_logger = self
 
+    def reset(self):
+        self.timeline = []
+        self.event_queue = queue.Queue()
+        self.timeline_per_thread = {}
+        for obj_tracker in ObjectTrackerFactory.get_all_trackers():
+            obj_tracker.reset()
+
     def add_callback(self, event_type: Type[Event], callback: CallbackFunction, condition: Optional[ConditionFunction] = lambda event: True) -> None:
         """
         Add a callback for an event type.

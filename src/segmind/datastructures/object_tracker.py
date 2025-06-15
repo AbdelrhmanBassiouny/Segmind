@@ -22,6 +22,9 @@ class ObjectTracker:
         self._lock: RLock = RLock()
         self._event_history: List[Event] = []
 
+    def reset(self) -> None:
+        self._event_history = []
+
     @property
     def current_state(self) -> ObjectState:
         return self.obj.current_state

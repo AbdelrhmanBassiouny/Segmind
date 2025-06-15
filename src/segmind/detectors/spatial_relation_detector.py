@@ -36,6 +36,11 @@ class SpatialRelationDetector(AtomicEventDetector):
         self.update_initial_state()
         for event, cond in self.check_on_events.items():
             self.logger.add_callback(event, self.on_event, cond)
+
+    def reset(self):
+        self.bodies_states = {}
+        self.update_initial_state()
+        self.event_queue = Queue()
     
     def update_initial_state(self):
         for body in self.world.objects:

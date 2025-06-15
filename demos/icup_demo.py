@@ -76,36 +76,37 @@ spawn_objects(models_dir)
 
 csv_file = os.path.join(episode_dir, f"data.csv")
 
+multiverse_player = MultiversePlayer(world=world,
+                                     time_between_frames=datetime.timedelta(milliseconds=4),
+                                     stop_after_ready=False)
+
+multiverse_player.start()
+
+
+episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
+                                                plot_timeline=True,
+                                                plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
+                                                detectors_to_start=[GeneralPickUpDetector],
+                                                initial_detectors=[InsertionDetector])
+
+# Create a thread
+thread = threading.Thread(target=episode_segmenter.start)
+# Start the thread
+thread.start()
+
 
 while True:
     user_input = input("Continue? (y/n) ")
     if user_input == "n":
         break
 
-    multiverse_player = MultiversePlayer(world=world,
-                                         time_between_frames=datetime.timedelta(milliseconds=4),
-                                         stop_after_ready=False)
 
-    episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
-                                                plot_timeline=True,
-                                                plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
-                                                detectors_to_start=[GeneralPickUpDetector],
-                                                initial_detectors=[InsertionDetector])
-    # Create a thread
-    thread = threading.Thread(target=episode_segmenter.start)
-    # Start the thread
-    thread.start()
-
-    input("Press Enter to continue...")
+    # input("Press Enter to continue...")
 
     # while True:
         # time.sleep(1)
         # if any(isinstance(event, InsertionEvent) for event in episode_segmenter.logger.get_events()):
             # break
-
-    episode_segmenter.stop()
-    thread.join()
-    logerr("Joined Thread.")
 
     all_events = episode_segmenter.logger.get_events()
     actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]
@@ -171,5 +172,16 @@ while True:
         plan.plot()
         plan.perform()
 
-    multiverse_player.stop()
-    multiverse_player.join()
+    episode_segmenter.logger.reset()
+    # for detector in episode_segmenter.detector_threads_list:
+    #     detector.reset()
+    # for detector in episode_segmenter.starter_event_to_detector_thread_map.values():
+    #     detector.stop()
+    #     detector.join()
+
+multiverse_player.stop()
+multiverse_player.join()
+
+episode_segmenter.stop()
+thread.join()
+logerr("Joined Thread.")
