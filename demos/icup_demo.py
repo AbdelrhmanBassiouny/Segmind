@@ -26,11 +26,8 @@ from pycram.ros import logerr
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Location, PhysicalObject
-from semantic_world.world import World as SemanticWorld
-from semantic_world.adapters.multi_parser import MultiParser
 
 
-# semantic_world: SemanticWorld = SemanticWorld()
 objects_dir = World.conf.cache_dir + "/objects"
 
 def spawn_objects(models_dir: str):
@@ -49,7 +46,6 @@ def spawn_objects(models_dir: str):
         else:
             obj_type = PhysicalObject
         obj = Object(obj_name, obj_type, path=file, pose=pose)
-        # semantic_world.merge_world(MultiParser(f"{objects_dir}/{file}").parse())
 
 
 def copy_model_files_to_world_data_dir(models_dir: str):
@@ -74,7 +70,6 @@ episode_dir = os.path.join(multiverse_episodes_dir, episode_name)
 models_dir = os.path.join(episode_dir, "models")
 
 spawn_objects(models_dir)
-World.current_world.update_views()
 
 csv_file = os.path.join(episode_dir, f"data.csv")
 

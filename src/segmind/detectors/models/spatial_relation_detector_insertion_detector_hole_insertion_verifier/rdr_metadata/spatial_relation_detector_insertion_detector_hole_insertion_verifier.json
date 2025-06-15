@@ -7,7 +7,7 @@
                 "_type": "ripple_down_rules.rules.SingleClassRule",
                 "conditions": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type .\"\"\"\n        return hole not in event.tracked_object.contained_in_bodies\n    return conditions_for_insertion_detector_hole_insertion_verifier(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type .\"\"\"\n        hole_bbox = hole.get_axis_aligned_bounding_box()\n        intersection = hole_bbox.intersection_with(event.bounding_box)\n        i_width, i_depth, i_height = intersection.width, intersection.depth, intersection.height\n        if (hole_bbox.width >= (i_width - 1e-3)\n            and hole_bbox.depth >= (i_depth - 1e-3)\n            and hole_bbox.height >= (i_height - 1e-3)):\n            return True\n        return False\n    return conditions_for_insertion_detector_hole_insertion_verifier(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
@@ -22,7 +22,8 @@
                         "NoneType": "builtins.NoneType",
                         "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                         "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                        "Container": "semantic_world.views.views.Container"
+                        "Container": "semantic_world.views.views.Container",
+                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -47,7 +48,8 @@
                         "NoneType": "builtins.NoneType",
                         "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                         "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                        "Container": "semantic_world.views.views.Container"
+                        "Container": "semantic_world.views.views.Container",
+                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -73,7 +75,7 @@
                     "_type": "ripple_down_rules.rules.SingleClassRule",
                     "conditions": {
                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                        "user_input": "def _get_value(case):\n    def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type .\"\"\"\n        rays_results = event.tracked_object.cast_rays_in_all_directions(0.07)\n        directions_results = [rr.intersected for rr in rays_results]\n        directions_results_bottom = directions_results[4]\n        if not directions_results_bottom:\n            return False\n        link_id = rays_results[4].link_id\n        obj_id = rays_results[4].obj_id\n        link = event.tracked_object.world.get_object_by_id(obj_id).get_link_by_id(link_id)\n        containers = [v for v in event.tracked_object.world.views['views'] if isinstance(v, Container)]\n        container_bodies = [c.body for c in containers]\n        container_body_names = [c.name.name for c in container_bodies]\n        return directions_results_bottom and link.name in container_body_names\n    return conditions_for_insertion_detector_hole_insertion_verifier(**case)\n    ",
+                        "user_input": "def _get_value(case):\n    def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type .\"\"\"\n        rays_results = event.tracked_object.cast_rays_in_all_directions(0.07)\n        directions_results = [rr.intersected for rr in rays_results]\n        directions_results_bottom = directions_results[4]\n        if not directions_results_bottom:\n            return False\n        if hasattr(event.tracked_object.world, \"views\") and event.tracked_object.world.views is not None:\n            link_id = rays_results[4].link_id\n            obj_id = rays_results[4].obj_id\n            link = event.tracked_object.world.get_object_by_id(obj_id).get_link_by_id(link_id)\n            containers = [v for v in event.tracked_object.world.views['views'] if isinstance(v, Container)]\n            container_bodies = [c.body for c in containers]\n            container_body_names = [c.name.name for c in container_bodies]\n            return directions_results_bottom and link.name in container_body_names\n        else:\n            return is_object_supported_by_container_body(event.tracked_object)\n    return conditions_for_insertion_detector_hole_insertion_verifier(**case)\n    ",
                         "conclusion_type": [
                             "builtins.bool"
                         ],
@@ -88,7 +90,8 @@
                             "NoneType": "builtins.NoneType",
                             "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                             "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                            "Container": "semantic_world.views.views.Container"
+                            "Container": "semantic_world.views.views.Container",
+                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -113,7 +116,8 @@
                             "NoneType": "builtins.NoneType",
                             "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                             "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                            "Container": "semantic_world.views.views.Container"
+                            "Container": "semantic_world.views.views.Container",
+                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -154,7 +158,8 @@
                                 "NoneType": "builtins.NoneType",
                                 "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                                 "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                                "Container": "semantic_world.views.views.Container"
+                                "Container": "semantic_world.views.views.Container",
+                                "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -179,7 +184,8 @@
                                 "NoneType": "builtins.NoneType",
                                 "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                                 "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                                "Container": "semantic_world.views.views.Container"
+                                "Container": "semantic_world.views.views.Container",
+                                "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",

@@ -267,13 +267,12 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
     @staticmethod
-    def ask_now(case_dict, output_):
+    def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        output_ = output_["output_"]
-        return isinstance(event, LossOfContactEvent) and "object_4" in event.tracked_object.name and output_
+        return isinstance(event, LossOfContactEvent) and "object_4" in event.tracked_object.name
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
-     fit=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
+     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """

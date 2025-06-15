@@ -25,10 +25,13 @@ from semantic_world.views import Container
 
 
 def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07) -> bool:
-    containers = [v for v in obj.world.views['views'] if isinstance(v, Container)]
-    container_bodies = [c.body for c in containers]
-    container_body_names = [c.name.name for c in container_bodies]
-    return any(body.name in container_body_names for body in obj.contact_points.get_all_bodies())
+    if hasattr(obj.world, "views") and obj.world.views is not None:
+        containers = [v for v in obj.world.views['views'] if isinstance(v, Container)]
+        container_bodies = [c.body for c in containers]
+        container_body_names = [c.name.name for c in container_bodies]
+        return any(body.name in container_body_names for body in obj.contact_points.get_all_bodies())
+    else:
+        return any("drawer" in body.name and "handle" not in body.name for body in obj.contact_points.get_all_bodies())
 
 
 def get_arm_and_grasp_description_for_object(obj: Object) -> Tuple[Arms, GraspDescription]:

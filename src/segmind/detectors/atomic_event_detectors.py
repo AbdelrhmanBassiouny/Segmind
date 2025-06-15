@@ -279,7 +279,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05,
-                 wait_time: Optional[timedelta] = timedelta(milliseconds=50),
+                 wait_time: Optional[timedelta] = timedelta(milliseconds=250),
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.

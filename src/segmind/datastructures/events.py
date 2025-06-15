@@ -9,7 +9,7 @@ from pycram.designators.action_designator import PickUpActionDescription, PlaceA
 from pycram.ros import logwarn
 from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState
+from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState, AxisAlignedBoundingBox
 from pycram.datastructures.dataclasses import Color
 from pycram.datastructures.pose import Pose, PoseStamped
 from pycram.datastructures.world import World
@@ -235,6 +235,8 @@ class StopRotationEvent(StopMotionEvent):
 
 
 class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
+    with_object_bounding_box: Optional[AxisAlignedBoundingBox] = None
+    with_object_pose: Optional[PoseStamped] = None
 
     def __init__(self,
                  contact_points: ContactPointsList,
@@ -246,6 +248,11 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         EventWithTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
         self.contact_points = contact_points
         self.latest_contact_points = latest_contact_points
+        self.bounding_box: AxisAlignedBoundingBox = of_object.get_axis_aligned_bounding_box()
+        self.pose: PoseStamped = of_object.pose
+        if with_object is not None:
+            self.with_object_bounding_box = with_object.get_axis_aligned_bounding_box()
+            self.with_object_pose = with_object.pose
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
