@@ -24,7 +24,7 @@ from pycram.datastructures.enums import WorldMode, Arms
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
 from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, \
-    ParkArmsActionDescription
+    ParkArmsActionDescription, PickUpAction
 from pycram.language import SequentialPlan
 from pycram.process_module import real_robot
 from pycram.robot_description import RobotDescriptionManager, RobotDescription
@@ -128,7 +128,7 @@ while True:
 
         if isinstance(actionable_event, PickUpEvent):
             if len(action_descriptions) >= 1 :
-                if isinstance(action_descriptions[i-1], PickUpActionDescription):
+                if action_descriptions[i-1].performable is PickUpAction:
                     action_descriptions.remove(action_descriptions[i-1])
             # logerr("Constructing pickup action")
             if actionable_event.tracked_object not in pickable_objects:
