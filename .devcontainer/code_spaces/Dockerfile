@@ -13,7 +13,7 @@ RUN sudo apt-get install graphviz graphviz-dev -y
 
 # Create overlay workspace
 WORKDIR /root/workspace/src
-COPY ../packages.repos .
+COPY ./packages.repos .
 
 
 RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/dev/pycram-ros2.rosinstall \

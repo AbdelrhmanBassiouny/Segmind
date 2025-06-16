@@ -1,11 +1,12 @@
-ok
+FROM osrf/ros:noetic-desktop-full-focal
+
 SHELL [ "/bin/bash" , "-c" ]
 
 # Remove old ROS key and install updated one
 RUN sudo apt-get install -y curl gnupg lsb-release && \
-    sudo rm -f /etc/apt/sources.list.d/ros2-latest.list && \
+    sudo rm -f /etc/apt/sources.list.d/ros-latest.list && \
     curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2.list && \
+    echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros.list && \
     sudo apt-get update
 
 # Now safe to do full upgrade
@@ -14,7 +15,7 @@ RUN sudo apt-get upgrade -y
 RUN sudo apt update && sudo apt upgrade -y
 
 # Install pycram dependencies
-RUN sudo apt install wget python3.12-venv ros-jazzy-xacro python3-vcstool git ros-dev-tools default-jre -y
+RUN sudo apt install wget python3.8-venv ros-noetic-xacro python3-vcstool git ros-dev-tools default-jre -y
 
 # Install RDR dependencies
 RUN sudo apt-get install graphviz graphviz-dev -y
@@ -28,24 +29,26 @@ ENV HOME=/root
 
 # Create overlay workspace
 WORKDIR $HOME/workspace/src
-COPY packages.repos .
+COPY ./packages.repos .
 
 ARG LIBSDIR=$HOME/libs
 
 RUN mkdir -p $LIBSDIR && \
     cd $LIBSDIR && \
     git clone -b giskard_library https://github.com/SemRoCo/giskardpy.git && \
-    git clone -b main https://github.com/AbdelrhmanBassiouny/Multiverse-Parser.git && \
-    git clone -b main https://github.com/Multiverse-Framework/Multiverse-Resources.git && \
     git clone https://github.com/qpSWIFT/qpSWIFT
 
+RUN cd $LIBSDIR && \
+    git clone -b main https://github.com/Multiverse-Framework/Multiverse.git && \
+    cd $LIBSDIR/Multiverse && \
+    git submodule update --init --recursive
 
-ARG BRANCH_NAME=icub_demo_ros2
+ARG BRANCH_NAME=icub_demo
 
-RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/${BRANCH_NAME}/rosinstall/pycram-ros2.rosinstall \
+RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/${BRANCH_NAME}/rosinstall/pycram.rosinstall \
     && cd .. \
     && source /opt/ros/${ROS_DISTRO}/setup.bash \
-    && colcon build --symlink-install
+    && catkin build --symlink-install
 
 RUN vcs import --input ./packages.repos --recursive
 RUN cd $HOME/workspace/src/ripple_down_rules && \
@@ -64,9 +67,9 @@ RUN python3 -m venv $HOME/.virtualenvs/venv && \
 RUN echo "export WORKON_HOME=$HOME/.virtualenvs" >> $HOME/.bashrc && \
     echo "export VIRTUALENVWRAPPER_PYTHON=$HOME/.virtualenvs/venv/bin/python" >> $HOME/.bashrc && \
     echo "export VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.virtualenvs/venv/bin/virtualenv" >> $HOME/.bashrc && \
-    echo "source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh" >> $HOME/.bashrc \
+    echo "source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh" >> $HOME/.bashrc
 
-RUN echo "export PYTHONPATH=\$PYTHONPATH:$HOME/workspace/src/Multiverse-Parser/USD/linux" >> $HOME/.bashrc
+RUN echo "export PYTHONPATH=$PYTHONPATH:$LIBSDIR/Multiverse/Multiverse-Launch/src/multiverse_connectors/multiverse_python_connector" >> $HOME/.bashrc
 
 
 ENV WORKON_HOME=$HOME/.virtualenvs
@@ -77,14 +80,18 @@ ENV VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.virtualenvs/venv/bin/virtualenv
 RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     mkvirtualenv --system-site-packages pycram-segmind && \
     workon pycram-segmind && \
-    pip install --upgrade pip && \
+    pip install --upgrade pip
+
+RUN workon pycram-segmind && \
     pip install -r pycram/requirements.txt && \
-    pip install -U setuptools && \
+    pip install -U setuptools
+
+RUN workon pycram-segmind && \
     pip install -r ripple_down_rules/requirements.txt && \
-    pip install lark && \
+    pip install lark
+
+RUN workon pycram-segmind && \
     cd $LIBSDIR/giskardpy && \
-    pip install -r requirements.txt && pip install -e . && \
-    cd $LIBSDIR/Multiverse-Parser && \
     pip install -r requirements.txt && pip install -e . && \
     cd $LIBSDIR/qpSWIFT/python && \
     sudo python3 setup.py install && \
@@ -94,9 +101,24 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     rosdep update --rosdistro=$ROS_DISTRO && \
     sudo apt-get update && \
     rosdep install --from-paths ./ -i -y --rosdistro ${ROS_DISTRO} && \
-    sudo apt-get install ros-jazzy-rclpy-message-converter -y && \
-    colcon build --symlink-install && \
+    catkin build --symlink-install && \
     source $HOME/workspace/install/setup.bash
+
+RUN workon pycram-segmind && \
+    cd $LIBSDIR/Multiverse/Multiverse-Launch && \
+    pip install -r requirements.txt && pip install -e .
+
+RUN workon pycram-segmind && \
+    cd $LIBSDIR/Multiverse/Multiverse-Parser && \
+    pip install -r requirements.txt && pip install -e .
+
+RUN workon pycram-segmind && \
+    cd $LIBSDIR/Multiverse/Multiverse-Launch/src/multiverse_connectors/multiverse_simulators_connector/src/mujoco_connector && \
+    pip install -r requirements.txt && pip install -e .
+
+RUN workon pycram-segmind && \
+    cd $LIBSDIR/Multiverse/Multiverse-Launch && \
+    pip install -r requirements.txt && pip install -e .
 
 # Install code-server
 RUN sudo apt-get update && sudo apt-get install -y \
@@ -120,12 +142,6 @@ RUN code-server \
     --user-data-dir=$USER_DATA_DIR \
     --install-extension PKief.material-icon-theme
 
-COPY start-code-server.sh /usr/local/bin/start-code-server.sh
-RUN sudo chmod +x /usr/local/bin/start-code-server.sh
-
-COPY post_create_setup.sh /
-RUN sudo chmod +x /post_create_setup.sh
-
 ENV XDG_RUNTIME_DIR=/tmp/runtime-root
 RUN mkdir -p $XDG_RUNTIME_DIR && chmod 700 $XDG_RUNTIME_DIR
 
@@ -134,6 +150,9 @@ ENV LIBGL_ALWAYS_SOFTWARE=1
 RUN echo "source ${HOME}/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
 RUN echo "source ${HOME}/workspace/install/setup.bash" >> $HOME/.bashrc
 
-COPY entrypoint.sh /
+COPY ./start-code-server.sh /usr/local/bin/start-code-server.sh
+RUN sudo chmod +x /usr/local/bin/start-code-server.sh
+
+COPY ./entrypoint.sh /
 RUN sudo chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

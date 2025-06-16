@@ -2,7 +2,12 @@
 
 set -e
 
-source /opt/ros/jazzy/setup.bash
+if [ "$ROS_DISTRO" = "noeitc" ]; then
+    source /opt/ros/noetic/setup.bash
+else
+    source /opt/ros/jazzy/setup.bash
+fi
+
 source /root/workspace/install/setup.bash
 source /root/.virtualenvs/pycram-segmind/bin/activate
 
@@ -16,7 +21,6 @@ cd "$WORKSPACE_DIR/../ripple_down_rules" && git pull && pip install -r "requirem
 cd "$WORKSPACE_DIR/../semantic_world" && git pull && pip install -r "requirements.txt" && pip install -e .
 cd "$WORKSPACE_DIR/../pycram" && git checkout icub_demo_ros2 && git pull && pip install -r "requirements.txt" && pip install -e .
 cd "$LIBS_DIR/giskardpy" && git pull && pip install -r "requirements.txt" && pip install -e .
-cd "$LIBS_DIR/Multiverse-Parser" && git pull && pip install -r "requirements.txt" && pip install -e .
-cd "$LIBS_DIR/Multiverse-Resources" && git pull && git submodule update --init --recursive
+cd "$LIBS_DIR/Multiverse" && git pull && git submodule update --init --recursive
 
 exec "$@"

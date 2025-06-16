@@ -1,5 +1,5 @@
 {
- "name": "osrf/ros:jazzy-desktop-full-noble",
+ "name": "osrf/ros:noetic-desktop-full-focal",
   "build": {
     "dockerfile": "Dockerfile",
 //    "args": {
@@ -48,7 +48,7 @@
   ],
   "forwardPorts": [8080],
   "appPort": [8080],
-  "postCreateCommand": "/post_create_setup.sh",
+//  "postCreateCommand": "/post_create_setup.sh",
   "postStartCommand": "/entrypoint.sh && start-code-server.sh",
 //  "customizations": {
 //     "jetbrains": {
