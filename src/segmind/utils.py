@@ -30,6 +30,7 @@ from gtts import gTTS
 # This module is imported so that we can
 # play the converted audio
 import os
+import pygame
 
 
 def text_to_speech(text: str):
@@ -49,8 +50,14 @@ def text_to_speech(text: str):
     # welcome
     myobj.save("welcome.mp3")
 
-    # Playing the converted file
-    os.system("start welcome.mp3")
+    # Initialize the mixer module
+    pygame.mixer.init()
+
+    # Load the mp3 file
+    pygame.mixer.music.load("welcome.mp3")
+
+    # Play the loaded mp3 file
+    pygame.mixer.music.play()
 
 
 def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07) -> bool:

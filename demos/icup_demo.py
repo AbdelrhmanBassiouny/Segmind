@@ -11,11 +11,12 @@ from typing import Tuple
 from pycram.datastructures.grasp import GraspDescription
 
 from segmind.datastructures.events import AbstractAgentObjectInteractionEvent, PlacingEvent, PickUpEvent, InsertionEvent
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
 from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.multiverse_player import MultiversePlayer
-from segmind.utils import get_arm_and_grasp_description_for_object
+from segmind.utils import get_arm_and_grasp_description_for_object, text_to_speech
 from typing_extensions import Dict
 
 import pycram
@@ -120,11 +121,15 @@ while True:
     object_picked_arm_and_grasp: Dict[Object, Tuple[Arms, GraspDescription, PoseStamped]] = {}
     mapped_objects: Dict[Object, Object] = {}
     logerr(str(actionable_events))
+    objects_to_insert = []
 
     for i, actionable_event in enumerate(actionable_events):
         action_descriptions.append(actionable_event.action_description)
 
         if isinstance(actionable_event, PickUpEvent):
+            if len(action_descriptions) >= 1 :
+                if isinstance(action_descriptions[i-1], PickUpActionDescription):
+                    action_descriptions.remove(action_descriptions[i-1])
             # logerr("Constructing pickup action")
             if actionable_event.tracked_object not in pickable_objects:
                 if len(pickable_objects) > 0:
@@ -163,19 +168,34 @@ while True:
                                                              arm=arm,
                                                              insert=isinstance(actionable_event, InsertionEvent),
                                                              pre_place_vertical_distance=0.05)
+            objects_to_insert.append(object_to_place)
             # logerr("Finished placing action")
             # action_descriptions.append(ParkArmsActionDescription(Arms.BOTH))
 
         # print(next(action_descriptions[-1].__iter__()))
 
+    episode_segmenter.logger.reset()
+
     if len(action_descriptions) > 0:
         action_descriptions.append(ParkArmsActionDescription(Arms.BOTH))
     with real_robot:
         plan = SequentialPlan(*action_descriptions)
-        plan.plot()
+        # plan.plot()
         plan.perform()
 
-    episode_segmenter.logger.reset()
+
+    obj_name_map = {"montessori_object_6": "Cylinder",
+                    "montessori_object_3": "Cube",
+                    "montessori_object_5": "Cuboid",
+                    "montessori_object_2": "Triangle",}
+
+    for obj in objects_to_insert:
+        obj_tracker = ObjectTrackerFactory.get_tracker(obj)
+        event = obj_tracker.get_latest_event_of_type(InsertionEvent)
+        if event is None and obj.name in obj_name_map:
+            text_to_speech(f"Hmmm, Looks like the {obj_name_map[obj.name]} was not inserted")
+            text_to_speech(f"Could you Help me out please?")
+
     # for detector in episode_segmenter.detector_threads_list:
     #     detector.reset()
     # for detector in episode_segmenter.starter_event_to_detector_thread_map.values():
