@@ -3,34 +3,37 @@ import logging
 import os
 import shutil
 import threading
+import time
 from os.path import dirname
 from pathlib import Path
+from typing import Tuple
+
+from pycram.datastructures.grasp import GraspDescription
 
 from segmind.datastructures.events import AbstractAgentObjectInteractionEvent, PlacingEvent, PickUpEvent, InsertionEvent
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
 from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.multiverse_player import MultiversePlayer
-from segmind.utils import get_arm_and_grasp_description_for_object
+from segmind.utils import get_arm_and_grasp_description_for_object, text_to_speech
 from typing_extensions import Dict
 
 import pycram
 from pycram.datastructures.enums import WorldMode, Arms
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
-from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription
+from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, \
+    ParkArmsActionDescription, PickUpAction
 from pycram.language import SequentialPlan
 from pycram.process_module import real_robot
-from pycram.robot_description import RobotDescriptionManager
+from pycram.robot_description import RobotDescriptionManager, RobotDescription
 from pycram.ros import logerr
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Location, PhysicalObject
-from semantic_world.world import World as SemanticWorld
-from semantic_world.adapters.multi_parser import MultiParser
 
 
-# semantic_world: SemanticWorld = SemanticWorld()
 objects_dir = World.conf.cache_dir + "/objects"
 
 def spawn_objects(models_dir: str):
@@ -41,7 +44,6 @@ def spawn_objects(models_dir: str):
         obj_name = Path(file).stem
         pose = PoseStamped()
         if obj_name == "iCub":
-            file = "iCub.urdf"
             obj_type = Robot
             pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
         elif obj_name == "scene":
@@ -49,7 +51,6 @@ def spawn_objects(models_dir: str):
         else:
             obj_type = PhysicalObject
         obj = Object(obj_name, obj_type, path=file, pose=pose)
-        # semantic_world.merge_world(MultiParser(f"{objects_dir}/{file}").parse())
 
 
 def copy_model_files_to_world_data_dir(models_dir: str):
@@ -61,7 +62,7 @@ def copy_model_files_to_world_data_dir(models_dir: str):
 
 
 rdm = RobotDescriptionManager()
-rdm.load_description("iCub3")
+rdm.load_description("iCub")
 
 world: BulletWorld = BulletWorld(WorldMode.GUI)
 
@@ -74,9 +75,26 @@ episode_dir = os.path.join(multiverse_episodes_dir, episode_name)
 models_dir = os.path.join(episode_dir, "models")
 
 spawn_objects(models_dir)
-World.current_world.update_views()
 
 csv_file = os.path.join(episode_dir, f"data.csv")
+
+multiverse_player = MultiversePlayer(world=world,
+                                     time_between_frames=datetime.timedelta(milliseconds=4),
+                                     stop_after_ready=False)
+
+multiverse_player.start()
+
+
+episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
+                                                plot_timeline=True,
+                                                plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
+                                                detectors_to_start=[GeneralPickUpDetector],
+                                                initial_detectors=[InsertionDetector])
+
+# Create a thread
+thread = threading.Thread(target=episode_segmenter.start)
+# Start the thread
+thread.start()
 
 
 while True:
@@ -84,25 +102,13 @@ while True:
     if user_input == "n":
         break
 
-    multiverse_player = MultiversePlayer(world=world,
-                                         time_between_frames=datetime.timedelta(milliseconds=4),
-                                         stop_after_ready=False)
 
-    episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
-                                                plot_timeline=True,
-                                                plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
-                                                detectors_to_start=[GeneralPickUpDetector],
-                                                initial_detectors=[InsertionDetector])
-    # Create a thread
-    thread = threading.Thread(target=episode_segmenter.start)
-    # Start the thread
-    thread.start()
+    # input("Press Enter to continue...")
 
-    input("Press Enter to continue...")
-
-    episode_segmenter.stop()
-    thread.join()
-    logerr("Joined Thread.")
+    # while True:
+        # time.sleep(1)
+        # if any(isinstance(event, InsertionEvent) for event in episode_segmenter.logger.get_events()):
+            # break
 
     all_events = episode_segmenter.logger.get_events()
     actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]
@@ -112,14 +118,18 @@ while True:
     all_inserted_objects = [event.tracked_object for event in actionable_events if isinstance(event, InsertionEvent)]
     pickable_objects = [obj for obj in pickable_objects if obj not in all_inserted_objects]
     object_pick_up_actions: Dict[Object, PickUpActionDescription] = {}
-    object_picked_arm: Dict[Object, Arms] = {}
+    object_picked_arm_and_grasp: Dict[Object, Tuple[Arms, GraspDescription, PoseStamped]] = {}
     mapped_objects: Dict[Object, Object] = {}
     logerr(str(actionable_events))
+    objects_to_insert = []
 
     for i, actionable_event in enumerate(actionable_events):
         action_descriptions.append(actionable_event.action_description)
 
         if isinstance(actionable_event, PickUpEvent):
+            if len(action_descriptions) >= 1 :
+                if action_descriptions[i-1].performable is PickUpAction:
+                    action_descriptions.remove(action_descriptions[i-1])
             # logerr("Constructing pickup action")
             if actionable_event.tracked_object not in pickable_objects:
                 if len(pickable_objects) > 0:
@@ -133,7 +143,9 @@ while True:
             logerr(f"Object to Pick is {to_pick_object.name}")
             mapped_objects[actionable_event.tracked_object] = to_pick_object
             arm, grasp = get_arm_and_grasp_description_for_object(to_pick_object)
-            object_picked_arm[to_pick_object] = arm
+            end_effector = RobotDescription.current_robot_description.get_arm_chain(arm).end_effector
+            pose = to_pick_object.get_grasp_pose(end_effector, grasp)
+            object_picked_arm_and_grasp[to_pick_object] = (arm, grasp, pose)
             action_descriptions[-1] = PickUpActionDescription(to_pick_object, arm=arm, grasp_description=grasp)
             # logerr("Finished pickup action")
         elif isinstance(actionable_event, (PlacingEvent, InsertionEvent)):
@@ -141,25 +153,58 @@ while True:
             if actionable_event.tracked_object in mapped_objects:
                 object_to_place = mapped_objects[actionable_event.tracked_object]
             else:
+                action_descriptions.remove(action_descriptions[-1])
+                continue
                 raise ValueError("Placing a not picked object")
             place_pose = actionable_event.tracked_object.pose
+            arm, grasp, pose = object_picked_arm_and_grasp[object_to_place]
             if isinstance(actionable_event, PlacingEvent):
                 place_pose.orientation = object_to_place.orientation
             elif isinstance(actionable_event, InsertionEvent):
-                place_pose.orientation = actionable_event.through_hole.orientation
+                place_pose = actionable_event.through_hole.pose
+                place_pose.orientation = pose.orientation
             logerr(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = PlaceActionDescription(object_to_place, target_location=place_pose,
-                                                             arm=object_picked_arm[object_to_place],
-                                                             insert=isinstance(actionable_event, InsertionEvent))
+                                                             arm=arm,
+                                                             insert=isinstance(actionable_event, InsertionEvent),
+                                                             pre_place_vertical_distance=0.05)
+            objects_to_insert.append(object_to_place)
             # logerr("Finished placing action")
             # action_descriptions.append(ParkArmsActionDescription(Arms.BOTH))
 
         # print(next(action_descriptions[-1].__iter__()))
 
+    episode_segmenter.logger.reset()
+
+    if len(action_descriptions) > 0:
+        action_descriptions.append(ParkArmsActionDescription(Arms.BOTH))
     with real_robot:
         plan = SequentialPlan(*action_descriptions)
-        plan.plot()
+        # plan.plot()
         plan.perform()
 
-    multiverse_player.stop()
-    multiverse_player.join()
+
+    obj_name_map = {"montessori_object_6": "Cylinder",
+                    "montessori_object_3": "Cube",
+                    "montessori_object_5": "Cuboid",
+                    "montessori_object_2": "Triangle",}
+
+    for obj in objects_to_insert:
+        obj_tracker = ObjectTrackerFactory.get_tracker(obj)
+        event = obj_tracker.get_latest_event_of_type(InsertionEvent)
+        if event is None and obj.name in obj_name_map:
+            text_to_speech(f"Hmmm, Looks like the {obj_name_map[obj.name]} was not inserted")
+            text_to_speech(f"Could you Help me out please?")
+
+    # for detector in episode_segmenter.detector_threads_list:
+    #     detector.reset()
+    # for detector in episode_segmenter.starter_event_to_detector_thread_map.values():
+    #     detector.stop()
+    #     detector.join()
+
+multiverse_player.stop()
+multiverse_player.join()
+
+episode_segmenter.stop()
+thread.join()
+logerr("Joined Thread.")

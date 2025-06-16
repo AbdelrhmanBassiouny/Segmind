@@ -23,12 +23,51 @@ from pycram.ros import logdebug
 
 from semantic_world.views import Container
 
+# Import the required module for text
+# to speech conversion
+from gtts import gTTS
+
+# This module is imported so that we can
+# play the converted audio
+import os
+import pygame
+
+
+def text_to_speech(text: str):
+    # The text that you want to convert to audio
+    text = 'Hello' if text is None else text
+
+    # Language in which you want to convert
+    language = 'en'
+
+    # Passing the text and language to the engine,
+    # here we have marked slow=False. Which tells
+    # the module that the converted audio should
+    # have a high speed
+    myobj = gTTS(text=text, lang=language, slow=False)
+
+    # Saving the converted audio in a mp3 file named
+    # welcome
+    myobj.save("welcome.mp3")
+
+    # Initialize the mixer module
+    pygame.mixer.init()
+
+    # Load the mp3 file
+    pygame.mixer.music.load("welcome.mp3")
+
+    # Play the loaded mp3 file
+    pygame.mixer.music.play()
+
 
 def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07) -> bool:
-    containers = [v for v in obj.world.views['views'] if isinstance(v, Container)]
-    container_bodies = [c.body for c in containers]
-    container_body_names = [c.name.name for c in container_bodies]
-    return any(body.name in container_body_names for body in obj.contact_points.get_all_bodies())
+    if hasattr(obj.world, "views") and obj.world.views is not None:
+        containers = [v for v in obj.world.views['views'] if isinstance(v, Container)]
+        container_bodies = [c.body for c in containers]
+        container_body_names = [c.name.name for c in container_bodies]
+        return any(body.name in container_body_names for body in obj.contact_points.get_all_bodies())
+    else:
+        return any("drawer" in body.name and "handle" not in body.name for body in obj.contact_points.get_all_bodies())
 
 
 def get_arm_and_grasp_description_for_object(obj: Object) -> Tuple[Arms, GraspDescription]:
@@ -66,6 +105,7 @@ class PropagatingThread(threading.Thread, ABC):
         Stop the event detector.
         """
         self.kill_event.set()
+        self._join()
     
     # def join(self, timeout=None):
     #     self._join(timeout)

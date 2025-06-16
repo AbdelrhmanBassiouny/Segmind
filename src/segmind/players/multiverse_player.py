@@ -8,7 +8,7 @@ from pycram.datastructures.pose import Pose, Quaternion, Vector3, PoseStamped, H
 from pycram.failures import ObjectNotFound
 from pycram.ros import logwarn, logdebug
 from pycram.world_concepts.world_object import Object
-from pycrap.ontologies import Floor
+from pycrap.ontologies import Floor, Supporter
 from .data_player import DataPlayer, FrameData, FrameDataGenerator
 from .utils.multiverse_client import MultiverseMetaData, MultiverseConnector
 
@@ -18,7 +18,7 @@ class MultiversePlayer(DataPlayer):
     def __init__(self, simulation_name: str = "replay", world_name: str = "world", objects_names: Optional[List[str]] = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.objects_names: Optional[List[str]] = objects_names if objects_names is not None else\
-            [obj.root_link.name for obj in self.world.objects if not issubclass(obj.obj_type, Floor)]
+            [obj.root_link.name for obj in self.world.objects if not issubclass(obj.obj_type, (Floor, Supporter))]
         self.joints_names: List[str] = [joint.name for joint in self.world.robot.joints.values()
                                         if joint.type in [JointType.REVOLUTE, JointType.CONTINUOUS]]
         self.multiverse_meta_data = MultiverseMetaData(

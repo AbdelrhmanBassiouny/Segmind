@@ -36,6 +36,11 @@ class SpatialRelationDetector(AtomicEventDetector):
         self.update_initial_state()
         for event, cond in self.check_on_events.items():
             self.logger.add_callback(event, self.on_event, cond)
+
+    def reset(self):
+        self.bodies_states = {}
+        self.update_initial_state()
+        self.event_queue = Queue()
     
     def update_initial_state(self):
         for body in self.world.objects:
@@ -156,7 +161,7 @@ class InsertionDetector(SpatialRelationDetector):
                     time.sleep(self.wait_time.total_seconds())
                     hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
-                    self.update_body_state(event.tracked_object, with_bodies=[hole])
+                    # self.update_body_state(event.tracked_object, with_bodies=[hole])
                     if not self.hole_insertion_verifier(hole, event):
                         if event.tracked_object.is_moving:
                             continue

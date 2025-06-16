@@ -17,9 +17,11 @@ from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
 from pycram.ros import loginfo, logdebug
 from pycram.world_concepts.world_object import Object, Link
-from .datastructures.events import Event, EventUnion, EventWithTrackedObjects, EventWithTwoTrackedObjects
+from .datastructures.events import Event, EventUnion, EventWithTrackedObjects, EventWithTwoTrackedObjects, PickUpEvent, \
+    InsertionEvent
 from .datastructures.mixins import HasPrimaryTrackedObject
 from .datastructures.object_tracker import ObjectTrackerFactory
+from .utils import text_to_speech
 
 if TYPE_CHECKING:
     from .detectors.coarse_event_detectors import DetectorWithStarterEvent
@@ -79,6 +81,13 @@ class EventLogger:
         if EventLogger.current_logger is None:
             EventLogger.current_logger = self
 
+    def reset(self):
+        self.timeline = []
+        self.event_queue = queue.Queue()
+        self.timeline_per_thread = {}
+        for obj_tracker in ObjectTrackerFactory.get_all_trackers():
+            obj_tracker.reset()
+
     def add_callback(self, event_type: Type[Event], callback: CallbackFunction, condition: Optional[ConditionFunction] = lambda event: True) -> None:
         """
         Add a callback for an event type.
@@ -93,6 +102,14 @@ class EventLogger:
         if self.is_event_in_timeline(event):
             return
         logdebug(f"Logging event: {event}")
+        obj_name_map = {"montessori_object_6": "Cylinder",
+                        "montessori_object_3": "Cube",
+                        "montessori_object_5": "Cuboid",
+                        "montessori_object_2": "Triangle", }
+        if isinstance(event, PickUpEvent) and event.tracked_object.name in obj_name_map:
+            text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was picked")
+        elif isinstance(event, InsertionEvent) and event.tracked_object.name in obj_name_map:
+            text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {event.through_hole.name}")
         self.update_object_trackers_with_event(event)
         self.event_queue.put(event)
         self.annotate_scene_with_event(event)

@@ -70,6 +70,9 @@ class AtomicEventDetector(PropagatingThread):
         self._pause: bool = False
         self.is_processing_jobs: bool = False
 
+    def reset(self):
+        pass
+
     @property
     def thread_id(self) -> str:
         return f"{self.__class__.__name__}_{self.ident}"
@@ -279,7 +282,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05,
-                 wait_time: Optional[timedelta] = timedelta(milliseconds=50),
+                 wait_time: Optional[timedelta] = timedelta(milliseconds=100),
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -500,7 +503,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         return False
 
     models_path = os.path.join(os.path.dirname(__file__), "models")
-    is_moving_rdr = RDRDecorator(models_path, (bool,), True, package_name="segmind", fit=True,
+    is_moving_rdr = RDRDecorator(models_path, (bool,), True, package_name="segmind", fit=False,
                                  use_generated_classifier=False,
                                  ask_now=_ask_now)
 

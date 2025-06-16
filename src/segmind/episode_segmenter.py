@@ -59,7 +59,8 @@ class EpisodeSegmenter(ABC):
         Start the Episode player thread, and waits until the thread signals that it is
         ready (e.g., the replay environment is initialized with all objects in starting poses).
         """
-        self.episode_player.start()
+        if not self.episode_player.is_alive():
+            self.episode_player.start()
         while not self.episode_player.ready:
             time.sleep(0.1)
 
