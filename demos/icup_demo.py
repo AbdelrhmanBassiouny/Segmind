@@ -22,7 +22,8 @@ import pycram
 from pycram.datastructures.enums import WorldMode, Arms
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
-from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription
+from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, \
+    ParkArmsActionDescription
 from pycram.language import SequentialPlan
 from pycram.process_module import real_robot
 from pycram.robot_description import RobotDescriptionManager, RobotDescription
@@ -167,6 +168,8 @@ while True:
 
         # print(next(action_descriptions[-1].__iter__()))
 
+    if len(action_descriptions) > 0:
+        action_descriptions.append(ParkArmsActionDescription(Arms.BOTH))
     with real_robot:
         plan = SequentialPlan(*action_descriptions)
         plan.plot()

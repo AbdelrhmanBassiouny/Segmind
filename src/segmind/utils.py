@@ -23,6 +23,35 @@ from pycram.ros import logdebug
 
 from semantic_world.views import Container
 
+# Import the required module for text
+# to speech conversion
+from gtts import gTTS
+
+# This module is imported so that we can
+# play the converted audio
+import os
+
+
+def text_to_speech(text: str):
+    # The text that you want to convert to audio
+    text = 'Hello' if text is None else text
+
+    # Language in which you want to convert
+    language = 'en'
+
+    # Passing the text and language to the engine,
+    # here we have marked slow=False. Which tells
+    # the module that the converted audio should
+    # have a high speed
+    myobj = gTTS(text=text, lang=language, slow=False)
+
+    # Saving the converted audio in a mp3 file named
+    # welcome
+    myobj.save("welcome.mp3")
+
+    # Playing the converted file
+    os.system("start welcome.mp3")
+
 
 def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07) -> bool:
     if hasattr(obj.world, "views") and obj.world.views is not None:
