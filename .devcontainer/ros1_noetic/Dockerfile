@@ -14,8 +14,13 @@ RUN sudo apt-get upgrade -y
 
 RUN sudo apt update && sudo apt upgrade -y
 
+RUN sudo apt install software-properties-common -y && \
+    sudo add-apt-repository ppa:deadsnakes/ppa && \
+    sudo apt update && \
+    sudo apt install python3.10 python3.10-venv python3.10-dev -y
+
 # Install pycram dependencies
-RUN sudo apt install wget python3.8-venv ros-noetic-xacro python3-vcstool git ros-dev-tools default-jre -y
+RUN sudo apt install wget ros-noetic-xacro python3-vcstool git ros-dev-tools default-jre python3-catkin-tools -y
 
 # Install RDR dependencies
 RUN sudo apt-get install graphviz graphviz-dev -y
@@ -39,16 +44,14 @@ RUN mkdir -p $LIBSDIR && \
     git clone https://github.com/qpSWIFT/qpSWIFT
 
 RUN cd $LIBSDIR && \
-    git clone -b main https://github.com/Multiverse-Framework/Multiverse.git && \
+    git clone -b main https://github.com/Multiverse-Framework/Multiverse.git --depth 1 && \
     cd $LIBSDIR/Multiverse && \
     git submodule update --init --recursive
 
-ARG BRANCH_NAME=icub_demo
-
-RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/${BRANCH_NAME}/rosinstall/pycram.rosinstall \
+RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/icub_demo/rosinstall/pycram-https.rosinstall \
     && cd .. \
-    && source /opt/ros/${ROS_DISTRO}/setup.bash \
-    && catkin build --symlink-install
+    && source /opt/ros/$ROS_DISTRO/setup.bash \
+    && catkin build
 
 RUN vcs import --input ./packages.repos --recursive
 RUN cd $HOME/workspace/src/ripple_down_rules && \
@@ -58,7 +61,7 @@ RUN cd $HOME/workspace/src/ripple_down_rules && \
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> $HOME/.bashrc
 
 # Install virtualenv and virtualenvwrapper
-RUN python3 -m venv $HOME/.virtualenvs/venv && \
+RUN python3.10 -m venv $HOME/.virtualenvs/venv && \
     source $HOME/.virtualenvs/venv/bin/activate && \
     pip install --upgrade pip && \
     pip install virtualenvwrapper
@@ -78,47 +81,55 @@ ENV VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.virtualenvs/venv/bin/virtualenv
 
 # Create a virtual environment for pycram-segmind
 RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
-    mkvirtualenv --system-site-packages pycram-segmind && \
+    mkvirtualenv --system-site-packages pycram-segmind -p python3.10 && \
     workon pycram-segmind && \
     pip install --upgrade pip
 
-RUN workon pycram-segmind && \
+RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
+    workon pycram-segmind && \
     pip install -r pycram/requirements.txt && \
     pip install -U setuptools
 
-RUN workon pycram-segmind && \
+RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
+    workon pycram-segmind && \
     pip install -r ripple_down_rules/requirements.txt && \
     pip install lark
 
-RUN workon pycram-segmind && \
+RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
+    workon pycram-segmind && \
     cd $LIBSDIR/giskardpy && \
     pip install -r requirements.txt && pip install -e . && \
     cd $LIBSDIR/qpSWIFT/python && \
     sudo python3 setup.py install && \
     source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    cd $HOME/workspace/src && \
+    git clone -b ros1-noetic-main https://github.com/SemRoCo/giskard_msgs.git && \
     cd $HOME/workspace && \
-    vcs import src < src/giskardpy_ros/$ROS_DISTRO.repos && \
     rosdep update --rosdistro=$ROS_DISTRO && \
     sudo apt-get update && \
-    rosdep install --from-paths ./ -i -y --rosdistro ${ROS_DISTRO} && \
-    catkin build --symlink-install && \
-    source $HOME/workspace/install/setup.bash
+#    rosdep install --from-paths ./ -i -y --rosdistro ${ROS_DISTRO} && \
+    catkin build && \
+    source $HOME/workspace/devel/setup.bash
 
-RUN workon pycram-segmind && \
+RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
+    workon pycram-segmind && \
     cd $LIBSDIR/Multiverse/Multiverse-Launch && \
-    pip install -r requirements.txt && pip install -e .
+    pip install -r requirements.txt
 
-RUN workon pycram-segmind && \
+RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
+    workon pycram-segmind && \
     cd $LIBSDIR/Multiverse/Multiverse-Parser && \
     pip install -r requirements.txt && pip install -e .
 
-RUN workon pycram-segmind && \
+RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
+    workon pycram-segmind && \
     cd $LIBSDIR/Multiverse/Multiverse-Launch/src/multiverse_connectors/multiverse_simulators_connector/src/mujoco_connector && \
-    pip install -r requirements.txt && pip install -e .
+    pip install -r requirements.txt
 
-RUN workon pycram-segmind && \
-    cd $LIBSDIR/Multiverse/Multiverse-Launch && \
-    pip install -r requirements.txt && pip install -e .
+RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
+    workon pycram-segmind && \
+    cd $LIBSDIR/Multiverse/Multiverse-Utilities && \
+    pip install -r requirements.txt
 
 # Install code-server
 RUN sudo apt-get update && sudo apt-get install -y \
@@ -148,7 +159,7 @@ RUN mkdir -p $XDG_RUNTIME_DIR && chmod 700 $XDG_RUNTIME_DIR
 ENV LIBGL_ALWAYS_SOFTWARE=1
 
 RUN echo "source ${HOME}/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
-RUN echo "source ${HOME}/workspace/install/setup.bash" >> $HOME/.bashrc
+RUN echo "source ${HOME}/workspace/devel/setup.bash" >> $HOME/.bashrc
 
 COPY ./start-code-server.sh /usr/local/bin/start-code-server.sh
 RUN sudo chmod +x /usr/local/bin/start-code-server.sh
