@@ -60,14 +60,17 @@ def text_to_speech(text: str):
     pygame.mixer.music.play()
 
 
-def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07) -> bool:
+def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07,
+                                          bodies_to_check: Optional[List[PhysicalBody]] = None) -> bool:
+    if bodies_to_check is None:
+        bodies_to_check = obj.contact_points.get_all_bodies()
     if hasattr(obj.world, "views") and obj.world.views is not None:
         containers = [v for v in obj.world.views['views'] if isinstance(v, Container)]
         container_bodies = [c.body for c in containers]
         container_body_names = [c.name.name for c in container_bodies]
-        return any(body.name in container_body_names for body in obj.contact_points.get_all_bodies())
+        return any(body.name in container_body_names for body in bodies_to_check)
     else:
-        return any("drawer" in body.name and "handle" not in body.name for body in obj.contact_points.get_all_bodies())
+        return any("drawer" in body.name and "handle" not in body.name for body in bodies_to_check)
 
 
 def get_arm_and_grasp_description_for_object(obj: Object) -> Tuple[Arms, GraspDescription]:
@@ -133,7 +136,7 @@ def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) 
         dt = math.sqrt(2 * distance / 9.81) + 0.01  # time to fall distance
         World.current_world.simulate(dt)
         cp = prospection_obj.contact_points
-        if not get_support(prospection_obj, cp.get_all_bodies()):
+        if get_support(prospection_obj, cp.get_all_bodies()) is None:
             return False
     return supported
 
@@ -163,6 +166,8 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
         contact_bodies = obj.contact_points.get_all_bodies()
     for body in contact_bodies:
         if issubclass(body.parent_entity.obj_type, (Supporter, Location)):
+            if is_object_supported_by_container_body(obj, bodies_to_check=[body]):
+                return body
             body_aabb = body.get_axis_aligned_bounding_box()
             surface_z = body_aabb.max_z - 0.001
             tracked_object_base = obj.position

@@ -44,6 +44,26 @@ class EpisodeSegmenter(ABC):
         self.plot_save_path = plot_save_path
         self.kill_event: threading.Event = threading.Event()
 
+    def reset(self):
+        self.logger.reset()
+        for detector in self.starter_event_to_detector_thread_map.values():
+            detector.reset()
+            detector.stop()
+            detector.join()
+            self.detector_threads_list.remove(detector)
+        self.starter_event_to_detector_thread_map = {}
+        initial_detector_instances = [detector for detector in self.detector_threads_list
+                                      if type(detector) in self.initial_detectors]
+        for detector in initial_detector_instances:
+            detector.stop()
+            detector.join()
+            self.detector_threads_list.remove(detector)
+        for detector in self.detector_threads_list:
+            detector.stop()
+            detector.join()
+        self.detector_threads_list = []
+        self.run_initial_event_detectors()
+
     def start(self) -> None:
         """
         Start the episode player and the event detectors.

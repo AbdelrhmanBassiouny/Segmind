@@ -12,7 +12,13 @@ from ....utils import is_object_supported_by_container_body
 def conditions_38355037295796650033371896063976531277(case) -> bool:
     def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:
         """Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type ."""
-        # hole_bbox = hole.get_axis_aligned_bounding_box()
+        hole_bbox = hole.get_axis_aligned_bounding_box()
+        hole_min_z = hole_bbox.min_z
+        obj_max_z = event.bounding_box.max_z
+        if obj_max_z <= hole_min_z + 1e-3:
+            return True
+        else:
+            return False
         # intersection = hole_bbox.intersection_with(event.bounding_box)
         # i_width, i_depth, i_height = intersection.width, intersection.depth, intersection.height
         # if (hole_bbox.width >= (i_width - 1e-3)
@@ -20,7 +26,7 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
         #     and hole_bbox.height >= (i_height - 1e-3)):
         #     return True
         # return False
-        return True
+        # return True
     return conditions_for_insertion_detector_hole_insertion_verifier(**case)
 
 

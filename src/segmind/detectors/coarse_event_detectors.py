@@ -101,6 +101,9 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
             self.currently_tracked_objects = {}
         self.currently_tracked_objects[self.tracked_object] = self
 
+    def reset(self):
+        self.currently_tracked_objects = {}
+
     def check_for_event_pre_starter_event(self, event_type: Type[Event],
                                           time_tolerance: timedelta) -> Optional[EventUnion]:
         """
@@ -348,9 +351,6 @@ class MotionPickUpDetector(AbstractPickUpDetector):
 
         self.kill_event.set()
         return False
-
-
-
 
 
 class PlacingDetector(AbstractInteractionDetector):

@@ -7,6 +7,7 @@ from os.path import dirname
 from pathlib import Path
 
 import pytest
+from pycram.tf_transformations import quaternion_from_euler
 from typing_extensions import Tuple
 
 from segmind.datastructures.events import AbstractAgentObjectInteractionEvent
@@ -57,7 +58,7 @@ def set_up_demo_fixture(episode_name: str = "icub_montessori_no_hands"):
     multiverse_player = MultiversePlayer(world=world,
                                          time_between_frames=datetime.timedelta(milliseconds=4),
                                          stop_after_ready=False)
-    # multiverse_player.start()
+    multiverse_player.start()
     episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
                                                     plot_timeline=True,
                                                     plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
@@ -116,13 +117,20 @@ def test_icub_demo(set_up_demo_fixture):
 
 
 def test_icub_pick_up_and_insert(set_up_demo_fixture):
-    obj_name = "montessori_object_3"
+    set_up_demo_fixture.episode_player.stop()
+    time.sleep(2)
+    obj_name = "montessori_object_5"
     obj = World.current_world.get_object_by_root_link_name(obj_name)
+    obj_pose = obj.pose
+    obj_pose = World.current_world.get_object_by_name("scene").links["circular_hole_1"].pose
+    obj_pose.position.z += 0.04
+    obj_pose.orientation = Quaternion(*quaternion_from_euler(0, 1.57/2, 0))
+    obj.set_pose(obj_pose)
     arm, grasp = get_arm_and_grasp_description_for_object(obj)
 
     scene_obj = World.current_world.get_object_by_name("scene")
     square_hole_pose = scene_obj.get_link_pose("square_hole")
-    object_description = ObjectDesignatorDescription(names=["montessori_object_3"])
+    object_description = ObjectDesignatorDescription(names=[obj_name])
     square_hole_pose.orientation = obj.orientation
     with real_robot:
         plan = SequentialPlan(ParkArmsActionDescription(Arms.BOTH),

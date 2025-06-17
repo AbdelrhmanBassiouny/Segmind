@@ -11,7 +11,7 @@ from pycram.datastructures.world_entity import abstractmethod, PhysicalBody
 from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import AtomicEventDetector
 from ..datastructures.events import MotionEvent, EventUnion, StopMotionEvent, NewObjectEvent, InsertionEvent, Event, \
-    ContainmentEvent, ContactEvent, InterferenceEvent
+    ContainmentEvent, ContactEvent, InterferenceEvent, LossOfInterferenceEvent
 from ..datastructures.object_tracker import ObjectTrackerFactory
 
 EventCondition = Callable[[EventUnion], bool]
@@ -133,10 +133,10 @@ class ContainmentDetector(SpatialRelationDetector):
 class InsertionDetector(SpatialRelationDetector):
 
     @staticmethod
-    def event_condition(event: InterferenceEvent) -> bool:
+    def event_condition(event: LossOfInterferenceEvent) -> bool:
         # logdebug(f"Checking bodies {event.link_names} with tracked object {event.tracked_object.name}")
         return any(['hole' in body.name for body in event.links])
-    check_on_events = {InterferenceEvent: event_condition}
+    check_on_events = {LossOfInterferenceEvent: event_condition}
 
     def update_body_state(self, body: PhysicalBody, with_bodies: Optional[List[PhysicalBody]] = None):
         """

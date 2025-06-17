@@ -1,11 +1,12 @@
 import time
 from abc import abstractmethod, ABC
 
-from typing_extensions import Optional, List, Union
+from typing_extensions import Optional, List, Union, Type
 
 from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.designator import ActionDescription, ObjectDesignatorDescription
-from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription
+from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
+    PlaceAction
 from pycram.ros import logwarn
 from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
@@ -457,6 +458,11 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
     def action_description(self) -> PartialDesignator[ActionDescription]:
         return self._action_description
 
+    @property
+    @abstractmethod
+    def action_type(self) -> Type[ActionDescription]:
+        pass
+
     def update_action_description(self) -> None:
         self._action_description = self.instantiate_action_description()
 
@@ -476,6 +482,10 @@ class PickUpEvent(AbstractAgentObjectInteractionEvent):
     def instantiate_action_description(self) -> PickUpActionDescription:
         return PickUpActionDescription(self.tracked_object)
 
+    @property
+    def action_type(self) -> Type[PickUpAction]:
+        return PickUpAction
+
 
 class PlacingEvent(AbstractAgentObjectInteractionEvent):
 
@@ -492,6 +502,10 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
         self.placement_pose = pose
         return PlaceActionDescription(self.tracked_object, pose)
 
+    @property
+    def action_type(self) -> Type[PlaceAction]:
+        return PlaceAction
+
 
 class InsertionEvent(AbstractAgentObjectInteractionEvent):
 
@@ -499,14 +513,18 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
 
     def __init__(self, inserted_object: Object,
                  inserted_into_objects: List[Object],
-                 through_hole: PhysicalBody,
+                 through_hole: Link,
                  agent: Optional[Object] = None,
                  timestamp: Optional[float] = None,
                  end_timestamp: Optional[float] = None):
         super().__init__(inserted_object, agent, timestamp, end_timestamp)
         self.inserted_into_objects: List[Object] = inserted_into_objects
-        self.through_hole: PhysicalBody = through_hole
-        self.with_object: Optional[Object] = through_hole
+        self.through_hole: Link = through_hole
+        self.with_object: Optional[PhysicalBody] = through_hole
+
+    @property
+    def action_type(self) -> Type[PlaceAction]:
+        return PlaceAction
 
     def instantiate_action_description(self) -> PlaceActionDescription:
         return PlaceActionDescription(self.tracked_object, self.through_hole.pose, insert=True)
