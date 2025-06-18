@@ -222,13 +222,13 @@ while True:
             performable.perform()
             if not validate:
                 continue
-            time.sleep(2)
             if issubclass(performable.action, PlaceAction):
                 logerr(f"Placing Pose is {performable.kwargs['target_location']}")
                 obj = performable.kwargs["object_designator"]
                 obj_tracker = ObjectTrackerFactory.get_tracker(obj)
                 latest_pick_up = obj_tracker.get_latest_event_of_type(PickUpEvent)
                 if latest_pick_up is not None:
+                    time.sleep(6)
                     insertion_event = obj_tracker.get_first_event_of_type_after_event(InsertionEvent, latest_pick_up)
                     if insertion_event is None:
                         failed_insertion_action = performable

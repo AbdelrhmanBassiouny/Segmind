@@ -23,7 +23,7 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
         hole_max_z = hole_bbox.max_z
         time.sleep(0.1)
         obj_bbox = event.tracked_object.get_axis_aligned_bounding_box()
-        obj_min_z = obj_bbox.min_z
+        obj_max = obj_bbox.max_z
         obj_event = SimpleEvent({obj_bbox.x_variable: obj_bbox.x_interval,
                             obj_bbox.y_variable: obj_bbox.y_interval})
         hole_event = SimpleEvent({hole_bbox.x_variable: hole_bbox.x_interval,
@@ -33,8 +33,10 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
         for x, y in itertools.product(intersection[AxisAlignedBoundingBox.x_variable].simple_sets,
                                          intersection[AxisAlignedBoundingBox.y_variable].simple_sets):
             result.append(AxisAlignedBoundingBox(x.lower, y.lower, y.lower, x.upper, y.upper, y.upper))
+        if len(result) == 0:
+            return False
         i_width, i_depth, i_height = result[0].width, result[0].depth, result[0].height
-        if obj_min_z <= hole_max_z + 1e-3 and i_width >= hole_width*0.2 and i_depth >= hole_depth*0.2:
+        if obj_max <= hole_max_z + 1e-3 and i_width >= hole_width*0.3 and i_depth >= hole_depth*0.3:
             return True
         else:
             return False
