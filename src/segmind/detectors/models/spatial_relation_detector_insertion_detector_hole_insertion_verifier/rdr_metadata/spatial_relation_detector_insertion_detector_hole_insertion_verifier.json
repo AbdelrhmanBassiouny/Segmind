@@ -7,12 +7,14 @@
                 "_type": "ripple_down_rules.rules.SingleClassRule",
                 "conditions": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type .\"\"\"\n        hole_bbox = hole.get_axis_aligned_bounding_box()\n        hole_min_z = hole_bbox.min_z\n        obj_max_z = event.bounding_box.max_z\n        if obj_max_z <= hole_min_z + 1e-3:\n            return True\n        else:\n            return False\n        # intersection = hole_bbox.intersection_with(event.bounding_box)\n        # i_width, i_depth, i_height = intersection.width, intersection.depth, intersection.height\n        # if (hole_bbox.width >= (i_width - 1e-3)\n        #     and hole_bbox.depth >= (i_depth - 1e-3)\n        #     and hole_bbox.height >= (i_height - 1e-3)):\n        #     return True\n        # return False\n        # return True\n    return conditions_for_insertion_detector_hole_insertion_verifier(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type .\"\"\"\n        hole_bbox = hole.get_axis_aligned_bounding_box()\n        hole_depth, hole_width, hole_height = hole_bbox.dimensions\n        hole_max_z = hole_bbox.max_z\n        time.sleep(0.1)\n        obj_bbox = event.tracked_object.get_axis_aligned_bounding_box()\n        obj_min_z = obj_bbox.min_z\n        obj_event = SimpleEvent({obj_bbox.x_variable: obj_bbox.x_interval,\n                            obj_bbox.y_variable: obj_bbox.y_interval})\n        hole_event = SimpleEvent({hole_bbox.x_variable: hole_bbox.x_interval,\n                            hole_bbox.y_variable: hole_bbox.y_interval})\n        intersection = hole_event.intersection_with(obj_event)\n        result = []\n        for x, y in itertools.product(intersection[AxisAlignedBoundingBox.x_variable].simple_sets,\n                                         intersection[AxisAlignedBoundingBox.y_variable].simple_sets):\n            result.append(AxisAlignedBoundingBox(x.lower, y.lower, y.lower, x.upper, y.upper, y.upper))\n        i_width, i_depth, i_height = result[0].width, result[0].depth, result[0].height\n        if obj_min_z <= hole_max_z + 1e-3 and i_width >= hole_width*0.2 and i_depth >= hole_depth*0.2:\n            return True\n        else:\n            return False\n        # intersection = hole_bbox.intersection_with(event.bounding_box)\n        # i_width, i_depth, i_height = intersection.width, intersection.depth, intersection.height\n        # if (hole_bbox.width >= (i_width - 1e-3)\n        #     and hole_bbox.depth >= (i_depth - 1e-3)\n        #     and hole_bbox.height >= (i_height - 1e-3)):\n        #     return True\n        # return False\n        # return True\n    return conditions_for_insertion_detector_hole_insertion_verifier(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
                     "scope": {
+                        "SimpleEvent": "random_events.product_algebra.SimpleEvent",
                         "Case": "ripple_down_rules.datastructures.case.Case",
+                        "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
                         "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                         "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -38,7 +40,9 @@
                         "builtins.bool"
                     ],
                     "scope": {
+                        "SimpleEvent": "random_events.product_algebra.SimpleEvent",
                         "Case": "ripple_down_rules.datastructures.case.Case",
+                        "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
                         "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                         "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -80,7 +84,9 @@
                             "builtins.bool"
                         ],
                         "scope": {
+                            "SimpleEvent": "random_events.product_algebra.SimpleEvent",
                             "Case": "ripple_down_rules.datastructures.case.Case",
+                            "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
                             "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                             "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
                             "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -106,7 +112,9 @@
                             "builtins.bool"
                         ],
                         "scope": {
+                            "SimpleEvent": "random_events.product_algebra.SimpleEvent",
                             "Case": "ripple_down_rules.datastructures.case.Case",
+                            "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
                             "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                             "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
                             "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -148,7 +156,9 @@
                                 "builtins.bool"
                             ],
                             "scope": {
+                                "SimpleEvent": "random_events.product_algebra.SimpleEvent",
                                 "Case": "ripple_down_rules.datastructures.case.Case",
+                                "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
                                 "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                                 "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
                                 "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -174,7 +184,9 @@
                                 "builtins.bool"
                             ],
                             "scope": {
+                                "SimpleEvent": "random_events.product_algebra.SimpleEvent",
                                 "Case": "ripple_down_rules.datastructures.case.Case",
+                                "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
                                 "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                                 "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
                                 "PickUpEvent": "segmind.datastructures.events.PickUpEvent",

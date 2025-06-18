@@ -199,7 +199,7 @@ while True:
                     logerr(f"Placing in the {actionable_event.through_hole.name}")
                     place_pose = actionable_event.through_hole.pose
                     logerr(f"Placing pose is {place_pose}")
-                place_pose.position.z += 0.025
+                place_pose.position.z += 0.007
                 place_pose.orientation = pose.orientation
             logerr(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = (actionable_event,
