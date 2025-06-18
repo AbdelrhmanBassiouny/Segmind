@@ -275,7 +275,7 @@
     </visual>
   </link>
   <joint name="montessori_square_hole_joint" type="fixed">
-    <origin xyz="0.02 -0.087 0.025" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.02 -0.087 0.04" rpy="0.0 0.0 0.0"/>
     <parent link="montessori_box"/>
     <child link="square_hole"/>
   </joint>
@@ -288,7 +288,7 @@
     <collision name="square_hole_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.03 0.03 0.005"/>
+        <box size="0.025 0.025 0.001"/>
       </geometry>
       <material name="MontessoriDrawer2_material">
         <color rgba="0.99 0.0 0.0 1.0"/>
@@ -296,7 +296,7 @@
     </collision>
   </link>
   <joint name="montessori_circular_hole_1_joint" type="fixed">
-    <origin xyz="-0.0215 -0.087 0.025" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.0215 -0.087 0.04" rpy="0.0 0.0 0.0"/>
     <parent link="montessori_box"/>
     <child link="circular_hole_1"/>
   </joint>
@@ -309,7 +309,7 @@
     <collision name="circular_hole_1_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder radius="0.019" length="0.005"/>
+        <cylinder radius="0.015" length="0.001"/>
       </geometry>
       <material name="MontessoriDrawer2_material">
         <color rgba="0.99 0.0 0.0 1.0"/>
@@ -317,7 +317,7 @@
     </collision>
   </link>
   <joint name="montessori_triangle_hole_joint" type="fixed">
-    <origin xyz="0.019 0.0 0.025" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.019 0.0 0.04" rpy="0.0 0.0 0.0"/>
     <parent link="montessori_box"/>
     <child link="triangle_hole"/>
   </joint>
@@ -330,12 +330,12 @@
     <collision name="MontessoriObject2">
       <origin xyz="-0.005819993559271097 1.2720914664890083e-19 3.725290298461914e-09" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="file://montessori_object_1/meshes/stl/montessori_object_2_MontessoriObject_002.stl" scale="1.1 1.1 0.3"/>
+        <mesh filename="file://montessori_object_1/meshes/stl/montessori_object_2_MontessoriObject_002.stl" scale="0.8 0.8 0.1"/>
       </geometry>
     </collision>
   </link>
   <joint name="montessori_rectangular_hole_joint" type="fixed">
-    <origin xyz="-0.027 0.0 0.025" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.027 0.0 0.04" rpy="0.0 0.0 0.0"/>
     <parent link="montessori_box"/>
     <child link="rectangular_hole"/>
   </joint>
@@ -348,12 +348,12 @@
     <collision name="rectangular_hole_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.02 0.04 0.005"/>
+        <box size="0.015 0.03 0.001"/>
       </geometry>
     </collision>
   </link>
   <joint name="montessori_circular_hole_2_joint" type="fixed">
-    <origin xyz="-0.018 0.091 0.025" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.018 0.091 0.04" rpy="0.0 0.0 0.0"/>
     <parent link="montessori_box"/>
     <child link="circular_hole_2"/>
   </joint>
@@ -366,11 +366,29 @@
     <collision name="circular_hole_2_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder radius="0.022" length="0.01"/>
+        <cylinder radius="0.015" length="0.001"/>
       </geometry>
       <material name="MontessoriDrawer2_material">
         <color rgba="0.99 0.0 0.0 1.0"/>
       </material>
+    </collision>
+  </link>
+  <joint name="montessori_disk_hole_joint" type="fixed">
+    <origin xyz="-0.018 0.091 0.04" rpy="0.0 0.0 0.0"/>
+    <parent link="montessori_box"/>
+    <child link="disk_hole"/>
+  </joint>
+  <link name="disk_hole">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.007762390188872814"/>
+      <inertia ixx="5.07195011323347e-07" ixy="0.0" ixz="0.0" iyy="5.07195011323347e-07" iyz="0.0" izz="5.07195011323347e-07"/>
+    </inertial>
+    <collision name="disk_hole_shape">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.01 0.03 0.001"/>
+      </geometry>
     </collision>
   </link>
   <joint name="montessori_drawer_1_joint" type="prismatic">

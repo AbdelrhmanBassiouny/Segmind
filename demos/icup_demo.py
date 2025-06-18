@@ -36,12 +36,16 @@ from segmind.utils import get_arm_and_grasp_description_for_object, text_to_spee
 
 objects_dir = World.conf.cache_dir + "/objects"
 
-obj_name_map = {"montessori_object_6": "Cylinder",
+obj_name_map = {"montessori_object_1": "Disk",
+                "montessori_object_4": "Sphere",
+                "montessori_object_6": "Cylinder",
                 "montessori_object_3": "Cube",
                 "montessori_object_5": "Cuboid",
                 "montessori_object_2": "Triangle", }
 
-obj_hole_map = {"montessori_object_6": "circular_hole_1",
+obj_hole_map = {"montessori_object_1": "disk_hole",
+                "montessori_object_4": "circular_hole_2",
+                "montessori_object_6": "circular_hole_1",
                 "montessori_object_3": "square_hole",
                 "montessori_object_5": "rectangular_hole",
                 "montessori_object_2": "triangle_hole", }
@@ -143,15 +147,21 @@ while True:
         action_descriptions.append((actionable_event, actionable_event.action_description))
         pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
         pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
-        pickable_objects = {obj for obj in pickable_objects if obj not in mapped_objects}
+        pickable_objects = {obj for obj in pickable_objects if obj not in mapped_objects.values()}
+
 
         if isinstance(actionable_event, PickUpEvent):
-            if len(action_descriptions) >= 1:
+            if len(action_descriptions) > 1:
                 if isinstance(action_descriptions[i - 1][0], PickUpEvent):
                     action_descriptions.remove(action_descriptions[i - 1])
             if actionable_event.tracked_object not in pickable_objects:
                 if len(pickable_objects) > 0:
-                    to_pick_object = pickable_objects.pop()
+                    square_obj = [obj for obj in pickable_objects if "3" in obj.name]
+                    if len(square_obj) > 0:
+                        to_pick_object = square_obj[0]
+                        pickable_objects.remove(to_pick_object)
+                    else:
+                        to_pick_object = pickable_objects.pop()
                 else:
                     raise ValueError("No pickup objects detected")
             else:
@@ -185,15 +195,18 @@ while True:
                     scene_obj = actionable_event.through_hole.parent_entity
                     place_pose = scene_obj.links[obj_hole_map[object_to_place.name]].pose
                 else:
+                    logerr("Not Matching Shapes")
+                    logerr(f"Placing in the {actionable_event.through_hole.name}")
                     place_pose = actionable_event.through_hole.pose
-                place_pose.position.z += 0.02
+                    logerr(f"Placing pose is {place_pose}")
+                place_pose.position.z += 0.025
                 place_pose.orientation = pose.orientation
             logerr(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = (actionable_event,
                                        PlaceActionDescription(object_to_place, target_location=place_pose,
                                                               arm=arm,
                                                               insert=isinstance(actionable_event, InsertionEvent),
-                                                              pre_place_vertical_distance=0.05))
+                                                              pre_place_vertical_distance=0.1))
             objects_to_insert.append(object_to_place)
             action_descriptions.append((None, ParkArmsActionDescription(Arms.BOTH)))
 
@@ -205,12 +218,14 @@ while True:
     event_that_led_to_insertion_action: Optional[InsertionEvent] = None
     with real_robot:
         for event, partial_designator in action_descriptions:
-            performable = next(iter(partial_designator))
+            performable = partial_designator.current_node
             performable.perform()
             if not validate:
                 continue
-            if isinstance(performable, PlaceAction) and performable.insert:
-                obj = performable.object_designator
+            time.sleep(2)
+            if issubclass(performable.action, PlaceAction):
+                logerr(f"Placing Pose is {performable.kwargs['target_location']}")
+                obj = performable.kwargs["object_designator"]
                 obj_tracker = ObjectTrackerFactory.get_tracker(obj)
                 latest_pick_up = obj_tracker.get_latest_event_of_type(PickUpEvent)
                 if latest_pick_up is not None:
@@ -219,8 +234,9 @@ while True:
                         failed_insertion_action = performable
                         failed_insertion_object_tracker = obj_tracker
                         event_that_led_to_insertion_action = event
-                        text_to_speech(f"Hmmm, Looks like the {obj_name_map[obj.name]} was not inserted")
-                        text_to_speech(f"Could you show me how or where to insert it?")
+                        text_to_speech(f"Hmmm, Looks like the {obj_name_map[obj.name]} was not inserted,"
+                                       f"Could you show me how or where to insert it?")
+                        ParkArmsActionDescription(Arms.BOTH).current_node.perform()
                         break
                     else:
                         all_inserted_objects.append(obj)
@@ -258,10 +274,12 @@ while True:
         else:
             continue
         text_to_speech(f"I see that the {obj_names_to_insert}")
-    elif type(obj_shape) is not type(teacher_hole_shape) and type(teacher_hole_shape) is type(failed_hole_shape):
+    elif type(teacher_hole_shape) is type(failed_hole_shape):
         text_to_speech("Hmm ok so you placed the object in the same hole I chose,"
                        " maybe I didn't manipulate it correctly and that's why it was not inserted,"
                        "I will try to do better next time!")
+    elif type(obj_shape) is not type(teacher_hole_shape):
+        text_to_speech("Hmm, I didn't get the idea, I do not see the patter here, sorry!")
 
 
 multiverse_player.stop()

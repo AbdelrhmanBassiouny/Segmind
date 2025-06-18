@@ -58,6 +58,7 @@ class DataPlayer(EpisodePlayer, ABC):
                          stop_after_ready=stop_after_ready, world=world)
         self.frame_callbacks: List[Callable[[float], None]] = []
         self.frame_data_generator: FrameDataGenerator = self.get_frame_data_generator()
+        self.sync_robot_only: bool = False
 
     @abstractmethod
     def get_frame_data_generator(self) -> FrameDataGenerator:
@@ -119,6 +120,8 @@ class DataPlayer(EpisodePlayer, ABC):
         objects_poses = self.get_objects_poses(frame_data)
         joint_states = self.get_joint_states(frame_data)
         if len(objects_poses):
+            if self.sync_robot_only:
+                objects_poses = {self.world.robot: objects_poses[self.world.robot]}
             self.world.reset_multiple_objects_base_poses(objects_poses)
         if len(joint_states):
             self.world.robot.set_multiple_joint_positions(joint_states)

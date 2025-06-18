@@ -42,7 +42,7 @@ from pycrap.ontologies import Location, PhysicalObject, Robot
 @pytest.fixture(scope="module")
 def set_up_demo_fixture(episode_name: str = "icub_montessori_no_hands"):
     rdm = RobotDescriptionManager()
-    rdm.load_description("iCub3")
+    rdm.load_description("iCub")
 
     world: BulletWorld = BulletWorld(WorldMode.GUI)
     # viz_marker_publisher = VizMarkerPublisher()
@@ -81,7 +81,6 @@ def spawn_objects(models_dir):
         obj_name = Path(file).stem
         pose = PoseStamped()
         if obj_name == "iCub":
-            file = "iCub.urdf"
             obj_type = Robot
             pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
         elif obj_name == "scene":
@@ -117,21 +116,21 @@ def test_icub_demo(set_up_demo_fixture):
 
 
 def test_icub_pick_up_and_insert(set_up_demo_fixture):
-    set_up_demo_fixture.episode_player.stop()
-    time.sleep(2)
-    obj_name = "montessori_object_5"
+    # set_up_demo_fixture.episode_player.stop()
+    # time.sleep(2)
+    set_up_demo_fixture.episode_player.sync_robot_only = True
+    obj_name = "montessori_object_3"
     obj = World.current_world.get_object_by_root_link_name(obj_name)
     obj_pose = obj.pose
     obj_pose = World.current_world.get_object_by_name("scene").links["circular_hole_1"].pose
-    obj_pose.position.z += 0.04
-    obj_pose.orientation = Quaternion(*quaternion_from_euler(0, 1.57/2, 0))
-    obj.set_pose(obj_pose)
+    # obj_pose.position.z += 0.04
+    # obj_pose.orientation = Quaternion(*quaternion_from_euler(0, 1.57/2, 0))
+    # obj.set_pose(obj_pose)
     arm, grasp = get_arm_and_grasp_description_for_object(obj)
 
     scene_obj = World.current_world.get_object_by_name("scene")
-    square_hole_pose = scene_obj.get_link_pose("square_hole")
+    square_hole_pose = scene_obj.get_link_pose("circular_hole_1")
     object_description = ObjectDesignatorDescription(names=[obj_name])
-    square_hole_pose.orientation = obj.orientation
     with real_robot:
         plan = SequentialPlan(ParkArmsActionDescription(Arms.BOTH),
                               PickUpActionDescription(object_description,arm=arm,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import threading
+import time
 from abc import ABC, abstractmethod
 import pytest
 
@@ -50,14 +51,23 @@ def text_to_speech(text: str):
     # welcome
     myobj.save("welcome.mp3")
 
+    # time.sleep(1)
+
     # Initialize the mixer module
     pygame.mixer.init()
 
-    # Load the mp3 file
-    pygame.mixer.music.load("welcome.mp3")
+    try:
+        pygame.mixer.music.load("welcome.mp3")
+    except pygame.error:
+        pass
+
+    # time.sleep(1)
 
     # Play the loaded mp3 file
     pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        time.sleep(0.1)
+        continue
 
 
 def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07,
