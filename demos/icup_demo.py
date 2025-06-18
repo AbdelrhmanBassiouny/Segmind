@@ -24,7 +24,7 @@ from pycram.ros import logerr
 from pycram.world_concepts.world_object import Object, Link
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Location, PhysicalObject
-from typing_extensions import Dict
+from typing_extensions import Dict, Set
 
 from segmind.datastructures.events import AbstractAgentObjectInteractionEvent, PlacingEvent, PickUpEvent, InsertionEvent
 from segmind.datastructures.object_tracker import ObjectTrackerFactory, ObjectTracker
@@ -107,22 +107,32 @@ thread = threading.Thread(target=episode_segmenter.start)
 thread.start()
 
 match_shapes: bool = False
+pickable_objects: Set[PhysicalBody] = set()
 
 while True:
-    user_input = input("Continue? (y/n) ")
-    if user_input == "n":
-        break
+    if not match_shapes or len(pickable_objects) == 0:
+        user_input = input("Continue? (y/n) ")
+        if user_input == "n":
+            break
 
     # input("Press Enter to continue...")
-
-    all_events = episode_segmenter.logger.get_events()
-    actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]
-    actionable_events = sorted(actionable_events, key=lambda event: event.timestamp)
-    pickable_objects = select_transportable_objects(World.current_world.objects, not_contained=True)
+    if match_shapes and len(pickable_objects) > 0:
+        actionable_events = []
+        for obj in pickable_objects:
+            actionable_events.append(PickUpEvent(obj))
+            scene_obj = World.current_world.get_object_by_name("scene")
+            through_hole = scene_obj.links[obj_hole_map[obj.name]]
+            actionable_events.append(InsertionEvent(obj, [through_hole], through_hole))
+    else:
+        all_events = episode_segmenter.logger.get_events()
+        actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]
+        actionable_events = sorted(actionable_events, key=lambda event: event.timestamp)
+        pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
+        all_inserted_objects = [event.tracked_object for event in actionable_events if
+                                isinstance(event, InsertionEvent)]
+        pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
     action_descriptions: List[Tuple[Optional[AbstractAgentObjectInteractionEvent],
                                     PartialDesignator[ActionDescription]]] = []
-    all_inserted_objects = [event.tracked_object for event in actionable_events if isinstance(event, InsertionEvent)]
-    pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
     object_pick_up_actions: Dict[Object, PickUpActionDescription] = {}
     object_picked_arm_and_grasp: Dict[Object, Tuple[Arms, GraspDescription, PoseStamped]] = {}
     mapped_objects: Dict[Object, Object] = {}
@@ -131,7 +141,7 @@ while True:
 
     for i, actionable_event in enumerate(actionable_events):
         action_descriptions.append((actionable_event, actionable_event.action_description))
-        pickable_objects = select_transportable_objects(World.current_world.objects, not_contained=True)
+        pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
         pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
         pickable_objects = {obj for obj in pickable_objects if obj not in mapped_objects}
 
@@ -189,7 +199,7 @@ while True:
 
     episode_segmenter.reset()
 
-    validate = False
+    validate = True
     failed_insertion_action: Optional[ActionDescription] = None
     failed_insertion_object_tracker: Optional[ObjectTracker] = None
     event_that_led_to_insertion_action: Optional[InsertionEvent] = None
@@ -212,6 +222,8 @@ while True:
                         text_to_speech(f"Hmmm, Looks like the {obj_name_map[obj.name]} was not inserted")
                         text_to_speech(f"Could you show me how or where to insert it?")
                         break
+                    else:
+                        all_inserted_objects.append(obj)
 
     episode_segmenter.reset()
 
@@ -232,9 +244,20 @@ while True:
     obj_shape = teacher_insertion_event.tracked_object.root_link.geometry[0]
 
     if type(obj_shape) is type(teacher_hole_shape) and type(obj_shape) is not type(failed_hole_shape):
-        text_to_speech("Ok thank you, I think I understand now what you want,"
-                       "you want me to match the object shape with the hole shape. OK ! Gotcha !")
         match_shapes = True
+        text_to_speech("Ok thank you, I think I understand now what you want,"
+                       "you want me to match the object shape with the hole shape.")
+        pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
+        pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
+        if len(pickable_objects) > 1:
+            obj_names_to_insert = ', the'.join([obj_name_map[obj.name] for obj in list(pickable_objects)[:-1]])
+            obj_names_to_insert += (f', and the {obj_name_map[list(pickable_objects)[-1].name]} have not been inserted yet,'
+                                    f' I can insert them if you let me.')
+        elif len(pickable_objects) == 1:
+            obj_names_to_insert = pickable_objects.pop().name + 'has not been inserted yet, I can insert it if you let me.'
+        else:
+            continue
+        text_to_speech(f"I see that the {obj_names_to_insert}")
     elif type(obj_shape) is not type(teacher_hole_shape) and type(teacher_hole_shape) is type(failed_hole_shape):
         text_to_speech("Hmm ok so you placed the object in the same hole I chose,"
                        " maybe I didn't manipulate it correctly and that's why it was not inserted,"
