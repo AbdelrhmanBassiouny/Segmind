@@ -8,6 +8,7 @@ from threading import RLock
 import time
 from datetime import timedelta
 from os.path import dirname, abspath
+import re
 
 from owlready2_optimized import defaultdict
 from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable, Tuple
@@ -109,7 +110,9 @@ class EventLogger:
         if isinstance(event, PickUpEvent) and event.tracked_object.name in obj_name_map:
             text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was picked")
         elif isinstance(event, InsertionEvent) and event.tracked_object.name in obj_name_map:
-            text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {event.through_hole.name}")
+            hole_name = event.through_hole.name.replace('_', ' ').strip()
+            hole_name = re.sub(r'\d+', '', hole_name).strip()
+            text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {hole_name}")
         self.update_object_trackers_with_event(event)
         self.event_queue.put(event)
         self.annotate_scene_with_event(event)
