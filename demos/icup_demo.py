@@ -114,6 +114,8 @@ match_shapes: bool = False
 pickable_objects: Set[PhysicalBody] = set()
 
 while True:
+    pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
+
     if not match_shapes or len(pickable_objects) == 0:
         user_input = input("Continue? (y/n) ")
         if user_input == "n":
@@ -281,6 +283,7 @@ while True:
     elif type(obj_shape) is not type(teacher_hole_shape):
         text_to_speech("Hmm, I didn't get the idea, I do not see the patter here, sorry!")
 
+    episode_segmenter.reset()
 
 multiverse_player.stop()
 multiverse_player.join()
