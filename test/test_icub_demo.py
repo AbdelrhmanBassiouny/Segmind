@@ -117,9 +117,9 @@ def test_icub_demo(set_up_demo_fixture):
 
 def test_icub_pick_up_and_insert(set_up_demo_fixture):
     # set_up_demo_fixture.episode_player.stop()
-    # time.sleep(2)
-    set_up_demo_fixture.episode_player.sync_robot_only = True
-    obj_name = "montessori_object_3"
+    time.sleep(2)
+    # set_up_demo_fixture.episode_player.sync_robot_only = True
+    obj_name = "montessori_object_5"
     obj = World.current_world.get_object_by_root_link_name(obj_name)
     obj_pose = obj.pose
     obj_pose = World.current_world.get_object_by_name("scene").links["circular_hole_1"].pose

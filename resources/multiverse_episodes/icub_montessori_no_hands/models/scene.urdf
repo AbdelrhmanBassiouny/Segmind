@@ -44,7 +44,7 @@
     </collision>
   </link>
   <joint name="small_table_joint" type="fixed">
-    <origin xyz="-0.35 0.0 1.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.35 0.0 1.05" rpy="0.0 0.0 0.0"/>
     <parent link="world"/>
     <child link="small_table"/>
   </joint>
@@ -55,9 +55,9 @@
       <inertia ixx="1.502666711807251" ixy="0.0" ixz="0.0" iyy="0.42766666412353516" iyz="0.0" izz="1.7316666841506958"/>
     </inertial>
     <collision name="small_table_geom_1">
-      <origin xyz="0.0 0.0 0.30000001192092896" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.25" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.5 1.0 0.10000000149011612"/>
+        <box size="0.5 1.0 0.025"/>
       </geometry>
     </collision>
     <collision name="small_table_geom_2">
@@ -86,7 +86,7 @@
     </collision>
   </link>
   <joint name="montessori_box_joint" type="fixed">
-    <origin xyz="-0.4 0.0 1.39" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.4 0.0 1.353" rpy="0.0 0.0 0.0"/>
     <parent link="world"/>
     <child link="montessori_box"/>
   </joint>
