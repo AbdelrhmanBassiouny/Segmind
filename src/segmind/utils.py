@@ -13,7 +13,7 @@ from typing_extensions import List, Optional, Tuple
 from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
 from pycram.datastructures.dataclasses import Color
 from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.enums import Arms, Grasp
+from pycram.datastructures.enums import Arms, Grasp, AxisIdentifier
 from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
@@ -80,7 +80,16 @@ def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0
         container_body_names = [c.name.name for c in container_bodies]
         return any(body.name in container_body_names for body in bodies_to_check)
     else:
-        return any("drawer" in body.name and "handle" not in body.name for body in bodies_to_check)
+        if any("drawer" in body.name and "handle" not in body.name for body in bodies_to_check):
+            return True
+        else:
+            obj.update_containment(axis_to_use=[AxisIdentifier.X, AxisIdentifier.Y])
+            possible_containers = [b for b in obj.contained_in_bodies if "drawer" in b.name and "handle" not in b.name]
+            for b in bodies_to_check:
+                b_contact_bodies = b.contact_points.get_all_bodies()
+                if any(contact_body in possible_containers for contact_body in b_contact_bodies):
+                    return True
+            return False
 
 
 def get_arm_and_grasp_description_for_object(obj: Object) -> Tuple[Arms, GraspDescription]:

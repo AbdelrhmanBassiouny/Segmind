@@ -109,7 +109,7 @@ episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=T
 thread = threading.Thread(target=episode_segmenter.start)
 # Start the thread
 thread.start()
-
+time.sleep(5)
 match_shapes: bool = False
 pickable_objects: Set[PhysicalBody] = set()
 
@@ -165,7 +165,9 @@ while True:
                     else:
                         to_pick_object = pickable_objects.pop()
                 else:
-                    raise ValueError("No pickup objects detected")
+                    action_descriptions.remove(action_descriptions[-1])
+                    break
+                    # raise ValueError("No pickup objects detected")
             else:
                 to_pick_object = actionable_event.tracked_object
                 pickable_objects.remove(actionable_event.tracked_object)

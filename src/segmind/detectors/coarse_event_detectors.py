@@ -471,6 +471,7 @@ def select_transportable_objects(objects: List[Object], not_contained: bool = Fa
     if not_contained:
         transportable_objects = [obj for obj in transportable_objects
                                  if not is_object_supported_by_container_body(obj)]
+
     return transportable_objects
 
 
