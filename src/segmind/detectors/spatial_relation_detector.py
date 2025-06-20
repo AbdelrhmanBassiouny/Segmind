@@ -92,7 +92,7 @@ class ContainmentDetector(SpatialRelationDetector):
         """
         Update the state of a body.
         """
-        body.update_containment(intersection_ratio=0.5)
+        body.update_containment(intersection_ratio=0.7)
         self.bodies_states[body] = copy(body.contained_in_bodies)
 
     def detect_events(self) -> None:
@@ -142,7 +142,7 @@ class InsertionDetector(SpatialRelationDetector):
         """
         Update the state of a body.
         """
-        body.update_containment(intersection_ratio=0.2, only_bodies=with_bodies)
+        body.update_containment(intersection_ratio=0.7)
         self.bodies_states[body] = copy(body.contained_in_bodies)
 
     def detect_events(self) -> None:
@@ -161,7 +161,6 @@ class InsertionDetector(SpatialRelationDetector):
                     time.sleep(self.wait_time.total_seconds())
                     hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
                     logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
-                    # self.update_body_state(event.tracked_object, with_bodies=[hole])
                     if not self.hole_insertion_verifier(hole, event):
                         if event.tracked_object.is_moving:
                             continue

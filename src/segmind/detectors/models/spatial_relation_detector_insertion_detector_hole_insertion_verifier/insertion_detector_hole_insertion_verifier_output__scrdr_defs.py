@@ -54,22 +54,15 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
 def conditions_21738774625860220488991060484462427733(case) -> bool:
     def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:
         """Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type ."""
-        # rays_results = event.tracked_object.cast_rays_in_all_directions(0.07)
-        # directions_results = [rr.intersected for rr in rays_results]
-        # directions_results_bottom = directions_results[4]
-        # if not directions_results_bottom:
-        #     return False
-        # if hasattr(event.tracked_object.world, "views") and event.tracked_object.world.views is not None:
-        #     link_id = rays_results[4].link_id
-        #     obj_id = rays_results[4].obj_id
-        #     link = event.tracked_object.world.get_object_by_id(obj_id).get_link_by_id(link_id)
-        #     containers = [v for v in event.tracked_object.world.views['views'] if isinstance(v, Container)]
-        #     container_bodies = [c.body for c in containers]
-        #     container_body_names = [c.name.name for c in container_bodies]
-        #     return directions_results_bottom and link.name in container_body_names
-        # else:
-            # return is_object_supported_by_container_body(event.tracked_object)
-        return True
+        if event.tracked_object in self_.bodies_states:
+            prev_containers = self_.bodies_states[event.tracked_object]
+            event.tracked_object.update_containment(intersection_ratio=0.7)
+            current_containers = event.tracked_object.contained_in_bodies
+            new_containers = [body for body in current_containers if body not in prev_containers]
+            return len(new_containers) > 0
+        else:
+            self_.update_body_state(event.tracked_object)
+            return len(self_.bodies_states[event.tracked_object]) > 0
     return conditions_for_insertion_detector_hole_insertion_verifier(**case)
 
 

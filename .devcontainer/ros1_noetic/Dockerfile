@@ -22,6 +22,15 @@ RUN sudo apt install software-properties-common -y && \
 # Install pycram dependencies
 RUN sudo apt install wget ros-noetic-xacro python3-vcstool git ros-dev-tools default-jre python3-catkin-tools -y
 
+RUN sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y && \
+    sudo apt-get update && \
+    sudo apt-get upgrade -y
+
+RUN sudo apt install ros-noetic-joint-trajectory-controller ros-noetic-ros-control ros-noetic-ros-controllers -y && \
+    sudo apt install ros-noetic-py-trees -y && \
+    sudo apt install ros-noetic-rospy-message-converter -y && \
+    sudo apt install ros-noetic-py-trees-ros
+
 # Install RDR dependencies
 RUN sudo apt-get install graphviz graphviz-dev -y
 
@@ -48,9 +57,16 @@ RUN cd $LIBSDIR && \
     cd $LIBSDIR/Multiverse && \
     git submodule update --init --recursive
 
+RUN cd $HOME/workspace/src \
+    && git clone https://github.com/orocos/orocos_kinematics_dynamics.git \
+    && sudo apt-get install libeigen3-dev libcppunit-dev -y \
+    && sudo apt-get install python3-psutil python3-future -y \
+    && cd orocos_kinematics_dynamics \
+    && git submodule update --init \
+
 RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/icub_demo/rosinstall/pycram-https.rosinstall \
-    && cd .. \
     && source /opt/ros/$ROS_DISTRO/setup.bash \
+    && cd .. \
     && catkin build
 
 RUN vcs import --input ./packages.repos --recursive
@@ -99,6 +115,7 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     workon pycram-segmind && \
     cd $LIBSDIR/giskardpy && \
     pip install -r requirements.txt && pip install -e . && \
+    pip install -U pycryptodomex && \
     cd $LIBSDIR/qpSWIFT/python && \
     sudo python3 setup.py install && \
     source /opt/ros/${ROS_DISTRO}/setup.bash && \
@@ -124,7 +141,9 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
 RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     workon pycram-segmind && \
     cd $LIBSDIR/Multiverse/Multiverse-Launch/src/multiverse_connectors/multiverse_simulators_connector/src/mujoco_connector && \
-    pip install -r requirements.txt
+    pip install -r requirements.txt \
+    cd $LIBSDIR/Multiverse/Multiverse-Launch/src/multiverse_connectors/multiverse_ros_connector/ros_ws/multiverse_ws && \
+    catkin build
 
 RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     workon pycram-segmind && \

@@ -14,6 +14,7 @@ from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
 from pycram.datastructures.world_entity import PhysicalBody
+from pycram.datastructures.dataclasses import AxisAlignedBoundingBox
 from pycram.designator import ActionDescription
 from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, \
     ParkArmsActionDescription, PlaceAction
@@ -109,7 +110,9 @@ episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=T
 thread = threading.Thread(target=episode_segmenter.start)
 # Start the thread
 thread.start()
+
 time.sleep(5)
+
 match_shapes: bool = False
 pickable_objects: Set[PhysicalBody] = set()
 

@@ -54,7 +54,11 @@ def text_to_speech(text: str):
     # time.sleep(1)
 
     # Initialize the mixer module
-    pygame.mixer.init()
+    try:
+        pygame.mixer.init()
+    except pygame.error:
+        print("Warning: Audio not available, running in silent mode.")
+        return
 
     try:
         pygame.mixer.music.load("welcome.mp3")
