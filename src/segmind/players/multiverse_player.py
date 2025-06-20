@@ -20,9 +20,7 @@ class MultiversePlayer(DataPlayer):
         self.objects_names: Optional[List[str]] = objects_names if objects_names is not None else\
             [obj.root_link.name for obj in self.world.objects if not issubclass(obj.obj_type, (Floor, Supporter))]
         self.joints_names: List[str] = [joint.name for joint in self.world.robot.joints.values()
-                                        if joint.type in [JointType.REVOLUTE, JointType.CONTINUOUS]
-                                        and not any(name in joint.name for name in ["hand_index", "hand_thumb", "hand_little",
-                                                                                    "hand_middle", "hand_ring"])]
+                                        if joint.type in [JointType.REVOLUTE, JointType.CONTINUOUS]]
         self.multiverse_meta_data = MultiverseMetaData(
             world_name=world_name,
             simulation_name=simulation_name,
