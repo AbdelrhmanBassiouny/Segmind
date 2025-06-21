@@ -4,6 +4,7 @@ from os.path import dirname
 
 from typing_extensions import List, Optional, Dict
 
+from pycram.ros import logerr
 from .datastructures.events import *
 from .datastructures.object_tracker import ObjectTracker
 from .detectors.coarse_event_detectors import *
@@ -45,23 +46,33 @@ class EpisodeSegmenter(ABC):
         self.kill_event: threading.Event = threading.Event()
 
     def reset(self):
-        self.logger.reset()
         for detector in self.starter_event_to_detector_thread_map.values():
+            detector_str = str(detector)
             detector.reset()
             detector.stop()
+            logerr(f"Detector {detector_str} stopped, joining it now...")
             detector.join()
+            logerr(f"Joined {detector_str}")
             self.detector_threads_list.remove(detector)
         self.starter_event_to_detector_thread_map = {}
         initial_detector_instances = [detector for detector in self.detector_threads_list
                                       if type(detector) in self.initial_detectors]
         for detector in initial_detector_instances:
+            detector_str = str(detector)
             detector.stop()
+            logerr(f"Detector {detector_str} stopped, joining it now...")
             detector.join()
+            logerr(f"Joined {detector_str}")
             self.detector_threads_list.remove(detector)
         for detector in self.detector_threads_list:
+            detector_str = str(detector)
             detector.stop()
+            logerr(f"Detector {detector_str} stopped, joining it now...")
             detector.join()
+            logerr(f"Joined {detector_str}")
         self.detector_threads_list = []
+        time.sleep(0.5)
+        self.logger.reset()
         self.run_initial_event_detectors()
 
     def start(self) -> None:

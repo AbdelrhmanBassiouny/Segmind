@@ -36,7 +36,7 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
         if len(result) == 0:
             return False
         i_width, i_depth, i_height = result[0].width, result[0].depth, result[0].height
-        if obj_max <= hole_max_z + 1e-3 and i_width >= hole_width*0.3 and i_depth >= hole_depth*0.3:
+        if obj_max <= hole_max_z + 1e-3 and i_width >= hole_width*0.5 and i_depth >= hole_depth*0.5:
             return True
         else:
             return False
@@ -62,7 +62,16 @@ def conditions_21738774625860220488991060484462427733(case) -> bool:
             return len(new_containers) > 0
         else:
             self_.update_body_state(event.tracked_object)
-            return len(self_.bodies_states[event.tracked_object]) > 0
+            contained_in = self_.bodies_states[event.tracked_object]
+            if len(contained_in) > 0:
+                if any("drawer" in b.name and "handle" not in b.name for b in contained_in):
+                    return True
+                elif any("box" in b.name for b in contained_in):
+                    return True
+                else:
+                    return False
+            else:
+                return False
     return conditions_for_insertion_detector_hole_insertion_verifier(**case)
 
 
@@ -73,7 +82,14 @@ def conditions_313966059252436144481394373657043070884(case) -> bool:
         if latest_insertion is None:
             return False
         latest_pickup = event.object_tracker.get_first_event_of_type_after_event(PickUpEvent, latest_insertion)
-        return latest_pickup is None
+        no_pick_up = latest_pickup is None
+        latest_insertion_before_this_insertion = event.object_tracker.get_first_event_of_type_before_event(InsertionEvent, latest_insertion)
+        if latest_insertion_before_this_insertion is None:
+            return no_pick_up
+        elif abs(latest_insertion.timestamp - latest_insertion_before_this_insertion.timestamp) < 0.5:
+            return True
+        else:
+            return no_pick_up
     return conditions_for_insertion_detector_hole_insertion_verifier(**case)
 
 

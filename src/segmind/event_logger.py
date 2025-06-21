@@ -102,17 +102,6 @@ class EventLogger:
     def log_event(self, event: Event):
         if self.is_event_in_timeline(event):
             return
-        logdebug(f"Logging event: {event}")
-        obj_name_map = {"montessori_object_6": "Cylinder",
-                        "montessori_object_3": "Cube",
-                        "montessori_object_5": "Cuboid",
-                        "montessori_object_2": "Triangle", }
-        if isinstance(event, PickUpEvent) and event.tracked_object.name in obj_name_map:
-            text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was picked")
-        elif isinstance(event, InsertionEvent) and event.tracked_object.name in obj_name_map:
-            hole_name = event.through_hole.name.replace('_', ' ').strip()
-            hole_name = re.sub(r'\d+', '', hole_name).strip()
-            text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {hole_name}")
         self.update_object_trackers_with_event(event)
         self.event_queue.put(event)
         self.annotate_scene_with_event(event)
@@ -402,6 +391,17 @@ class EventAnnotationThread(threading.Thread):
                 time.sleep(0.1)
                 continue
             self.logger.annotation_queue.task_done()
+            logdebug(f"Logging event: {event}")
+            obj_name_map = {"montessori_object_6": "Cylinder",
+                            "montessori_object_3": "Cube",
+                            "montessori_object_5": "Cuboid",
+                            "montessori_object_2": "Triangle", }
+            if isinstance(event, PickUpEvent) and event.tracked_object.name in obj_name_map:
+                text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was picked")
+            elif isinstance(event, InsertionEvent) and event.tracked_object.name in obj_name_map:
+                hole_name = event.through_hole.name.replace('_', ' ').strip()
+                hole_name = re.sub(r'\d+', '', hole_name).strip()
+                text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {hole_name}")
             if len(self.current_annotations) >= self.max_annotations:
                 # Move all annotations up and remove the oldest one
                 for text_ann in self.current_annotations:

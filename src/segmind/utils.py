@@ -34,6 +34,8 @@ import os
 import pygame
 
 
+speech_lock = threading.RLock()
+
 def text_to_speech(text: str):
     # The text that you want to convert to audio
     text = 'Hello' if text is None else text
@@ -49,29 +51,30 @@ def text_to_speech(text: str):
 
     # Saving the converted audio in a mp3 file named
     # welcome
-    myobj.save("welcome.mp3")
+    with speech_lock:
+        myobj.save("welcome.mp3")
 
-    # time.sleep(1)
+        # time.sleep(1)
 
-    # Initialize the mixer module
-    try:
-        pygame.mixer.init()
-    except pygame.error:
-        print("Warning: Audio not available, running in silent mode.")
-        return
+        # Initialize the mixer module
+        try:
+            pygame.mixer.init()
+        except pygame.error:
+            print("Warning: Audio not available, running in silent mode.")
+            return
 
-    try:
-        pygame.mixer.music.load("welcome.mp3")
-    except pygame.error:
-        pass
+        try:
+            pygame.mixer.music.load("welcome.mp3")
+        except pygame.error:
+            pass
 
-    # time.sleep(1)
+        # time.sleep(1)
 
-    # Play the loaded mp3 file
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():
-        time.sleep(0.1)
-        continue
+        # Play the loaded mp3 file
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
+            continue
 
 
 def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07,

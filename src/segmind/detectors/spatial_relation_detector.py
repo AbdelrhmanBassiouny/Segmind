@@ -4,6 +4,8 @@ import time
 from os.path import dirname
 
 from ripple_down_rules.rdr_decorators import RDRDecorator
+
+from pycram.world_concepts.world_object import Object
 from segmind.episode_player import EpisodePlayer
 from typing_extensions import Any, Dict, List, Optional, Type, Callable
 
@@ -92,6 +94,10 @@ class ContainmentDetector(SpatialRelationDetector):
         """
         Update the state of a body.
         """
+        if isinstance(body, Object):
+            for link in body.links.values():
+                link.update_containment(intersection_ratio=0.7)
+                self.bodies_states[link] = copy(link.contained_in_bodies)
         body.update_containment(intersection_ratio=0.7)
         self.bodies_states[body] = copy(body.contained_in_bodies)
 
