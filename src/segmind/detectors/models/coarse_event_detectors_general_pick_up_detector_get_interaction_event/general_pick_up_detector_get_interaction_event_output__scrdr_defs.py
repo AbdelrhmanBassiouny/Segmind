@@ -40,6 +40,7 @@ def conditions_121320552838186729138877771657303489240(case) -> bool:
 def conditions_320416996501934194262144719758568379805(case) -> bool:
     def conditions_for_general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[NoneType, PickUpEvent]) -> bool:
         """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent."""
+        return False
         latest_pick_up_event = self_.object_tracker.get_latest_event_of_type(PickUpEvent)
         if latest_pick_up_event is not None:
             any_placing_event_after_pick_up_event = self_.object_tracker.get_first_event_of_type_after_event(PlacingEvent, latest_pick_up_event)
@@ -62,7 +63,7 @@ def conclusion_320416996501934194262144719758568379805(case) -> Optional[PickUpE
 def conclusion_121320552838186729138877771657303489240(case) -> Optional[PickUpEvent]:
     def general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[NoneType, PickUpEvent]) -> Union[NoneType, PickUpEvent]:
         """Get possible value(s) for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent."""
-        if check_for_supporting_surface(self_.tracked_object) is None:
+        if get_support(self_.tracked_object) is None:
             return PickUpEvent(self_.tracked_object, timestamp=self_.starter_event.timestamp - self_.wait_time.total_seconds(), end_timestamp=self_.starter_event.timestamp)
         return None
     return general_pick_up_detector_get_interaction_event(**case)

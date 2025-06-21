@@ -23,6 +23,7 @@ def conditions_318535409151373315477142163500790537263(case) -> bool:
 def conditions_217503528191875472672592688900935027547(case) -> bool:
     def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[MotionPickUpDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:
         """Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type ."""
+        return False
         if not issubclass(detector_type, GeneralPickUpDetector):
             return False
         if not isinstance(starter_event, EventWithOneTrackedObject):
@@ -62,6 +63,7 @@ def conclusion_217503528191875472672592688900935027547(case) -> bool:
 def conclusion_318535409151373315477142163500790537263(case) -> bool:
     def episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[MotionPickUpDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:
         """Get possible value(s) for EpisodeSegmenter_is_detector_redundant.output_  of type ."""
+        return False
         similar_detectors = [(se, de, de_inst) for (se, de), de_inst in self_.starter_event_to_detector_thread_map.items()
         if isinstance(se, starter_event.__class__) and issubclass(de, detector_type)]
     

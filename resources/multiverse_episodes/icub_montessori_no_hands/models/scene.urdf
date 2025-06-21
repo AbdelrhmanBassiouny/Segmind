@@ -288,7 +288,7 @@
     <collision name="square_hole_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.025 0.025 0.001"/>
+        <box size="0.03 0.03 0.001"/>
       </geometry>
       <material name="MontessoriDrawer2_material">
         <color rgba="0.99 0.0 0.0 1.0"/>

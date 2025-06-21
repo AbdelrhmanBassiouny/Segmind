@@ -36,7 +36,7 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
         if len(result) == 0:
             return False
         i_width, i_depth, i_height = result[0].width, result[0].depth, result[0].height
-        if obj_max <= hole_max_z + 1e-3 and i_width >= hole_width*0.5 and i_depth >= hole_depth*0.5:
+        if obj_max <= hole_max_z + 1e-3 and i_width >= hole_width*0.3 and i_depth >= hole_depth*0.3:
             return True
         else:
             return False

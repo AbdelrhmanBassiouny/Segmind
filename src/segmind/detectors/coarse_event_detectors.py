@@ -273,7 +273,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        return isinstance(event, LossOfContactEvent) and "object_4" in event.tracked_object.name
+        return isinstance(event, LossOfContactEvent) and "object_6" in event.tracked_object.name
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
      fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """

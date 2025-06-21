@@ -16,7 +16,7 @@ from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callabl
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
-from pycram.ros import loginfo, logdebug
+from pycram.ros import loginfo, logdebug, logerr
 from pycram.world_concepts.world_object import Object, Link
 from .datastructures.events import Event, EventUnion, EventWithTrackedObjects, EventWithTwoTrackedObjects, PickUpEvent, \
     InsertionEvent
@@ -126,7 +126,7 @@ class EventLogger:
 
         :param event: The event to annotate the scene with.
         """
-        if self.annotate_events and (self.events_to_annotate is None or (type(event) in self.events_to_annotate)) \
+        if self.annotate_events and (self.events_to_annotate is not None and (type(event) in self.events_to_annotate)) \
             and World.current_world.mode == WorldMode.GUI:
             self.annotation_queue.put(event)
 
@@ -391,7 +391,7 @@ class EventAnnotationThread(threading.Thread):
                 time.sleep(0.1)
                 continue
             self.logger.annotation_queue.task_done()
-            logdebug(f"Logging event: {event}")
+            logerr(f"Logging event: {event}")
             obj_name_map = {"montessori_object_6": "Cylinder",
                             "montessori_object_3": "Cube",
                             "montessori_object_5": "Cuboid",
@@ -402,21 +402,21 @@ class EventAnnotationThread(threading.Thread):
                 hole_name = event.through_hole.name.replace('_', ' ').strip()
                 hole_name = re.sub(r'\d+', '', hole_name).strip()
                 text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {hole_name}")
-            if len(self.current_annotations) >= self.max_annotations:
-                # Move all annotations up and remove the oldest one
-                for text_ann in self.current_annotations:
-                    World.current_world.remove_text(text_ann.id)
-                self.current_annotations.pop(0)
-                for text_ann in self.current_annotations:
-                    text_ann.position[2] += self.step_z_offset
-                    text_ann.id = World.current_world.add_text(text_ann.text,
-                                                               text_ann.position,
-                                                               color=text_ann.color,
-                                                               size=text_ann.size)
-            z_offset = self.get_next_z_offset()
-            text_ann = event.annotate([1.5, 1, z_offset])
-            self.current_annotations.append(text_ann)
-            time.sleep(0.01)
+            # if len(self.current_annotations) >= self.max_annotations:
+            #     # Move all annotations up and remove the oldest one
+            #     for text_ann in self.current_annotations:
+            #         World.current_world.remove_text(text_ann.id)
+            #     self.current_annotations.pop(0)
+            #     for text_ann in self.current_annotations:
+            #         text_ann.position[2] += self.step_z_offset
+            #         text_ann.id = World.current_world.add_text(text_ann.text,
+            #                                                    text_ann.position,
+            #                                                    color=text_ann.color,
+            #                                                    size=text_ann.size)
+            # z_offset = self.get_next_z_offset()
+            # text_ann = event.annotate([1.5, 1, z_offset])
+            # self.current_annotations.append(text_ann)
+            # time.sleep(0.1)
 
     def stop(self):
         self.kill_event.set()
