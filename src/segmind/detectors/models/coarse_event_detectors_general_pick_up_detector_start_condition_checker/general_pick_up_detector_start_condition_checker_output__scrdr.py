@@ -28,6 +28,12 @@ def classify(case: Dict, **kwargs) -> Optional[bool]:
 
             elif conditions_199058987582084612752317307773823561830(case):
                 return conclusion_199058987582084612752317307773823561830(case)
+
+            elif conditions_85208169816383195582254003928161949871(case):
+                return conclusion_85208169816383195582254003928161949871(case)
+
+            elif conditions_181643586107175766966334460719476171055(case):
+                return conclusion_181643586107175766966334460719476171055(case)
             return conclusion_8274239634455277150877461420723135533(case)
         return conclusion_79409294830217498801042528243955850723(case)
     else:

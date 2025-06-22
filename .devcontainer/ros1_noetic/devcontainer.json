@@ -16,18 +16,14 @@
     //  "--user", "${localEnv:UID}:${localEnv:GID}",
 //     "--pid=host", // Shares the host's PID namespace with the container
 //     "--privileged", // Gives the container full access to the host's devices and allows it to run with root privileges
-    "--device=/dev/snd",
-    "-e", "PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native",
-    "-v", "${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native",
-    "-v", "${HOME}/.config/pulse/cookie:/root/.config/pulse/cookie"
+    "--device=/dev/snd", // Allows the container to access the host's sound devices
+    "--group-add", "audio"
   ],
   "workspaceMount": "source=${localWorkspaceFolder},target=/root/workspace/src/${localWorkspaceFolderBasename},type=bind",
   "workspaceFolder": "/root/workspace/src",
   "containerEnv": {
     // Uncomment to allow the container to access the X server on the host e.g. to run Rviz and other GUI tools
     "DISPLAY": "${localEnv:DISPLAY}",
-    //
-    "SDL_AUDIODRIVER": "pulse"
   },
   "mounts": [
     // Uncomment to allow the container to access the X server on the host e.g. to run Rviz and other GUI tools

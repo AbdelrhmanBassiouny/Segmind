@@ -15,6 +15,10 @@ try:
 except ImportError:
     Multiverse = None
 
+try:
+    from ripple_down_rules.user_interface.gui import RDRCaseViewer
+except ImportError:
+    RDRCaseViewer = None
 
 from .utils import PropagatingThread
 from .datastructures.enums import PlayerStatus
@@ -37,9 +41,11 @@ class EpisodePlayer(PropagatingThread, ABC):
         return cls._instance
 
     def __init__(self, time_between_frames: Optional[datetime.timedelta] = None, use_realtime: bool = False,
-                 stop_after_ready: bool = False, world: Optional[World] = None):
+                 stop_after_ready: bool = False, world: Optional[World] = None,
+                 rdr_viewer: Optional[RDRCaseViewer] = None):
         if not self._initialized:
             super().__init__()
+            self.rdr_viewer: Optional[RDRCaseViewer] = rdr_viewer
             self.stop_after_ready: bool = stop_after_ready
             self.world: World = world if world is not None else World.current_world
             self._ready: bool = False

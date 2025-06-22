@@ -10,7 +10,7 @@ from pycram.language import SequentialPlan
 from pycram.datastructures.pose import PoseStamped, Vector3
 from pycram.ros import set_logger_level
 from segmind.segmenters.cram_segmenter import CRAMSegmenter
-from segmind.detectors.coarse_event_detectors import MotionPickUpDetector, GeneralPickUpDetector
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
 from pycram.datastructures.enums import Arms, Grasp, TorsoState, WorldMode, LoggerLevel
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import UseProspectionWorld

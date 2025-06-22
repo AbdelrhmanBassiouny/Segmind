@@ -164,6 +164,10 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
     """
     An abstract detector that detects an interaction between the agent and an object.
     """
+    models_path: str = os.path.join(os.path.dirname(__file__), "models")
+    """
+    The path to the directory where the Ripple Down Rules models are stored.
+    """
 
     def __init__(self, logger: EventLogger, starter_event: EventUnion, *args, **kwargs):
         """
@@ -255,15 +259,13 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A detector that detects pick-up events based on incremental learning using Ripple Down Rules.
     """
-    models_path: str = os.path.join(os.path.dirname(__file__), "models")
-    """
-    The path to the directory where the Ripple Down Rules models are stored.
-    """
+    models_path: str = AbstractInteractionDetector.models_path
     interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind",
      fit=False, update_existing_rules=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
+   
     object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind",
      fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
     """
@@ -273,25 +275,22 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        return isinstance(event, LossOfContactEvent) and "object_6" in event.tracked_object.name
+        return isinstance(event, LossOfContactEvent) and any((n in event.tracked_object.name) or (n in event.with_object.name) for n in ["object_6", "object_3"])
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
      fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
-    # @EpisodePlayer.pause_resume
     @interaction_checks_rdr.decorator
     def get_interaction_event(self) -> Optional[PickUpEvent]:
         pass
 
     @classmethod
-    # @EpisodePlayer.pause_resume
     @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
         pass
 
     @classmethod
-    # @EpisodePlayer.pause_resume
     @start_condition_rdr.decorator
     def start_condition_checker(cls, event: Event, target: Optional[bool] = None) -> bool:
         pass
@@ -303,62 +302,35 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
             return super().__str__()
 
 
-class MotionPickUpDetector(AbstractPickUpDetector):
-
-    def __init__(self, logger: EventLogger, starter_event: LossOfContactEvent, *args, **kwargs):
-        """
-        :param logger: An instance of the EventLogger class that is used to log the events.
-        :param starter_event: An instance of the ContactEvent class that represents the event to start the event
-         detector.
-        """
-        super().__init__(logger, starter_event, *args, **kwargs)
-
-    @classmethod
-    def get_object_to_track_from_starter_event(cls, event: LossOfContactEvent) -> Object:
-        return select_transportable_objects_from_loss_of_contact_event(event)[0]
-
-    @classmethod
-    def start_condition_checker(cls, event: Event) -> bool:
-        """
-        Check if an agent is in contact with the tracked_object.
-
-        :param event: The ContactEvent instance that represents the contact event.
-        """
-        if (isinstance(event, LossOfContactEvent)
-                and any(select_transportable_objects_from_loss_of_contact_event(event))
-                and not get_support(event.tracked_object, event.links)):
-            logdebug(f"{event} with object {event.tracked_object.name} IS A starter event")
-            return True
-        if isinstance(event, LossOfContactEvent):
-            logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
-        return False
-
-    def get_interaction_event(self) -> bool:
-        """
-        Check for upward motion after the object lost contact with the surface.
-        """
-        logdebug(f"checking if {self.tracked_object.name} was picked up")
-        # wait for the object to be lifted TODO: Should be replaced with a wait on a lifting event
-        dt = timedelta(milliseconds=1000)
-        time.sleep(dt.total_seconds())
-        logdebug(f"checking for translation event for {self.tracked_object.name}")
-        latest_event = self.check_for_event_near_starter_event(TranslationEvent, dt)
-
-        if latest_event:
-            self.start_timestamp = min(latest_event.timestamp, self.start_timestamp)
-            self.end_timestamp = max(latest_event.timestamp, self.start_timestamp)
-            return True
-
-        self.kill_event.set()
-        return False
-
-
 class PlacingDetector(AbstractInteractionDetector):
     """
     An abstract detector that detects if the tracked_object was placed by the agent.
     """
 
     thread_prefix = "placing_"
+
+    models_path: str = AbstractInteractionDetector.models_path
+    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PlacingEvent, type(None)), True, package_name="segmind",
+     fit=True, update_existing_rules=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+    """
+    A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
+    """
+   
+    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind",
+     fit=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+    """
+    A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
+    """
+    @staticmethod
+    def ask_now(case_dict):
+        cls_ = case_dict["cls_"]
+        event = case_dict["event"]
+        return isinstance(event, InterferenceEvent) and any((n in event.tracked_object.name) or (n in event.with_object.name) for n in ["object_6", "object_3"])
+    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
+     fit=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+    """
+    A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
+    """
 
     @classmethod
     def action_type(cls):
@@ -371,7 +343,9 @@ class PlacingDetector(AbstractInteractionDetector):
     def _init_interaction_event(self) -> EventUnion:
         return PlacingEvent(self.tracked_object, timestamp=self.start_timestamp)
 
-    def get_interaction_event(self) -> bool:
+    @interaction_checks_rdr.decorator
+    def get_interaction_event(self) -> Optional[PlacingEvent]:
+        return
         dt = timedelta(milliseconds=1000)
         event = self.check_for_event_near_starter_event(StopMotionEvent, dt)
         if event is not None:
@@ -385,18 +359,21 @@ class PlacingDetector(AbstractInteractionDetector):
         return False
 
     @classmethod
+    @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: ContactEvent) -> Object:
-        return starter_event.tracked_object
+        return
 
     @classmethod
+    @start_condition_rdr.decorator
     def start_condition_checker(cls, event: EventWithOneTrackedObject) -> bool:
         """
         Check if an agent is in contact with the tracked_object.
 
         :param event: The ContactEvent instance that represents the contact event.
         """
+        return
         if (isinstance(event, ContactEvent)
-                and any(select_transportable_objects([event.tracked_object]))
+                and any(select_transportable_objects(event.tracked_objects))
                 and get_support(event.tracked_object, event.links)):
             logdebug(f"{event} with object {event.tracked_object.name} IS A starter event")
             return True
@@ -476,9 +453,8 @@ def select_transportable_objects(objects: List[Object], not_contained: bool = Fa
 
 
 EventDetectorUnion = Union[NewObjectDetector, ContactDetector, LossOfContactDetector, LossOfSurfaceDetector,
-MotionDetector, TranslationDetector, RotationDetector,
-MotionPickUpDetector, PlacingDetector]
+MotionDetector, TranslationDetector, RotationDetector, PlacingDetector]
 TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
 Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
-Type[NewObjectDetector], Type[MotionPickUpDetector],
+Type[NewObjectDetector],
 Type[PlacingDetector]]

@@ -32,7 +32,16 @@ def is_displaced(latest_distances: Distances, threshold: float = 0.05) -> bool:
     above a certain threshold.
     """
     avg_distance = np.linalg.norm(np.sum(np.array(latest_distances)))
-    return avg_distance > threshold
+    return avg_distance >= threshold
+
+
+def is_stopped(latest_distances: Distances, threshold: float = 0.01) -> bool:
+    """
+    Check if the object is stopped by checking if the displacement between latest position and the start position is
+    below a certain threshold.
+    """
+    avg_distance = np.linalg.norm(np.sum(np.array(latest_distances)))
+    return avg_distance <= threshold
 
 
 class DataFilter(ABC):

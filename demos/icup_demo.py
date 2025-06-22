@@ -34,7 +34,10 @@ from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.multiverse_player import MultiversePlayer
 from segmind.utils import get_arm_and_grasp_description_for_object, text_to_speech
+from PyQt6.QtWidgets import QApplication
+from ripple_down_rules.user_interface.gui import RDRCaseViewer
 import numpy as np
+import sys
 
 objects_dir = World.conf.cache_dir + "/objects"
 
@@ -52,6 +55,12 @@ obj_hole_map = {"montessori_object_1": "disk_hole",
                 "montessori_object_5": "rectangular_hole",
                 "montessori_object_2": "triangle_hole", }
 
+use_gui = False
+app: Optional[QApplication] = None
+viewer: Optional[RDRCaseViewer] = None
+if RDRCaseViewer is not None and QApplication is not None and use_gui:
+    app = QApplication(sys.argv)
+    viewer = RDRCaseViewer()
 
 def spawn_objects(models_dir: str):
     copy_model_files_to_world_data_dir(models_dir)
@@ -81,7 +90,7 @@ def copy_model_files_to_world_data_dir(models_dir: str):
 rdm = RobotDescriptionManager()
 rdm.load_description("iCub")
 
-world: BulletWorld = BulletWorld(WorldMode.GUI)
+world: BulletWorld = BulletWorld(WorldMode.DIRECT)
 
 # viz_marker_publisher = VizMarkerPublisher()
 pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
@@ -141,7 +150,7 @@ while True:
         actionable_events = sorted(actionable_events, key=lambda event: event.timestamp)
         if latest_event is not None:
             actionable_events = list(filter(lambda e: e.timestamp > latest_event.timestamp, actionable_events))
-        else:
+        elif len(actionable_events) > 0:
             latest_event = actionable_events[-1]
         pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
         all_inserted_objects = {event.tracked_object for event in actionable_events if

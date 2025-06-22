@@ -16,9 +16,9 @@ class MultiverseConnector(MultiverseClient):
         self._connect_and_start()
 
     def send_and_receive_meta_data(self) -> None:
-        self.loginfo("Sending request meta data: " + str(self.request_meta_data))
+        # self.loginfo("Sending request meta data: " + str(self.request_meta_data))
         self._communicate(True)
-        self.loginfo("Received response meta data: " + str(self.response_meta_data))
+        # self.loginfo("Received response meta data: " + str(self.response_meta_data))
 
     def send_and_receive_data(self) -> None:
         # self.loginfo("Sending data: " + str(self.send_data))

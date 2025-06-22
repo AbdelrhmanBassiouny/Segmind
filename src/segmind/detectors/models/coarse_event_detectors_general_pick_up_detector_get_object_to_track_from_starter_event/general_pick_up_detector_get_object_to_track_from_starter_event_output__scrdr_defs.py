@@ -15,7 +15,7 @@ def conditions_257779009639527613634091190332753064691(case) -> bool:
 def conclusion_257779009639527613634091190332753064691(case) -> Optional[Object]:
     def general_pick_up_detector_get_object_to_track_from_starter_event(cls_: Type[GeneralPickUpDetector], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: Object) -> Optional[Object]:
         """Get possible value(s) for GeneralPickUpDetector_get_object_to_track_from_starter_event.output_  of type Object."""
-        objects = select_transportable_objects(starter_event.objects)
+        objects = select_transportable_objects(starter_event.tracked_objects)
         return objects[0] if len(objects) > 0 else None
     return general_pick_up_detector_get_object_to_track_from_starter_event(**case)
 
@@ -30,7 +30,7 @@ def conditions_306600839998818187425923425930024243551(case) -> bool:
 def conclusion_306600839998818187425923425930024243551(case) -> Optional[Object]:
     def general_pick_up_detector_get_object_to_track_from_starter_event(cls_: Type[GeneralPickUpDetector], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: Union[Object, NoneType]) -> Union[Object, NoneType]:
         """Get possible value(s) for GeneralPickUpDetector_get_object_to_track_from_starter_event.output_  of type Object."""
-        objects = select_transportable_objects(starter_event.objects + starter_event.tracked_objects)
+        objects = select_transportable_objects(starter_event.tracked_objects)
         return objects[0] if len(objects) > 0 else None
     return general_pick_up_detector_get_object_to_track_from_starter_event(**case)
 

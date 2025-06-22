@@ -3,8 +3,9 @@ import os
 import pytest
 
 try:
-    from neem_pycram_interface import PyCRAMNEEMInterface
-    from segmind.segmenters.neem_segmenter import NEEMSegmenter
+    # from neem_pycram_interface import PyCRAMNEEMInterface
+    # from segmind.segmenters.neem_segmenter import NEEMSegmenter
+    raise ImportError
 except ImportError:
     PyCRAMNEEMInterface = None
     NEEMSegmenter = None

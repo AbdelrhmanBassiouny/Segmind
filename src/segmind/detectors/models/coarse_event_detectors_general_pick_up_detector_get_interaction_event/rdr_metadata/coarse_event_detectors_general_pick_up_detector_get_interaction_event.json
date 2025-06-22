@@ -104,7 +104,7 @@
                     },
                     "conclusion": {
                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[NoneType, PickUpEvent]) -> Union[NoneType, PickUpEvent]:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent.\"\"\"\n        if get_support(self_.tracked_object) is None:\n            return PickUpEvent(self_.tracked_object, timestamp=self_.starter_event.timestamp - self_.wait_time.total_seconds(), end_timestamp=self_.starter_event.timestamp)\n        return None\n    return general_pick_up_detector_get_interaction_event(**case)\n    ",
+                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[NoneType, PickUpEvent]) -> Union[NoneType, PickUpEvent]:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent.\"\"\"\n        # if get_support(self_.tracked_object) is None:\n        return PickUpEvent(self_.tracked_object, timestamp=self_.starter_event.timestamp - self_.wait_time.total_seconds(), end_timestamp=self_.starter_event.timestamp)\n        # return None\n    return general_pick_up_detector_get_interaction_event(**case)\n    ",
                         "conclusion_type": [
                             "builtins.NoneType",
                             "segmind.datastructures.events.PickUpEvent"

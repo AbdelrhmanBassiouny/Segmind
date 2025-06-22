@@ -63,9 +63,9 @@ def conclusion_320416996501934194262144719758568379805(case) -> Optional[PickUpE
 def conclusion_121320552838186729138877771657303489240(case) -> Optional[PickUpEvent]:
     def general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[NoneType, PickUpEvent]) -> Union[NoneType, PickUpEvent]:
         """Get possible value(s) for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent."""
-        if get_support(self_.tracked_object) is None:
-            return PickUpEvent(self_.tracked_object, timestamp=self_.starter_event.timestamp - self_.wait_time.total_seconds(), end_timestamp=self_.starter_event.timestamp)
-        return None
+        # if get_support(self_.tracked_object) is None:
+        return PickUpEvent(self_.tracked_object, timestamp=self_.starter_event.timestamp - self_.wait_time.total_seconds(), end_timestamp=self_.starter_event.timestamp)
+        # return None
     return general_pick_up_detector_get_interaction_event(**case)
 
 

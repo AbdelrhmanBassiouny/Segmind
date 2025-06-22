@@ -1,4 +1,4 @@
-FROM osrf/ros:noetic-desktop-full-focal
+FROM osrf/ros:noetic-desktop-full-focal as base
 
 SHELL [ "/bin/bash" , "-c" ]
 
@@ -29,10 +29,17 @@ RUN sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y && \
 RUN sudo apt install ros-noetic-joint-trajectory-controller ros-noetic-ros-control ros-noetic-ros-controllers -y && \
     sudo apt install ros-noetic-py-trees -y && \
     sudo apt install ros-noetic-rospy-message-converter -y && \
-    sudo apt install ros-noetic-py-trees-ros
+    sudo apt install ros-noetic-py-trees-ros -y
 
 # Install RDR dependencies
 RUN sudo apt-get install graphviz graphviz-dev -y
+
+# Install additional dependencies for audio processing
+RUN sudo apt-get update && apt-get install -y \
+    libasound2 \
+    libsdl2-mixer-2.0-0 \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set the user to the non-root user
 ARG USERNAME=root
@@ -59,12 +66,14 @@ RUN cd $LIBSDIR && \
 
 RUN cd $HOME/workspace/src \
     && git clone https://github.com/orocos/orocos_kinematics_dynamics.git \
+    && sudo add-apt-repository universe \
+    && sudo apt update \
     && sudo apt-get install libeigen3-dev libcppunit-dev -y \
     && sudo apt-get install python3-psutil python3-future -y \
     && cd orocos_kinematics_dynamics \
-    && git submodule update --init \
+    && git submodule update --init
 
-RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/icub_demo/rosinstall/pycram-https.rosinstall \
+RUN vcs import --input https://raw.githubusercontent.com/AbdelrhmanBassiouny/pycram/icub_demo/rosinstall/pycram-https.rosinstall\
     && source /opt/ros/$ROS_DISTRO/setup.bash \
     && cd .. \
     && catkin build
@@ -88,8 +97,13 @@ RUN echo "export WORKON_HOME=$HOME/.virtualenvs" >> $HOME/.bashrc && \
     echo "export VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.virtualenvs/venv/bin/virtualenv" >> $HOME/.bashrc && \
     echo "source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh" >> $HOME/.bashrc
 
+# Set up Multiverse Python connector
 RUN echo "export PYTHONPATH=$PYTHONPATH:$LIBSDIR/Multiverse/Multiverse-Launch/src/multiverse_connectors/multiverse_python_connector" >> $HOME/.bashrc
 
+# Set up aliases for convenience
+RUN echo "alias ease25_demo='$LIBSDIR/Multiverse/Multiverse-Launch/bin/multiverse_launch $LIBSDIR/Multiverse/Multiverse-Resources/muv/EASE2025/iCub_with_montessori_toys_2.muv'" >> $HOME/.bashrc && \
+    echo "alias giskard_icup='roslaunch giskardpy_ros giskardpy_icub_mujoco_vel.launch'" >> $HOME/.bashrc && \
+    echo "alias replay_icup='python $LIBSDIR/Multiverse/Multiverse-Utilities/scripts/multiverse_replay.py --data_path=~/workspace/src/Segmind/resources/multiverse_episodes/icub_montessori_no_hands/data_ref.csv'" >> $HOME/.bashrc
 
 ENV WORKON_HOME=$HOME/.virtualenvs
 ENV VIRTUALENVWRAPPER_PYTHON=$HOME/.virtualenvs/venv/bin/python
@@ -141,8 +155,11 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
 RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     workon pycram-segmind && \
     cd $LIBSDIR/Multiverse/Multiverse-Launch/src/multiverse_connectors/multiverse_simulators_connector/src/mujoco_connector && \
-    pip install -r requirements.txt \
+    pip install -r requirements.txt && \
     cd $LIBSDIR/Multiverse/Multiverse-Launch/src/multiverse_connectors/multiverse_ros_connector/ros_ws/multiverse_ws && \
+    source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    cd $HOME/workspace && \
+    catkin clean -y && \
     catkin build
 
 RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
@@ -151,8 +168,7 @@ RUN source $HOME/.virtualenvs/venv/bin/virtualenvwrapper.sh && \
     pip install -r requirements.txt
 
 # Install code-server
-RUN sudo apt-get update && sudo apt-get install -y \
-    curl wget gnupg git bash sudo build-essential \
+RUN sudo apt-get update && sudo apt-get install -y curl wget gnupg git bash sudo build-essential \
     && sudo apt-get clean && sudo rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL https://code-server.dev/install.sh | sh
 # Install desired extensions
@@ -177,12 +193,15 @@ RUN mkdir -p $XDG_RUNTIME_DIR && chmod 700 $XDG_RUNTIME_DIR
 
 ENV LIBGL_ALWAYS_SOFTWARE=1
 
+RUN sudo apt update && sudo apt upgrade -y
+
 RUN echo "source ${HOME}/.virtualenvs/pycram-segmind/bin/activate" >> $HOME/.bashrc
 RUN echo "source ${HOME}/workspace/devel/setup.bash" >> $HOME/.bashrc
 
 COPY ./start-code-server.sh /usr/local/bin/start-code-server.sh
 RUN sudo chmod +x /usr/local/bin/start-code-server.sh
 
+FROM base as final
 COPY ./entrypoint.sh /
 RUN sudo chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

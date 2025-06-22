@@ -126,9 +126,12 @@ class EventLogger:
 
         :param event: The event to annotate the scene with.
         """
-        if self.annotate_events and (self.events_to_annotate is not None and (type(event) in self.events_to_annotate)) \
-            and World.current_world.mode == WorldMode.GUI:
-            self.annotation_queue.put(event)
+        logerr(f"Logging event: {event}")
+        if self.events_to_annotate is not None and (type(event) in self.events_to_annotate):
+            logerr(f"Logging event: {event}")
+            if self.annotate_events and World.current_world.mode == WorldMode.GUI:
+                self.annotation_queue.put(event)
+                
 
     @staticmethod
     def update_object_trackers_with_event(event: Event) -> None:
@@ -391,7 +394,6 @@ class EventAnnotationThread(threading.Thread):
                 time.sleep(0.1)
                 continue
             self.logger.annotation_queue.task_done()
-            logerr(f"Logging event: {event}")
             obj_name_map = {"montessori_object_6": "Cylinder",
                             "montessori_object_3": "Cube",
                             "montessori_object_5": "Cuboid",

@@ -16,6 +16,7 @@ from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 def conditions_318535409151373315477142163500790537263(case) -> bool:
     def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[MotionPickUpDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:
         """Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type ."""
+        return False
         return issubclass(detector_type, AbstractInteractionDetector)
     return conditions_for_episode_segmenter_is_detector_redundant(**case)
 
@@ -33,13 +34,13 @@ def conditions_217503528191875472672592688900935027547(case) -> bool:
         is_being_picked_objects = [detector.tracked_object for detector in pick_up_detetectors if detector.is_alive()]
         if starter_event.tracked_object in is_being_picked_objects:
             return True
-        object_tracker = ObjectTrackerFactory.get_tracker(starter_event.tracked_object)
-        latest_pick_up_event = object_tracker.get_latest_event_of_type(PickUpEvent)
-        if latest_pick_up_event is not None:
-            latest_placing_event = object_tracker.get_first_event_of_type_after_event(PlacingEvent, latest_pick_up_event)
-            latest_insertion_event = object_tracker.get_first_event_of_type_after_event(InsertionEvent, latest_pick_up_event)
-            if latest_placing_event is None and latest_insertion_event is None:
-                return True
+        # object_tracker = ObjectTrackerFactory.get_tracker(starter_event.tracked_object)
+        # latest_pick_up_event = object_tracker.get_latest_event_of_type(PickUpEvent)
+        # if latest_pick_up_event is not None:
+        #     latest_placing_event = object_tracker.get_first_event_of_type_after_event(PlacingEvent, latest_pick_up_event)
+        #     latest_insertion_event = object_tracker.get_first_event_of_type_after_event(InsertionEvent, latest_pick_up_event)
+        #     if latest_placing_event is None and latest_insertion_event is None:
+        #         return True
         picked_objects = [detector.tracked_object for detector in pick_up_detetectors if not detector.is_alive()]
         if starter_event.tracked_object in picked_objects:
             contacted_bodies = starter_event.tracked_object.contact_points.get_all_bodies()
@@ -63,7 +64,6 @@ def conclusion_217503528191875472672592688900935027547(case) -> bool:
 def conclusion_318535409151373315477142163500790537263(case) -> bool:
     def episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[MotionPickUpDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:
         """Get possible value(s) for EpisodeSegmenter_is_detector_redundant.output_  of type ."""
-        return False
         similar_detectors = [(se, de, de_inst) for (se, de), de_inst in self_.starter_event_to_detector_thread_map.items()
         if isinstance(se, starter_event.__class__) and issubclass(de, detector_type)]
     

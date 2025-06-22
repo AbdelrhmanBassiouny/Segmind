@@ -10,7 +10,7 @@ from queue import Queue, Empty, Full
 import numpy as np
 
 from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
-from ..detectors.motion_detection_helpers import is_displaced, has_consistent_direction
+from ..detectors.motion_detection_helpers import is_displaced, has_consistent_direction, is_stopped
 from ..episode_player import EpisodePlayer
 
 try:
@@ -282,7 +282,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05,
-                 wait_time: Optional[timedelta] = timedelta(milliseconds=100),
+                 wait_time: Optional[timedelta] = timedelta(milliseconds=500),
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -495,6 +495,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     """
     The threshold for the velocity to detect movement.
     """
+    stop_velocity_threshold: float
+    """
+    The threshold for the velocity to detect movement.
+    """
 
     def _ask_now(case_dict) -> bool:
         self_ = case_dict["self_"]
@@ -509,9 +513,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  velocity_threshold: Optional[float] = None,
-                 time_between_frames: timedelta = timedelta(milliseconds=50),
-                 window_size_in_seconds: int = 0.5,
+                 time_between_frames: timedelta = timedelta(milliseconds=200),
+                 window_size_in_seconds: int = 1,
                  distance_filter_method: Optional[DataFilter] = None,
+                 stop_velocity_threshold: Optional[float] = None,
                  *args, **kwargs):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
@@ -521,6 +526,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :param time_between_frames: The time between frames of episode player.
         :param window_size: The size of the window that is used to calculate the distances (must be > 1).
         :param distance_filter_method: An optional DataFilter instance that is used to filter the distances.
+        :param stop_velocity_threshold: The threshold for the velocity to detect stop.
         """
         DetectorWithTrackedObject.__init__(self, logger, tracked_object, *args, **kwargs)
         if self.episode_player is not None:
@@ -530,9 +536,11 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
             self.time_between_frames: timedelta = time_between_frames
         self.window_size: int = round(window_size_in_seconds / self.time_between_frames.total_seconds())
         self.velocity_threshold: float = velocity_threshold if velocity_threshold is not None else self.velocity_threshold
+        self.stop_velocity_threshold: float = stop_velocity_threshold if stop_velocity_threshold is not None else self.stop_velocity_threshold
         self.data_queue: Queue[Tuple[float, Pose]] = Queue(1)
         self.queues = [self.data_queue]
         self.distance_threshold: float = self.velocity_threshold * self.window_size_in_seconds
+        self.stop_distance_threshold: float = self.stop_velocity_threshold * self.window_size_in_seconds
         self.measure_timestep: timedelta = self.time_between_frames * 2
         self.filter: Optional[DataFilter] = distance_filter_method
 
@@ -609,6 +617,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         Update the latest pose and time of the object.
         """
         latest_pose, latest_time = self.get_current_pose_and_time()
+        return latest_pose, latest_time
         # if current_time is not None:
         # latest_time = current_time
         if self.start_pose is None:
@@ -635,8 +644,8 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
         try:
-            self.update_with_latest_motion_data()
-            latest_time, latest_pose = self.data_queue.get_nowait()
+            latest_pose, latest_time = self.update_with_latest_motion_data()
+            # latest_time, latest_pose = self.data_queue.get_nowait()
             self.data_queue.task_done()
             self.poses.append(latest_pose)
             self.times.append(latest_time)
@@ -669,11 +678,20 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         return self.create_event()
 
     @property
-    def motion_sate_changed(self):
+    def motion_sate_changed(self) -> bool:
         """
-        Check if the motion state of the object has changed.
+        Check if the object is moving/has stopped by using the motion detection method.
+
+        :return: A boolean value that indicates if the object motion state has changed.
         """
-        return self.is_moving != self.was_moving
+        distances = self.filter_data() if self.filter else self.latest_distances
+        # consistent_direction = has_consistent_direction(distances)
+        if self.was_moving:
+            stopped = is_stopped(self.all_distances[-self.window_size:], self.stop_distance_threshold)
+            return stopped
+        else:
+            displaced = is_displaced(self.all_distances[-self.window_size:], self.distance_threshold)
+            return displaced
 
     def keep_track_of_history(self):
         """
@@ -696,20 +714,6 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :param is_moving: A boolean value that represents if the object is moving.
         """
         pass
-
-    @property
-    # @EpisodePlayer.pause_resume
-    # @is_moving_rdr.decorator
-    def is_moving(self) -> bool:
-        """
-        Check if the object is moving by using the motion detection method.
-
-        :return: A boolean value that represents if the object is moving.
-        """
-        distances = self.filter_data() if self.filter else self.latest_distances
-        consistent_direction = has_consistent_direction(distances)
-        displaced = is_displaced(self.all_distances[-self.window_size:], self.distance_threshold)
-        return displaced
 
     def calculate_and_update_latest_distance(self):
         """
@@ -851,8 +855,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
 
 class TranslationDetector(MotionDetector):
-    cm_per_second: float = 0.5
-    velocity_threshold: float = (cm_per_second * 1e-2)
+    translating_velocity_in_mm_per_second: float = 10
+    velocity_threshold: float = (translating_velocity_in_mm_per_second * 1e-3)
+    stop_velocity_in_mm_per_second: float = 1
+    stop_velocity_threshold: float = (stop_velocity_in_mm_per_second * 1e-3)
 
     def update_object_motion_state(self, is_moving: bool) -> None:
         """

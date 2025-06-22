@@ -18,7 +18,7 @@ from pycram.datastructures.pose import Transform
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
-from pycram.world_concepts.world_object import Object
+from pycram.world_concepts.world_object import Object, Link
 from pycrap.ontologies import Supporter, Floor, Location
 from pycram.ros import logdebug
 
@@ -191,16 +191,20 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
     if not contact_bodies:
         contact_bodies = obj.contact_points.get_all_bodies()
     for body in contact_bodies:
-        if issubclass(body.parent_entity.obj_type, (Supporter, Location)):
-            if is_object_supported_by_container_body(obj, bodies_to_check=[body]):
-                return body
-            body_aabb = body.get_axis_aligned_bounding_box()
-            surface_z = body_aabb.max_z - 0.001
-            tracked_object_base = obj.position
-            if tracked_object_base.z + 0.001 >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
-                    body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
-                logdebug(f"Object {obj.name} IS supported by {body.name}")
-                return body
+        # if isinstance(body, Link):
+        #     parent_obj = body.parent_entity
+        # else:
+        #     parent_obj = body
+        # if issubclass(obj.obj_type, (Supporter, Location)):
+        if is_object_supported_by_container_body(obj, bodies_to_check=[body]):
+            return body
+        body_aabb = body.get_axis_aligned_bounding_box()
+        surface_z = body_aabb.max_z - 0.001
+        tracked_object_base = obj.position
+        if tracked_object_base.z + 0.001 >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
+                body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
+            logdebug(f"Object {obj.name} IS supported by {body.name}")
+            return body
     logdebug(f"Object {obj.name} IS NOT supported")
 
 

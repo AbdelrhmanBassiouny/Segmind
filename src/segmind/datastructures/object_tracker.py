@@ -12,6 +12,7 @@ from pycram.description import RootLink, Link
 
 if TYPE_CHECKING:
     from .events import Event, EventUnion
+    from ..detectors.coarse_event_detectors import DetectorWithStarterEvent
     from pycram.datastructures.dataclasses import ObjectState
 
 
@@ -21,6 +22,17 @@ class ObjectTracker:
         self.obj = obj
         self._lock: RLock = RLock()
         self._event_history: List[Event] = []
+        self._current_detectors: List[DetectorWithStarterEvent] = []
+
+    @property
+    def current_detectors(self) -> List[DetectorWithStarterEvent]:
+        with self._lock:
+            current_detectors_cpy = self._current_detectors.copy()
+        return current_detectors_cpy
+
+    def add_detector(self, detector: DetectorWithStarterEvent):
+        with self._lock:
+            self._current_detectors.append(detector)
 
     def reset(self) -> None:
         self._event_history = []
