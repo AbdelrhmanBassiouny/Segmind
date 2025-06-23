@@ -91,7 +91,7 @@ def copy_model_files_to_world_data_dir(models_dir: str):
 rdm = RobotDescriptionManager()
 rdm.load_description("iCub")
 
-world: BulletWorld = BulletWorld(WorldMode.DIRECT)
+world: BulletWorld = BulletWorld(WorldMode.GUI)
 
 # viz_marker_publisher = VizMarkerPublisher()
 pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
