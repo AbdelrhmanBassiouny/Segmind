@@ -29,7 +29,8 @@ from typing_extensions import Dict, Set
 
 from segmind.datastructures.events import AbstractAgentObjectInteractionEvent, PlacingEvent, PickUpEvent, InsertionEvent
 from segmind.datastructures.object_tracker import ObjectTrackerFactory, ObjectTracker
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects, \
+    PlacingDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.multiverse_player import MultiversePlayer
@@ -113,7 +114,7 @@ multiverse_player.start()
 episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
                                             plot_timeline=True,
                                             plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
-                                            detectors_to_start=[GeneralPickUpDetector],
+                                            detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
                                             initial_detectors=[InsertionDetector])
 
 # Create a thread
@@ -127,9 +128,11 @@ match_shapes: bool = False
 pickable_objects: Set[PhysicalBody] = set()
 latest_event: Optional[AbstractAgentObjectInteractionEvent] = None
 all_inserted_objects: Set[PhysicalBody] = set()
-
+excluded_objects: List[Object] = [World.current_world.get_object_by_name("montessori_object_1"),
+World.current_world.get_object_by_name("montessori_object_4")]
 while True:
     pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
+    pickable_objects = {pobj for pobj in pickable_objects if pobj not in excluded_objects}
     pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
     if not match_shapes or len(pickable_objects) == 0:
         user_input = input("Continue? (y/n) ")
@@ -146,13 +149,14 @@ while True:
             actionable_events.append(InsertionEvent(obj, [through_hole], through_hole))
     else:
         all_events = episode_segmenter.logger.get_events()
-        actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent)]
+        actionable_events = [event for event in all_events if isinstance(event, AbstractAgentObjectInteractionEvent) and not isinstance(event, PlacingEvent)]
         actionable_events = sorted(actionable_events, key=lambda event: event.timestamp)
         if latest_event is not None:
             actionable_events = list(filter(lambda e: e.timestamp > latest_event.timestamp, actionable_events))
         elif len(actionable_events) > 0:
             latest_event = actionable_events[-1]
         pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
+        pickable_objects = {pobj for pobj in pickable_objects if pobj not in excluded_objects}
         all_inserted_objects = {event.tracked_object for event in actionable_events if
                                 isinstance(event, InsertionEvent)}
         pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
@@ -167,14 +171,15 @@ while True:
     for i, actionable_event in enumerate(actionable_events):
         action_descriptions.append((actionable_event, actionable_event.action_description))
         pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
+        pickable_objects = {pobj for pobj in pickable_objects if pobj not in excluded_objects}
         pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
         pickable_objects = {obj for obj in pickable_objects if obj not in mapped_objects.values()}
 
 
         if isinstance(actionable_event, PickUpEvent):
             if len(action_descriptions) > 1:
-                if isinstance(action_descriptions[i - 1][0], PickUpEvent):
-                    action_descriptions.remove(action_descriptions[i - 1])
+                if isinstance(action_descriptions[-2][0], PickUpEvent):
+                    action_descriptions.remove(action_descriptions[-2])
             if actionable_event.tracked_object not in pickable_objects:
                 if len(pickable_objects) > 0:
                     square_obj = [obj for obj in pickable_objects if "3" in obj.name]
@@ -318,6 +323,7 @@ while True:
 
     if match_shapes:
         pickable_objects = set(select_transportable_objects(World.current_world.objects, not_contained=True))
+        pickable_objects = {pobj for pobj in pickable_objects if pobj not in excluded_objects}
         pickable_objects = {obj for obj in pickable_objects if obj not in all_inserted_objects}
         if len(pickable_objects) > 1:
             obj_names_to_insert = ', the'.join([obj_name_map[obj.name] for obj in list(pickable_objects)[:-1]])
