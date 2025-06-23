@@ -327,7 +327,7 @@ class PlacingDetector(AbstractInteractionDetector):
         event = case_dict["event"]
         return isinstance(event, StopTranslationEvent)
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
+     fit=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
@@ -361,7 +361,7 @@ class PlacingDetector(AbstractInteractionDetector):
     @classmethod
     @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: ContactEvent) -> Object:
-        return
+        pass
 
     @classmethod
     @start_condition_rdr.decorator

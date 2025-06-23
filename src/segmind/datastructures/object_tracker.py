@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import timedelta
 from threading import RLock
+from typing import Callable, Tuple
+
 from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict
 
 import numpy as np
@@ -44,6 +46,7 @@ class ObjectTracker:
     def add_event(self, event: Event):
         with self._lock:
             self._event_history.append(event)
+            self._event_history.sort(key=lambda e: e.timestamp)
         if isinstance(self.obj, Link):
             ObjectTrackerFactory.get_tracker(self.obj.parent_entity).add_event(event)
 
@@ -110,6 +113,27 @@ class ObjectTracker:
                 return None
             return nearest_event_index
 
+    def get_nearest_event_to_event_with_conditions(self, event: Event, conditions: Callable[[Event], bool]) -> Optional[Event]:
+        with self._lock:
+            import pdb; pdb.set_trace()
+            events = self.get_events_sorted_by_nearest_to_event(event)
+            found_events = self.get_event_where(conditions, events=[e[0] for e in events])
+            if len(found_events) == 0:
+                return None
+            else:
+                return found_events[0]
+
+    def get_events_sorted_by_nearest_to_event(self, event: Event):
+        return self.get_events_sorted_by_nearest_to_timestamp(event.timestamp)
+
+    def get_events_sorted_by_nearest_to_timestamp(self, timestamp: float) -> List[Tuple[Event, float]]:
+        with self._lock:
+            time_stamps = self.time_stamps_array
+            time_diff = np.abs(time_stamps - timestamp)
+            events_with_time_diff = [(event, dt) for event, dt in zip(self._event_history, time_diff)]
+            events_with_time_diff.sort(key=lambda e: e[1])
+        return events_with_time_diff
+
     def get_first_event_of_type_after_event(self, event_type: Type[Event], event: Event) -> Optional[EventUnion]:
         return self.get_first_event_of_type_after_timestamp(event_type, event.timestamp)
 
@@ -149,6 +173,27 @@ class ObjectTracker:
             except IndexError:
                 logwarn(f"No events before timestamp {timestamp}")
                 return None
+
+    def get_events_between_two_events(self, event1: Event, event2: Event) -> List[Event]:
+        return [e for e in self.get_events_between_timestamps(event1.timestamp, event2.timestamp)
+                if e not in [event1, event2]]
+
+    def get_events_between_timestamps(self, timestamp1: float, timestamp2: float) -> List[Event]:
+        with self._lock:
+            time_stamps = self.time_stamps_array
+            if timestamp1 > timestamp2:
+                timestamp1, timestamp2 = timestamp2, timestamp1
+            try:
+                indices = np.where(np.logical_and(time_stamps <= timestamp2, time_stamps >= timestamp1))[0]
+                events = [self._event_history[i] for i in indices]
+                return events
+            except IndexError:
+                logwarn(f"No events between timestamps {timestamp1}, {timestamp2}")
+                return []
+
+    def get_event_where(self, conditions: Callable[[Event], bool], events: Optional[List[Event]] = None) -> List[Event]:
+        events = events if events is not None else self._event_history
+        return [event for event in events if conditions(event)]
 
     @property
     def time_stamps_array(self) -> np.ndarray:
