@@ -62,7 +62,7 @@ def set_up_demo_fixture(episode_name: str = "icub_montessori_no_hands"):
     episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
                                                     plot_timeline=True,
                                                     plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
-                                                    detectors_to_start=[PlacingDetector],
+                                                    detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
                                                     initial_detectors=[InsertionDetector])
     # episode_segmenter.start()
 
