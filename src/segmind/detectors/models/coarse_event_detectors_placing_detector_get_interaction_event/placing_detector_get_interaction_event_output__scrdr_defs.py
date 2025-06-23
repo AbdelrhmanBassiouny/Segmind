@@ -15,7 +15,7 @@ def conditions_73076948442184610140058021308995926047(case) -> bool:
 def conclusion_73076948442184610140058021308995926047(case) -> Optional[PlacingEvent]:
     def placing_detector_get_interaction_event(self_: PlacingDetector, output_: Union[NoneType, PlacingEvent]) -> Union[NoneType, PlacingEvent]:
         """Get possible value(s) for PlacingDetector_get_interaction_event.output_  of type PlacingEvent."""
-        latest_translation_event = starter_event.object_tracker.get_first_event_of_type_before_event(TranslationEvent, self_.starter_event)
+        latest_translation_event = self_.starter_event.object_tracker.get_first_event_of_type_before_event(TranslationEvent, self_.starter_event)
         return PlacingEvent(self_.tracked_object, timestamp=latest_translation_event.timestamp, end_timestamp=self_.starter_event.timestamp)
     return placing_detector_get_interaction_event(**case)
 

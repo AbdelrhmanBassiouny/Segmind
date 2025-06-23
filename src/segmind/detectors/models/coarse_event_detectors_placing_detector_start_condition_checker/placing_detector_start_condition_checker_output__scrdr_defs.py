@@ -1,10 +1,10 @@
-from typing_extensions import Dict, Optional, Type, Union
 from segmind.datastructures.events import Event, EventWithOneTrackedObject, InterferenceEvent, MotionEvent, StopTranslationEvent, TranslationEvent
+from typing_extensions import Dict, Optional, Type, Union
 from ripple_down_rules.datastructures.case import Case
-from pycram.object_descriptors.urdf import ObjectDescription
-from types import NoneType
 from segmind.utils import get_support
+from types import NoneType
 from segmind.detectors.coarse_event_detectors import PlacingDetector
+from pycram.object_descriptors.urdf import ObjectDescription
 
 
 def conditions_213633301887999429662908232055793196406(case) -> bool:

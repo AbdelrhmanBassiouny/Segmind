@@ -345,18 +345,7 @@ class PlacingDetector(AbstractInteractionDetector):
 
     @interaction_checks_rdr.decorator
     def get_interaction_event(self) -> Optional[PlacingEvent]:
-        return
-        dt = timedelta(milliseconds=1000)
-        event = self.check_for_event_near_starter_event(StopMotionEvent, dt)
-        if event is not None:
-            # start_motion_event_type = TranslationEvent if isinstance(event, StopTranslationEvent) else RotationEvent
-            start_motion_event = self.object_tracker.get_first_event_of_type_before_event(MotionEvent, event)
-            self.start_timestamp = min(start_motion_event.timestamp, self.start_timestamp)
-            self.end_timestamp = max(event.timestamp, self.starter_event.timestamp)
-            return True
-        elif time.time() - self.start_timestamp > dt.total_seconds():
-            self.kill_event.set()
-        return False
+        pass
 
     @classmethod
     @object_to_track_rdr.decorator
@@ -371,14 +360,7 @@ class PlacingDetector(AbstractInteractionDetector):
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        return
-        if (isinstance(event, ContactEvent)
-                and any(select_transportable_objects(event.tracked_objects))
-                and get_support(event.tracked_object, event.links)):
-            logdebug(f"{event} with object {event.tracked_object.name} IS A starter event")
-            return True
-        logdebug(f"{event} with object {event.tracked_object.name} IS NOT a starter event")
-        return False
+        pass
 
 
 def check_for_supporting_surface(tracked_object: Object,

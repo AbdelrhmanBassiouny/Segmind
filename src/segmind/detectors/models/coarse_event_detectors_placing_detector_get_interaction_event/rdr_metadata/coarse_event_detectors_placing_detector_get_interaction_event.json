@@ -30,7 +30,7 @@
                 },
                 "conclusion": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def placing_detector_get_interaction_event(self_: PlacingDetector, output_: Union[NoneType, PlacingEvent]) -> Union[NoneType, PlacingEvent]:\n        \"\"\"Get possible value(s) for PlacingDetector_get_interaction_event.output_  of type PlacingEvent.\"\"\"\n        latest_translation_event = starter_event.object_tracker.get_first_event_of_type_before_event(TranslationEvent, self_.starter_event)\n        return PlacingEvent(self_.tracked_object, timestamp=latest_translation_event.timestamp, end_timestamp=self_.starter_event.timestamp)\n    return placing_detector_get_interaction_event(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def placing_detector_get_interaction_event(self_: PlacingDetector, output_: Union[NoneType, PlacingEvent]) -> Union[NoneType, PlacingEvent]:\n        \"\"\"Get possible value(s) for PlacingDetector_get_interaction_event.output_  of type PlacingEvent.\"\"\"\n        latest_translation_event = self_.starter_event.object_tracker.get_first_event_of_type_before_event(TranslationEvent, self_.starter_event)\n        return PlacingEvent(self_.tracked_object, timestamp=latest_translation_event.timestamp, end_timestamp=self_.starter_event.timestamp)\n    return placing_detector_get_interaction_event(**case)\n    ",
                     "conclusion_type": [
                         "builtins.NoneType",
                         "segmind.datastructures.events.PlacingEvent"

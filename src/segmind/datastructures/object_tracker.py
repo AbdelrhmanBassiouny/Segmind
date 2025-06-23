@@ -115,7 +115,6 @@ class ObjectTracker:
 
     def get_nearest_event_to_event_with_conditions(self, event: Event, conditions: Callable[[Event], bool]) -> Optional[Event]:
         with self._lock:
-            import pdb; pdb.set_trace()
             events = self.get_events_sorted_by_nearest_to_event(event)
             found_events = self.get_event_where(conditions, events=[e[0] for e in events])
             if len(found_events) == 0:
