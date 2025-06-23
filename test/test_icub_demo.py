@@ -11,7 +11,7 @@ from pycram.tf_transformations import quaternion_from_euler
 from typing_extensions import Tuple
 
 from segmind.datastructures.events import AbstractAgentObjectInteractionEvent
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 
@@ -62,7 +62,7 @@ def set_up_demo_fixture(episode_name: str = "icub_montessori_no_hands"):
     episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=True,
                                                     plot_timeline=True,
                                                     plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
-                                                    detectors_to_start=[GeneralPickUpDetector],#, PlacingDetector],
+                                                    detectors_to_start=[PlacingDetector],
                                                     initial_detectors=[InsertionDetector])
     # episode_segmenter.start()
 

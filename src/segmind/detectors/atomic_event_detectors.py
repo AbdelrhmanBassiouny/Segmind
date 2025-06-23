@@ -646,7 +646,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         try:
             latest_pose, latest_time = self.update_with_latest_motion_data()
             # latest_time, latest_pose = self.data_queue.get_nowait()
-            self.data_queue.task_done()
+            # self.data_queue.task_done()
             self.poses.append(latest_pose)
             self.times.append(latest_time)
             if len(self.poses) > 1:
@@ -855,9 +855,9 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
 
 class TranslationDetector(MotionDetector):
-    translating_velocity_in_mm_per_second: float = 10
+    translating_velocity_in_mm_per_second: float = 30
     velocity_threshold: float = (translating_velocity_in_mm_per_second * 1e-3)
-    stop_velocity_in_mm_per_second: float = 1
+    stop_velocity_in_mm_per_second: float = 3
     stop_velocity_threshold: float = (stop_velocity_in_mm_per_second * 1e-3)
 
     def update_object_motion_state(self, is_moving: bool) -> None:
