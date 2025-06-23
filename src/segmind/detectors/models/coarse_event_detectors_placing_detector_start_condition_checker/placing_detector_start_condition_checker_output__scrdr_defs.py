@@ -1,10 +1,10 @@
-from segmind.datastructures.events import Event, EventWithOneTrackedObject, InterferenceEvent, MotionEvent, StopTranslationEvent, TranslationEvent
 from typing_extensions import Dict, Optional, Type, Union
-from segmind.detectors.coarse_event_detectors import PlacingDetector
-from segmind.utils import get_support
-from types import NoneType
-from pycram.object_descriptors.urdf import ObjectDescription
+from segmind.datastructures.events import Event, EventWithOneTrackedObject, InterferenceEvent, MotionEvent, StopTranslationEvent, TranslationEvent
 from ripple_down_rules.datastructures.case import Case
+from pycram.object_descriptors.urdf import ObjectDescription
+from types import NoneType
+from segmind.utils import get_support
+from segmind.detectors.coarse_event_detectors import PlacingDetector
 
 
 def conditions_213633301887999429662908232055793196406(case) -> bool:
@@ -51,6 +51,20 @@ def conditions_200496988155257780428139539183300226414(case) -> bool:
 
 
 def conclusion_200496988155257780428139539183300226414(case) -> bool:
+    def placing_detector_start_condition_checker(cls_: Type[PlacingDetector], event: EventWithOneTrackedObject, output_: bool) -> bool:
+        """Get possible value(s) for PlacingDetector_start_condition_checker.output_  of type ."""
+        return False
+    return placing_detector_start_condition_checker(**case)
+
+
+def conditions_308324129151228864976597656067893575149(case) -> bool:
+    def conditions_for_placing_detector_start_condition_checker(cls_: Type[PlacingDetector], event: EventWithOneTrackedObject, output_: bool) -> bool:
+        """Get conditions on whether it's possible to conclude a value for PlacingDetector_start_condition_checker.output_  of type ."""
+        return len([b for b in event.tracked_object.contact_points.get_all_bodies() if 'hole' in b.name]) > 0
+    return conditions_for_placing_detector_start_condition_checker(**case)
+
+
+def conclusion_308324129151228864976597656067893575149(case) -> bool:
     def placing_detector_start_condition_checker(cls_: Type[PlacingDetector], event: EventWithOneTrackedObject, output_: bool) -> bool:
         """Get possible value(s) for PlacingDetector_start_condition_checker.output_  of type ."""
         return False

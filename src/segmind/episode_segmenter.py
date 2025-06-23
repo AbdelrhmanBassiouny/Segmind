@@ -152,7 +152,6 @@ class EpisodeSegmenter(ABC):
         """
         for event_detector in self.detectors_to_start:
             if event_detector.start_condition_checker(event):
-                import pdb; pdb.set_trace()
                 self.start_detector_thread_for_starter_event(event, event_detector)
 
     @abstractmethod

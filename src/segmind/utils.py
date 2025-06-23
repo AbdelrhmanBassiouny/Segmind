@@ -190,7 +190,12 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
     """
     if not contact_bodies:
         contact_bodies = obj.contact_points.get_all_bodies()
+    excluded_bodies = [obj]
+    if isinstance(obj, Object):
+        excluded_bodies.extend(list(obj.links.values()))
     for body in contact_bodies:
+        if body in excluded_bodies:
+            continue
         # if isinstance(body, Link):
         #     parent_obj = body.parent_entity
         # else:
