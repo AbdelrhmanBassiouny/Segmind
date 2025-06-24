@@ -1,6 +1,6 @@
-from ripple_down_rules.datastructures.case import Case, create_case
-from typing_extensions import Optional
 from types import NoneType
+from typing_extensions import Optional
+from ripple_down_rules.datastructures.case import create_case
 from .general_pick_up_detector_start_condition_checker_output__scrdr_defs import *
 
 
@@ -14,6 +14,15 @@ def classify(case: Dict, **kwargs) -> Optional[bool]:
         case = create_case(case, max_recursion_idx=3)
 
     if conditions_313968436519149281932112885344716145224(case):
+
+        if conditions_185374571278911955422500089733244334209(case):
+            return conclusion_185374571278911955422500089733244334209(case)
+
+        elif conditions_259334668447470890319338447268411809573(case):
+            return conclusion_259334668447470890319338447268411809573(case)
+
+        elif conditions_1084517150588802996811823834978763787(case):
+            return conclusion_1084517150588802996811823834978763787(case)
         return conclusion_313968436519149281932112885344716145224(case)
     else:
         return None

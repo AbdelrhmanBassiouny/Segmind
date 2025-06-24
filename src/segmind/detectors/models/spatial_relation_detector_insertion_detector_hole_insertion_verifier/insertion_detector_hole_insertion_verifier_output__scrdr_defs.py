@@ -54,10 +54,10 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
 def conditions_21738774625860220488991060484462427733(case) -> bool:
     def conditions_for_insertion_detector_hole_insertion_verifier(self_: InsertionDetector, hole: PhysicalBody, event: InterferenceEvent, output_: bool) -> bool:
         """Get conditions on whether it's possible to conclude a value for InsertionDetector_hole_insertion_verifier.output_  of type ."""
+        return True
         if event.tracked_object in self_.bodies_states:
             prev_containers = self_.bodies_states[event.tracked_object]
-            event.tracked_object.update_containment(intersection_ratio=0.7)
-            current_containers = event.tracked_object.contained_in_bodies
+            current_containers = event.tracked_object.update_containment(intersection_ratio=0.7)
             new_containers = [body for body in current_containers if body not in prev_containers]
             return len(new_containers) > 0
         else:
