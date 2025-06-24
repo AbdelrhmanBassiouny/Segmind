@@ -1,6 +1,6 @@
 from typing_extensions import Any, Dict
-from ripple_down_rules.helpers import general_rdr_classify
 from ripple_down_rules.datastructures.case import Case, create_case
+from ripple_down_rules.helpers import general_rdr_classify
 from . import general_pick_up_detector_start_condition_checker_output__scrdr as output__classifier
 
 classifiers_dict = dict()
