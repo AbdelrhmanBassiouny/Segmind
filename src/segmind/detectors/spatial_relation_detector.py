@@ -214,7 +214,7 @@ class SupportDetector(SpatialRelationDetector):
     def event_condition(event: StopTranslationEvent) -> bool:
         # logdebug(f"Checking bodies {event.link_names} with tracked object {event.tracked_object.name}")
         return len(event.tracked_object.contact_points) > 0
-    check_on_events = {StopTranslationEvent: None}
+    check_on_events = {StopTranslationEvent: None, LossOfInterferenceEvent: None}
 
     def update_body_state(self, body: PhysicalBody, with_bodies: Optional[List[PhysicalBody]] = None):
         """

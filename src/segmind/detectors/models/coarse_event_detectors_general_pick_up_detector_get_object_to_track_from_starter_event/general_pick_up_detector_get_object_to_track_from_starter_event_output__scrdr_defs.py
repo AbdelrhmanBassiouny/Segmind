@@ -1,5 +1,7 @@
 from typing_extensions import Dict, Optional, Type, Union
-from segmind.datastructures.events import AbstractContactEvent, AgentContactEvent, AgentLossOfContactEvent, ContactEvent, LossOfContactEvent, LossOfInterferenceEvent, LossOfSurfaceEvent, MotionEvent, NewObjectEvent, PickUpEvent, PlacingEvent, StopMotionEvent
+from segmind.datastructures.events import AbstractContactEvent, AgentContactEvent, AgentLossOfContactEvent, \
+    ContactEvent, LossOfContactEvent, LossOfInterferenceEvent, LossOfSurfaceEvent, MotionEvent, NewObjectEvent, \
+    PickUpEvent, PlacingEvent, StopMotionEvent, EventWithOneTrackedObject
 from ripple_down_rules.datastructures.case import Case
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
 from types import NoneType
@@ -9,7 +11,7 @@ from pycram.world_concepts.world_object import Object
 def conditions_132752200528268219213179872006260451656(case) -> bool:
     def conditions_for_general_pick_up_detector_get_object_to_track_from_starter_event(cls_: Type[GeneralPickUpDetector], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: Union[NoneType, Object]) -> bool:
         """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_get_object_to_track_from_starter_event.output_  of type Object."""
-        return isinstance(starter_event, AbstractContactEvent)
+        return isinstance(starter_event, EventWithOneTrackedObject)
     return conditions_for_general_pick_up_detector_get_object_to_track_from_starter_event(**case)
 
 

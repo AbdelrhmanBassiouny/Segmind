@@ -10,7 +10,7 @@ from types import NoneType
 def conditions_157980724165316319734190707637955950660(case) -> bool:
     def conditions_for_placing_detector_get_object_to_track_from_starter_event(cls_: Type[PlacingDetector], starter_event: ContactEvent, output_: Union[NoneType, Object]) -> bool:
         """Get conditions on whether it's possible to conclude a value for PlacingDetector_get_object_to_track_from_starter_event.output_  of type Object."""
-        return isinstance(starter_event, EventWithOneTrackedObject) and not isinstance(starter_event, HasSecondaryTrackedObject)
+        return isinstance(starter_event, EventWithOneTrackedObject)
     return conditions_for_placing_detector_get_object_to_track_from_starter_event(**case)
 
 

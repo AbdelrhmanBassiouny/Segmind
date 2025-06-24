@@ -7,7 +7,7 @@
                 "_type": "ripple_down_rules.rules.SingleClassRule",
                 "conditions": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[NoneType, PickUpEvent]) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent.\"\"\"\n        return isinstance(self_.starter_event, LossOfInterferenceEvent)\n    return conditions_for_general_pick_up_detector_get_interaction_event(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_get_interaction_event(self_: GeneralPickUpDetector, output_: Union[NoneType, PickUpEvent]) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_get_interaction_event.output_  of type PickUpEvent.\"\"\"\n        return isinstance(self_.starter_event, LossOfSupportEvent)\n    return conditions_for_general_pick_up_detector_get_interaction_event(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
@@ -19,6 +19,7 @@
                         "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                         "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
+                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
                         "NoneType": "builtins.NoneType"
                     },
@@ -43,6 +44,7 @@
                         "LossOfInterferenceEvent": "segmind.datastructures.events.LossOfInterferenceEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
                         "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
+                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
                         "NoneType": "builtins.NoneType"
                     },

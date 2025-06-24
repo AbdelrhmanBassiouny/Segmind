@@ -275,7 +275,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        return isinstance(event, LossOfInterferenceEvent)
+        return isinstance(event, LossOfSupportEvent)
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
      fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """
@@ -292,7 +292,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
 
     @classmethod
     @start_condition_rdr.decorator
-    def start_condition_checker(cls, event: Event, target: Optional[bool] = None) -> bool:
+    def start_condition_checker(cls, event: Event) -> bool:
         pass
 
     def __str__(self):
@@ -325,7 +325,7 @@ class PlacingDetector(AbstractInteractionDetector):
     def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        return isinstance(event, StopTranslationEvent)
+        return isinstance(event, SupportEvent)
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
      fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
     """
