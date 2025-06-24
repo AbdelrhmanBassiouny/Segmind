@@ -180,7 +180,8 @@ class InsertionDetector(SpatialRelationDetector):
                 while True:
                     # time.sleep(self.wait_time.total_seconds())
                     # hole: PhysicalBody = [link for link in event.links if 'hole' in link.name][0]
-                    # logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")
+                    # logdebug(f"Checking insertion for {event.tracked_object.name} through hole {hole.name}")#
+                    # import pdb; pdb.set_trace()
                     def conditions(event_to_check: EventUnion) -> bool:
                         return (isinstance(event_to_check, InterferenceEvent) and
                                 event_to_check.timestamp < event.timestamp and

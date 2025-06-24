@@ -195,7 +195,7 @@ class EpisodeSegmenter(ABC):
                 #         logdebug(f"Imagined support for object {obj.name}.")
         for obj in set_of_objects:
             self.start_motion_threads_for_object(obj)
-            # self.start_contact_threads_for_object(obj)
+            self.start_contact_threads_for_object(obj)
         self.episode_player.resume()
 
     def update_tracked_objects(self, event: EventUnion) -> None:

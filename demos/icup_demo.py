@@ -31,12 +31,12 @@ from segmind.datastructures.events import AbstractAgentObjectInteractionEvent, P
 from segmind.datastructures.object_tracker import ObjectTrackerFactory, ObjectTracker
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, select_transportable_objects, \
     PlacingDetector
-from segmind.detectors.spatial_relation_detector import InsertionDetector
+from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.multiverse_player import MultiversePlayer
 from segmind.utils import get_arm_and_grasp_description_for_object, text_to_speech
-from PyQt6.QtWidgets import QApplication
-from ripple_down_rules.user_interface.gui import RDRCaseViewer
+# from PyQt6.QtWidgets import QApplication
+# from ripple_down_rules.user_interface.gui import RDRCaseViewer
 import numpy as np
 import sys
 
@@ -57,11 +57,11 @@ obj_hole_map = {"montessori_object_1": "disk_hole",
                 "montessori_object_2": "triangle_hole", }
 
 use_gui = False
-app: Optional[QApplication] = None
-viewer: Optional[RDRCaseViewer] = None
-if RDRCaseViewer is not None and QApplication is not None and use_gui:
-    app = QApplication(sys.argv)
-    viewer = RDRCaseViewer()
+# app: Optional[QApplication] = None
+# viewer: Optional[RDRCaseViewer] = None
+# if RDRCaseViewer is not None and QApplication is not None and use_gui:
+#     app = QApplication(sys.argv)
+#     viewer = RDRCaseViewer()
 
 def spawn_objects(models_dir: str):
     copy_model_files_to_world_data_dir(models_dir)
@@ -115,7 +115,7 @@ episode_segmenter = NoAgentEpisodeSegmenter(multiverse_player, annotate_events=T
                                             plot_timeline=True,
                                             plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
                                             detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
-                                            initial_detectors=[InsertionDetector])
+                                            initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector])
 
 # Create a thread
 thread = threading.Thread(target=episode_segmenter.start)
