@@ -10,7 +10,8 @@ from queue import Queue, Empty, Full
 import numpy as np
 
 from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
-from ..detectors.motion_detection_helpers import is_displaced, has_consistent_direction, is_stopped
+from ..detectors.motion_detection_helpers import is_displaced, has_consistent_direction, is_stopped, \
+    ExponentialMovingAverage
 from ..episode_player import EpisodePlayer
 
 try:
@@ -514,8 +515,8 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  velocity_threshold: Optional[float] = None,
                  time_between_frames: timedelta = timedelta(milliseconds=200),
-                 window_size_in_seconds: int = 1,
-                 distance_filter_method: Optional[DataFilter] = None,
+                 window_size_in_seconds: int = 0.3,
+                 distance_filter_method: Optional[DataFilter] = ExponentialMovingAverage(0.99),
                  stop_velocity_threshold: Optional[float] = None,
                  *args, **kwargs):
         """
@@ -684,13 +685,13 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
         :return: A boolean value that indicates if the object motion state has changed.
         """
-        distances = self.filter_data() if self.filter else self.latest_distances
+        # distances = self.filter_data() if self.filter else self.latest_distances
         # consistent_direction = has_consistent_direction(distances)
         if self.was_moving:
-            stopped = is_stopped(self.all_distances[-self.window_size:], self.stop_distance_threshold)
+            stopped = is_stopped(self.latest_distances, self.stop_distance_threshold)
             return stopped
         else:
-            displaced = is_displaced(self.all_distances[-self.window_size:], self.distance_threshold)
+            displaced = is_displaced(self.latest_distances, self.distance_threshold)
             return displaced
 
     def keep_track_of_history(self):
@@ -734,7 +735,13 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         return len(self.latest_distances) >= self.window_size
 
     def _crop_distances_and_times_to_window_size(self):
-        self.latest_distances = self.all_distances[-self.window_size:]
+        if len(self.latest_distances) < self.window_size:
+            self.latest_distances.append(self.all_distances[-1])
+        else:
+            self.latest_distances.pop(0)
+            self.latest_distances.append(self.all_distances[-1])
+        if self.filter:
+            self.latest_distances = self.filter.filter_data(np.array(self.latest_distances)).tolist()
         self.latest_times = self.times[-self.window_size:]
 
     def _reset_distances_and_times(self):

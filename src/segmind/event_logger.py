@@ -89,13 +89,14 @@ class EventLogger:
         for obj_tracker in ObjectTrackerFactory.get_all_trackers():
             obj_tracker.reset()
 
-    def add_callback(self, event_type: Type[Event], callback: CallbackFunction, condition: Optional[ConditionFunction] = lambda event: True) -> None:
+    def add_callback(self, event_type: Type[Event], callback: CallbackFunction, condition: Optional[ConditionFunction] = None) -> None:
         """
         Add a callback for an event type.
 
         :param event_type: The type of the event.
         :param callback: The callback to add.
         """
+        condition = lambda event: True if condition is None else condition
         with self.event_callbacks_lock:
             self.event_callbacks[event_type] = [(condition, callback)]
 
@@ -126,7 +127,7 @@ class EventLogger:
 
         :param event: The event to annotate the scene with.
         """
-        # logerr(f"Logging event: {event}")
+        logerr(f"Logging event: {event}")
         if self.events_to_annotate is not None and (type(event) in self.events_to_annotate):
             logerr(f"Logging event: {event}")
             if self.annotate_events and World.current_world.mode == WorldMode.GUI:

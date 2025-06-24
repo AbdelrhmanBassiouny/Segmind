@@ -205,9 +205,11 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
             return body
         body_aabb = body.get_axis_aligned_bounding_box()
         surface_z = body_aabb.max_z - 0.001
+        obj_bbox = obj.get_axis_aligned_bounding_box()
+        intersection = obj_bbox.intersection_with(body_aabb, axis_to_use=[AxisIdentifier.X, AxisIdentifier.Y])
         tracked_object_base = obj.position
-        if tracked_object_base.z + 0.001 >= surface_z and body_aabb.min_x <= tracked_object_base.x <= body_aabb.max_x and \
-                body_aabb.min_y <= tracked_object_base.y <= body_aabb.max_y:
+        if tracked_object_base.z + 0.001 >= surface_z and intersection.width >= 0.49 * obj_bbox.width and \
+              intersection.depth >= 0.49 * obj_bbox.depth:
             logdebug(f"Object {obj.name} IS supported by {body.name}")
             return body
     logdebug(f"Object {obj.name} IS NOT supported")

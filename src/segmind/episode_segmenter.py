@@ -195,7 +195,7 @@ class EpisodeSegmenter(ABC):
                 #         logdebug(f"Imagined support for object {obj.name}.")
         for obj in set_of_objects:
             self.start_motion_threads_for_object(obj)
-            self.start_contact_threads_for_object(obj)
+            # self.start_contact_threads_for_object(obj)
         self.episode_player.resume()
 
     def update_tracked_objects(self, event: EventUnion) -> None:
@@ -425,8 +425,8 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
     def __init__(self, episode_player: EpisodePlayer,
                  detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
                  annotate_events: bool = False, **kwargs):
-        if detectors_to_start is None:
-            detectors_to_start = [GeneralPickUpDetector, PlacingDetector]
+        # if detectors_to_start is None:
+        #     detectors_to_start = [GeneralPickUpDetector, PlacingDetector]
         super().__init__(episode_player, detectors_to_start=detectors_to_start, annotate_events=annotate_events,
                          **kwargs)
 

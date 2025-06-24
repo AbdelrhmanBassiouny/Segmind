@@ -21,7 +21,7 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
         hole_bbox = hole.get_axis_aligned_bounding_box()
         hole_depth, hole_width, hole_height = hole_bbox.dimensions
         hole_max_z = hole_bbox.max_z
-        time.sleep(0.1)
+        # time.sleep(0.1)
         obj_bbox = event.tracked_object.get_axis_aligned_bounding_box()
         obj_max = obj_bbox.max_z
         obj_event = SimpleEvent({obj_bbox.x_variable: obj_bbox.x_interval,

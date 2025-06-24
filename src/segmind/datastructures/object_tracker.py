@@ -4,18 +4,19 @@ from datetime import timedelta
 from threading import RLock
 from typing import Callable, Tuple
 
-from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict
+from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict, Set
 
 import numpy as np
 
 from pycram.world_concepts.world_object import Object
 from pycram.ros import logwarn
 from pycram.description import RootLink, Link
+from pycram.datastructures.dataclasses import ObjectState
+from pycram.datastructures.world_entity import PhysicalBody
 
 if TYPE_CHECKING:
     from .events import Event, EventUnion
     from ..detectors.coarse_event_detectors import DetectorWithStarterEvent
-    from pycram.datastructures.dataclasses import ObjectState
 
 
 class ObjectTracker:
@@ -25,6 +26,16 @@ class ObjectTracker:
         self._lock: RLock = RLock()
         self._event_history: List[Event] = []
         self._current_detectors: List[DetectorWithStarterEvent] = []
+        self._support: Optional[PhysicalBody] = None
+
+    @property
+    def support(self) -> Optional[PhysicalBody]:
+        return self._support
+
+    @support.setter
+    def support(self, support: PhysicalBody):
+        with self._lock:
+            self._support = support
 
     @property
     def current_detectors(self) -> List[DetectorWithStarterEvent]:

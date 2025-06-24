@@ -13,8 +13,10 @@ from pycram.datastructures.world_entity import abstractmethod, PhysicalBody
 from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import AtomicEventDetector
 from ..datastructures.events import MotionEvent, EventUnion, StopMotionEvent, NewObjectEvent, InsertionEvent, Event, \
-    ContainmentEvent, ContactEvent, InterferenceEvent, LossOfInterferenceEvent
+    ContainmentEvent, ContactEvent, InterferenceEvent, LossOfInterferenceEvent, StopTranslationEvent, \
+    LossOfSurfaceEvent, LossOfSupportEvent, SupportEvent
 from ..datastructures.object_tracker import ObjectTrackerFactory
+from ..utils import get_support
 
 EventCondition = Callable[[EventUnion], bool]
 
@@ -180,6 +182,71 @@ class InsertionDetector(SpatialRelationDetector):
                     insertion_event.update_action_description()
                     self.logger.log_event(insertion_event)
                     break
+                time.sleep(self.wait_time.total_seconds())
+        except Empty:
+            pass
+
+    @staticmethod
+    def ask_now(case_dict):
+        self_ = case_dict['self_']
+        hole = case_dict['hole']
+        event = case_dict['event']
+        return "object_3" in event.tracked_object.name
+    hole_insertion_verifier_rdr = RDRDecorator(f"{dirname(__file__)}/models", (bool,),
+                                               True, fit=False,
+                                               fitting_decorator=EpisodePlayer.pause_resume,
+                                               package_name="segmind",
+                                               ask_now=ask_now)
+
+    @hole_insertion_verifier_rdr.decorator
+    def hole_insertion_verifier(self, hole: PhysicalBody, event: InterferenceEvent) -> bool:
+        pass
+        # return hole not in event.tracked_object.contained_in_bodies
+
+    @classmethod
+    def event_type(cls) -> Type[InsertionEvent]:
+        return InsertionEvent
+
+
+class SupportDetector(SpatialRelationDetector):
+
+    @staticmethod
+    def event_condition(event: StopTranslationEvent) -> bool:
+        # logdebug(f"Checking bodies {event.link_names} with tracked object {event.tracked_object.name}")
+        return len(event.tracked_object.contact_points) > 0
+    check_on_events = {StopTranslationEvent: None}
+
+    def update_body_state(self, body: PhysicalBody, with_bodies: Optional[List[PhysicalBody]] = None):
+        """
+        Update the state of a body.
+        """
+        support = get_support(body)
+        if body in self.bodies_states:
+            if support is None:
+                if self.bodies_states[body] is None:
+                    return
+                else:
+                    self.logger.log_event(LossOfSupportEvent(body, self.bodies_states[body]))
+            else:
+                if self.bodies_states[body] is None:
+                    self.logger.log_event(SupportEvent(body, support))
+                elif support != self.bodies_states[body]:
+                    self.logger.log_event(LossOfSupportEvent(body, self.bodies_states[body]))
+                    self.logger.log_event(SupportEvent(body, support))
+                else:
+                    return
+        self.bodies_states[body] = support
+        ObjectTrackerFactory.get_tracker(body).support = support
+
+    def detect_events(self) -> None:
+        """
+        Detect Containment relations between objects.
+        """
+        try:
+            while True:
+                event = self.event_queue.get_nowait()
+                self.event_queue.task_done()
+                self.update_body_state(event.tracked_object)
                 time.sleep(self.wait_time.total_seconds())
         except Empty:
             pass

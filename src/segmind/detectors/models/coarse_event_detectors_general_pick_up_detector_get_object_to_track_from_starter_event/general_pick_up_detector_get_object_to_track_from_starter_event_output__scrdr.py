@@ -13,10 +13,7 @@ def classify(case: Dict, **kwargs) -> Optional[Object]:
     if not isinstance(case, Case):
         case = create_case(case, max_recursion_idx=3)
 
-    if conditions_257779009639527613634091190332753064691(case):
-        return conclusion_257779009639527613634091190332753064691(case)
-
-    elif conditions_306600839998818187425923425930024243551(case):
-        return conclusion_306600839998818187425923425930024243551(case)
+    if conditions_132752200528268219213179872006260451656(case):
+        return conclusion_132752200528268219213179872006260451656(case)
     else:
         return None

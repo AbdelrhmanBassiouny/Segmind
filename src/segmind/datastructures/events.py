@@ -168,6 +168,24 @@ class EventWithTwoTrackedObjects(EventWithOneTrackedObject, HasSecondaryTrackedO
         return hash(hash_tuple)
 
 
+class DefaultEventWithTwoTrackedObjects(EventWithTwoTrackedObjects):
+    """
+    A default implementation of EventWithTwoTrackedObjects that does not require a with_object.
+    This is useful for events that only involve one tracked object.
+    """
+
+    @property
+    def involved_bodies(self) -> List[PhysicalBody]:
+        return self.tracked_objects
+
+    def set_color(self, color: Optional[Color] = None):
+        ...
+
+    @property
+    def color(self) -> Color:
+        return self.tracked_object.color
+
+
 class NewObjectEvent(EventWithOneTrackedObject):
     """
     The NewObjectEvent class is used to represent an event that involves the addition of a new object to the world.
@@ -186,6 +204,21 @@ class NewObjectEvent(EventWithOneTrackedObject):
     @property
     def color(self) -> Color:
         return self.tracked_object.color
+
+
+class SupportEvent(DefaultEventWithTwoTrackedObjects):
+    """
+    The SupportEvent class is used to represent an event that involves an object that is supported by another object.
+    """
+    ...
+
+
+class LossOfSupportEvent(DefaultEventWithTwoTrackedObjects):
+    """
+    The LossOfSupportEvent class is used to represent an event that involves an object that was supported by another
+    object and then lost support.
+    """
+    ...
 
 
 class MotionEvent(EventWithOneTrackedObject, ABC):
