@@ -57,8 +57,7 @@ def conditions_21738774625860220488991060484462427733(case) -> bool:
         return True
         if event.tracked_object in self_.bodies_states:
             prev_containers = self_.bodies_states[event.tracked_object]
-            event.tracked_object.update_containment(intersection_ratio=0.7)
-            current_containers = event.tracked_object.contained_in_bodies
+            current_containers = event.tracked_object.update_containment(intersection_ratio=0.7)
             new_containers = [body for body in current_containers if body not in prev_containers]
             return len(new_containers) > 0
         else:

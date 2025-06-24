@@ -30,4 +30,5 @@ Link = ObjectDescription.Link
 
 def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:
     """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
-    return "hole" in event.with_object.name
+    support = event.with_object
+    return support.contains_body(event.tracked_object)

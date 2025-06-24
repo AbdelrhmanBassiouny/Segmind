@@ -90,8 +90,8 @@ def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0
         if any("drawer" in body.name and "handle" not in body.name for body in bodies_to_check):
             return True
         else:
-            obj.update_containment(axis_to_use=[AxisIdentifier.X, AxisIdentifier.Y])
-            possible_containers = [b for b in obj.contained_in_bodies if "drawer" in b.name and "handle" not in b.name]
+            possible_containers = obj.update_containment(axis_to_use=[AxisIdentifier.X, AxisIdentifier.Y])
+            possible_containers = [b for b in possible_containers if "drawer" in b.name and "handle" not in b.name]
             for b in bodies_to_check:
                 b_contact_bodies = b.contact_points.get_all_bodies()
                 if any(contact_body in possible_containers for contact_body in b_contact_bodies):
