@@ -7,21 +7,20 @@
                 "_type": "ripple_down_rules.rules.SingleClassRule",
                 "conditions": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return isinstance(event, LossOfSupportEvent)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return isinstance(event, LossOfSupportEvent)\n    \n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Type": "typing.Type",
-                        "Union": "typing.Union",
-                        "Case": "ripple_down_rules.datastructures.case.Case",
                         "Event": "segmind.datastructures.events.Event",
                         "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "NoneType": "builtins.NoneType",
-                        "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
+                        "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                        "get_support": "segmind.utils.get_support",
+                        "Type": "typing.Type",
+                        "logerr": "pycram.ros.ros1.logging.logerr"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -31,21 +30,20 @@
                 },
                 "conclusion": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return True\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return True\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Type": "typing.Type",
-                        "Union": "typing.Union",
-                        "Case": "ripple_down_rules.datastructures.case.Case",
                         "Event": "segmind.datastructures.events.Event",
                         "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "NoneType": "builtins.NoneType",
-                        "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
+                        "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                        "get_support": "segmind.utils.get_support",
+                        "Type": "typing.Type",
+                        "logerr": "pycram.ros.ros1.logging.logerr"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -72,21 +70,20 @@
                     "_type": "ripple_down_rules.rules.SingleClassRule",
                     "conditions": {
                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True, intersection_ratio=0.9)\n    \n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
                         "conclusion_type": [
                             "builtins.bool"
                         ],
                         "scope": {
-                            "Dict": "typing.Dict",
-                            "Optional": "typing.Optional",
-                            "Type": "typing.Type",
-                            "Union": "typing.Union",
-                            "Case": "ripple_down_rules.datastructures.case.Case",
                             "Event": "segmind.datastructures.events.Event",
                             "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                            "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                            "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                             "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                            "NoneType": "builtins.NoneType",
-                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
+                            "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                            "get_support": "segmind.utils.get_support",
+                            "Type": "typing.Type",
+                            "logerr": "pycram.ros.ros1.logging.logerr"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -96,21 +93,20 @@
                     },
                     "conclusion": {
                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
                         "conclusion_type": [
                             "builtins.bool"
                         ],
                         "scope": {
-                            "Dict": "typing.Dict",
-                            "Optional": "typing.Optional",
-                            "Type": "typing.Type",
-                            "Union": "typing.Union",
-                            "Case": "ripple_down_rules.datastructures.case.Case",
                             "Event": "segmind.datastructures.events.Event",
                             "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                            "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                            "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                             "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                            "NoneType": "builtins.NoneType",
-                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
+                            "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                            "get_support": "segmind.utils.get_support",
+                            "Type": "typing.Type",
+                            "logerr": "pycram.ros.ros1.logging.logerr"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -118,395 +114,7 @@
                         },
                         "mutually_exclusive": true
                     },
-                    "parent": {
-                        "_type": "ripple_down_rules.rules.SingleClassRule",
-                        "conditions": {
-                            "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                            "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return isinstance(event, LossOfSupportEvent)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                            "conclusion_type": [
-                                "builtins.bool"
-                            ],
-                            "scope": {
-                                "Dict": "typing.Dict",
-                                "Optional": "typing.Optional",
-                                "Type": "typing.Type",
-                                "Union": "typing.Union",
-                                "Case": "ripple_down_rules.datastructures.case.Case",
-                                "Event": "segmind.datastructures.events.Event",
-                                "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                "NoneType": "builtins.NoneType",
-                                "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                            },
-                            "conclusion": {
-                                "_type": "builtins.NoneType",
-                                "value": null
-                            },
-                            "mutually_exclusive": true
-                        },
-                        "conclusion": {
-                            "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                            "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return True\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                            "conclusion_type": [
-                                "builtins.bool"
-                            ],
-                            "scope": {
-                                "Dict": "typing.Dict",
-                                "Optional": "typing.Optional",
-                                "Type": "typing.Type",
-                                "Union": "typing.Union",
-                                "Case": "ripple_down_rules.datastructures.case.Case",
-                                "Event": "segmind.datastructures.events.Event",
-                                "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                "NoneType": "builtins.NoneType",
-                                "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                            },
-                            "conclusion": {
-                                "_type": "builtins.NoneType",
-                                "value": null
-                            },
-                            "mutually_exclusive": true
-                        },
-                        "parent": null,
-                        "corner_case": {
-                            "_type": "ripple_down_rules.datastructures.case.Case",
-                            "cls_": {
-                                "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                            },
-                            "event": null,
-                            "output_": null,
-                            "_id": 140117233030080,
-                            "_obj_type": "builtins.dict",
-                            "_name": "GeneralPickUpDetector_start_condition_checker"
-                        },
-                        "conclusion_name": "output_",
-                        "weight": null,
-                        "uid": "313968436519149281932112885344716145224",
-                        "refinement": {
-                            "_type": "ripple_down_rules.rules.SingleClassRule",
-                            "conditions": {
-                                "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                "conclusion_type": [
-                                    "builtins.bool"
-                                ],
-                                "scope": {
-                                    "Dict": "typing.Dict",
-                                    "Optional": "typing.Optional",
-                                    "Type": "typing.Type",
-                                    "Union": "typing.Union",
-                                    "Case": "ripple_down_rules.datastructures.case.Case",
-                                    "Event": "segmind.datastructures.events.Event",
-                                    "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                    "NoneType": "builtins.NoneType",
-                                    "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                },
-                                "conclusion": {
-                                    "_type": "builtins.NoneType",
-                                    "value": null
-                                },
-                                "mutually_exclusive": true
-                            },
-                            "conclusion": {
-                                "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                "conclusion_type": [
-                                    "builtins.bool"
-                                ],
-                                "scope": {
-                                    "Dict": "typing.Dict",
-                                    "Optional": "typing.Optional",
-                                    "Type": "typing.Type",
-                                    "Union": "typing.Union",
-                                    "Case": "ripple_down_rules.datastructures.case.Case",
-                                    "Event": "segmind.datastructures.events.Event",
-                                    "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                    "NoneType": "builtins.NoneType",
-                                    "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                },
-                                "conclusion": {
-                                    "_type": "builtins.NoneType",
-                                    "value": null
-                                },
-                                "mutually_exclusive": true
-                            },
-                            "parent": {
-                                "_type": "ripple_down_rules.rules.SingleClassRule",
-                                "conditions": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return isinstance(event, LossOfSupportEvent)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Dict": "typing.Dict",
-                                        "Optional": "typing.Optional",
-                                        "Type": "typing.Type",
-                                        "Union": "typing.Union",
-                                        "Case": "ripple_down_rules.datastructures.case.Case",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                        "NoneType": "builtins.NoneType",
-                                        "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "conclusion": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return True\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Dict": "typing.Dict",
-                                        "Optional": "typing.Optional",
-                                        "Type": "typing.Type",
-                                        "Union": "typing.Union",
-                                        "Case": "ripple_down_rules.datastructures.case.Case",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                        "NoneType": "builtins.NoneType",
-                                        "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "parent": null,
-                                "corner_case": {
-                                    "_type": "ripple_down_rules.datastructures.case.Case",
-                                    "cls_": {
-                                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "event": null,
-                                    "output_": null,
-                                    "_id": 140117233030080,
-                                    "_obj_type": "builtins.dict",
-                                    "_name": "GeneralPickUpDetector_start_condition_checker"
-                                },
-                                "conclusion_name": "output_",
-                                "weight": null,
-                                "uid": "313968436519149281932112885344716145224",
-                                "refinement": {
-                                    "_type": "ripple_down_rules.rules.SingleClassRule",
-                                    "conditions": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "conclusion": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "parent": null,
-                                    "corner_case": {
-                                        "_type": "ripple_down_rules.datastructures.case.Case",
-                                        "cls_": {
-                                            "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                        },
-                                        "event": null,
-                                        "output_": true,
-                                        "_id": 140211622923584,
-                                        "_obj_type": "builtins.dict",
-                                        "_name": "GeneralPickUpDetector_start_condition_checker"
-                                    },
-                                    "conclusion_name": null,
-                                    "weight": "except if",
-                                    "uid": "185374571278911955422500089733244334209",
-                                    "refinement": null,
-                                    "alternative": null
-                                },
-                                "alternative": null
-                            },
-                            "corner_case": {
-                                "_type": "ripple_down_rules.datastructures.case.Case",
-                                "cls_": {
-                                    "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                },
-                                "event": null,
-                                "output_": true,
-                                "_id": 140211622923584,
-                                "_obj_type": "builtins.dict",
-                                "_name": "GeneralPickUpDetector_start_condition_checker"
-                            },
-                            "conclusion_name": null,
-                            "weight": "except if",
-                            "uid": "185374571278911955422500089733244334209",
-                            "refinement": null,
-                            "alternative": {
-                                "_type": "ripple_down_rules.rules.SingleClassRule",
-                                "conditions": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return \"hole\" in event.with_object.name\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Type": "typing.Type",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "conclusion": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Type": "typing.Type",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "parent": {
-                                    "_type": "ripple_down_rules.rules.SingleClassRule",
-                                    "conditions": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "conclusion": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "parent": null,
-                                    "corner_case": {
-                                        "_type": "ripple_down_rules.datastructures.case.Case",
-                                        "cls_": {
-                                            "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                        },
-                                        "event": null,
-                                        "output_": true,
-                                        "_id": 140211622923584,
-                                        "_obj_type": "builtins.dict",
-                                        "_name": "GeneralPickUpDetector_start_condition_checker"
-                                    },
-                                    "conclusion_name": null,
-                                    "weight": "except if",
-                                    "uid": "185374571278911955422500089733244334209",
-                                    "refinement": null,
-                                    "alternative": null
-                                },
-                                "corner_case": {
-                                    "_type": "ripple_down_rules.datastructures.case.Case",
-                                    "cls_": {
-                                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "event": null,
-                                    "output_": true,
-                                    "_id": 139710319900224,
-                                    "_obj_type": "builtins.dict",
-                                    "_name": "GeneralPickUpDetector_start_condition_checker"
-                                },
-                                "conclusion_name": null,
-                                "weight": "else if",
-                                "uid": "259334668447470890319338447268411809573",
-                                "refinement": null,
-                                "alternative": null
-                            }
-                        },
-                        "alternative": null
-                    },
+                    "parent": null,
                     "corner_case": {
                         "_type": "ripple_down_rules.datastructures.case.Case",
                         "cls_": {
@@ -526,14 +134,20 @@
                         "_type": "ripple_down_rules.rules.SingleClassRule",
                         "conditions": {
                             "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                            "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return \"hole\" in event.with_object.name\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                            "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return \"hole\" in event.with_object.name\n    \n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
                             "conclusion_type": [
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "Type": "typing.Type",
                                 "Event": "segmind.datastructures.events.Event",
-                                "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                                "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                                "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                                "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
+                                "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                                "get_support": "segmind.utils.get_support",
+                                "Type": "typing.Type",
+                                "logerr": "pycram.ros.ros1.logging.logerr"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -543,14 +157,20 @@
                         },
                         "conclusion": {
                             "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                            "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                            "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
                             "conclusion_type": [
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "Type": "typing.Type",
                                 "Event": "segmind.datastructures.events.Event",
-                                "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                                "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                                "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                                "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
+                                "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                                "get_support": "segmind.utils.get_support",
+                                "Type": "typing.Type",
+                                "logerr": "pycram.ros.ros1.logging.logerr"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -558,328 +178,7 @@
                             },
                             "mutually_exclusive": true
                         },
-                        "parent": {
-                            "_type": "ripple_down_rules.rules.SingleClassRule",
-                            "conditions": {
-                                "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                "conclusion_type": [
-                                    "builtins.bool"
-                                ],
-                                "scope": {
-                                    "Dict": "typing.Dict",
-                                    "Optional": "typing.Optional",
-                                    "Type": "typing.Type",
-                                    "Union": "typing.Union",
-                                    "Case": "ripple_down_rules.datastructures.case.Case",
-                                    "Event": "segmind.datastructures.events.Event",
-                                    "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                    "NoneType": "builtins.NoneType",
-                                    "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                },
-                                "conclusion": {
-                                    "_type": "builtins.NoneType",
-                                    "value": null
-                                },
-                                "mutually_exclusive": true
-                            },
-                            "conclusion": {
-                                "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                "conclusion_type": [
-                                    "builtins.bool"
-                                ],
-                                "scope": {
-                                    "Dict": "typing.Dict",
-                                    "Optional": "typing.Optional",
-                                    "Type": "typing.Type",
-                                    "Union": "typing.Union",
-                                    "Case": "ripple_down_rules.datastructures.case.Case",
-                                    "Event": "segmind.datastructures.events.Event",
-                                    "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                    "NoneType": "builtins.NoneType",
-                                    "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                },
-                                "conclusion": {
-                                    "_type": "builtins.NoneType",
-                                    "value": null
-                                },
-                                "mutually_exclusive": true
-                            },
-                            "parent": {
-                                "_type": "ripple_down_rules.rules.SingleClassRule",
-                                "conditions": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return isinstance(event, LossOfSupportEvent)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Dict": "typing.Dict",
-                                        "Optional": "typing.Optional",
-                                        "Type": "typing.Type",
-                                        "Union": "typing.Union",
-                                        "Case": "ripple_down_rules.datastructures.case.Case",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                        "NoneType": "builtins.NoneType",
-                                        "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "conclusion": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return True\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Dict": "typing.Dict",
-                                        "Optional": "typing.Optional",
-                                        "Type": "typing.Type",
-                                        "Union": "typing.Union",
-                                        "Case": "ripple_down_rules.datastructures.case.Case",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                        "NoneType": "builtins.NoneType",
-                                        "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "parent": null,
-                                "corner_case": {
-                                    "_type": "ripple_down_rules.datastructures.case.Case",
-                                    "cls_": {
-                                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "event": null,
-                                    "output_": null,
-                                    "_id": 140117233030080,
-                                    "_obj_type": "builtins.dict",
-                                    "_name": "GeneralPickUpDetector_start_condition_checker"
-                                },
-                                "conclusion_name": "output_",
-                                "weight": null,
-                                "uid": "313968436519149281932112885344716145224",
-                                "refinement": {
-                                    "_type": "ripple_down_rules.rules.SingleClassRule",
-                                    "conditions": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "conclusion": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "parent": null,
-                                    "corner_case": {
-                                        "_type": "ripple_down_rules.datastructures.case.Case",
-                                        "cls_": {
-                                            "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                        },
-                                        "event": null,
-                                        "output_": true,
-                                        "_id": 140211622923584,
-                                        "_obj_type": "builtins.dict",
-                                        "_name": "GeneralPickUpDetector_start_condition_checker"
-                                    },
-                                    "conclusion_name": null,
-                                    "weight": "except if",
-                                    "uid": "185374571278911955422500089733244334209",
-                                    "refinement": null,
-                                    "alternative": null
-                                },
-                                "alternative": null
-                            },
-                            "corner_case": {
-                                "_type": "ripple_down_rules.datastructures.case.Case",
-                                "cls_": {
-                                    "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                },
-                                "event": null,
-                                "output_": true,
-                                "_id": 140211622923584,
-                                "_obj_type": "builtins.dict",
-                                "_name": "GeneralPickUpDetector_start_condition_checker"
-                            },
-                            "conclusion_name": null,
-                            "weight": "except if",
-                            "uid": "185374571278911955422500089733244334209",
-                            "refinement": null,
-                            "alternative": {
-                                "_type": "ripple_down_rules.rules.SingleClassRule",
-                                "conditions": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return \"hole\" in event.with_object.name\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Type": "typing.Type",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "conclusion": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Type": "typing.Type",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "parent": {
-                                    "_type": "ripple_down_rules.rules.SingleClassRule",
-                                    "conditions": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "conclusion": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "parent": null,
-                                    "corner_case": {
-                                        "_type": "ripple_down_rules.datastructures.case.Case",
-                                        "cls_": {
-                                            "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                        },
-                                        "event": null,
-                                        "output_": true,
-                                        "_id": 140211622923584,
-                                        "_obj_type": "builtins.dict",
-                                        "_name": "GeneralPickUpDetector_start_condition_checker"
-                                    },
-                                    "conclusion_name": null,
-                                    "weight": "except if",
-                                    "uid": "185374571278911955422500089733244334209",
-                                    "refinement": null,
-                                    "alternative": null
-                                },
-                                "corner_case": {
-                                    "_type": "ripple_down_rules.datastructures.case.Case",
-                                    "cls_": {
-                                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "event": null,
-                                    "output_": true,
-                                    "_id": 139710319900224,
-                                    "_obj_type": "builtins.dict",
-                                    "_name": "GeneralPickUpDetector_start_condition_checker"
-                                },
-                                "conclusion_name": null,
-                                "weight": "else if",
-                                "uid": "259334668447470890319338447268411809573",
-                                "refinement": null,
-                                "alternative": null
-                            }
-                        },
+                        "parent": null,
                         "corner_case": {
                             "_type": "ripple_down_rules.datastructures.case.Case",
                             "cls_": {
@@ -899,14 +198,20 @@
                             "_type": "ripple_down_rules.rules.SingleClassRule",
                             "conditions": {
                                 "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return any([\"hole\" in b.name for b in event.tracked_object.contact_points.get_all_bodies()])\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return any([\"hole\" in b.name for b in event.tracked_object.contact_points.get_all_bodies()])\n    \n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
                                 "conclusion_type": [
                                     "builtins.bool"
                                 ],
                                 "scope": {
-                                    "Type": "typing.Type",
                                     "Event": "segmind.datastructures.events.Event",
-                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                                    "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                                    "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                                    "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
+                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                    "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                                    "get_support": "segmind.utils.get_support",
+                                    "Type": "typing.Type",
+                                    "logerr": "pycram.ros.ros1.logging.logerr"
                                 },
                                 "conclusion": {
                                     "_type": "builtins.NoneType",
@@ -916,14 +221,20 @@
                             },
                             "conclusion": {
                                 "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
                                 "conclusion_type": [
                                     "builtins.bool"
                                 ],
                                 "scope": {
-                                    "Type": "typing.Type",
                                     "Event": "segmind.datastructures.events.Event",
-                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                                    "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                                    "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                                    "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
+                                    "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                    "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                                    "get_support": "segmind.utils.get_support",
+                                    "Type": "typing.Type",
+                                    "logerr": "pycram.ros.ros1.logging.logerr"
                                 },
                                 "conclusion": {
                                     "_type": "builtins.NoneType",
@@ -931,127 +242,7 @@
                                 },
                                 "mutually_exclusive": true
                             },
-                            "parent": {
-                                "_type": "ripple_down_rules.rules.SingleClassRule",
-                                "conditions": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return \"hole\" in event.with_object.name\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Type": "typing.Type",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "conclusion": {
-                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                    "conclusion_type": [
-                                        "builtins.bool"
-                                    ],
-                                    "scope": {
-                                        "Type": "typing.Type",
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "conclusion": {
-                                        "_type": "builtins.NoneType",
-                                        "value": null
-                                    },
-                                    "mutually_exclusive": true
-                                },
-                                "parent": {
-                                    "_type": "ripple_down_rules.rules.SingleClassRule",
-                                    "conditions": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True)\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "conclusion": {
-                                        "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event, output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
-                                        "conclusion_type": [
-                                            "builtins.bool"
-                                        ],
-                                        "scope": {
-                                            "Dict": "typing.Dict",
-                                            "Optional": "typing.Optional",
-                                            "Type": "typing.Type",
-                                            "Union": "typing.Union",
-                                            "Case": "ripple_down_rules.datastructures.case.Case",
-                                            "Event": "segmind.datastructures.events.Event",
-                                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                            "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                            "NoneType": "builtins.NoneType",
-                                            "ObjectDescription": "pycram.object_descriptors.urdf.ObjectDescription"
-                                        },
-                                        "conclusion": {
-                                            "_type": "builtins.NoneType",
-                                            "value": null
-                                        },
-                                        "mutually_exclusive": true
-                                    },
-                                    "parent": null,
-                                    "corner_case": {
-                                        "_type": "ripple_down_rules.datastructures.case.Case",
-                                        "cls_": {
-                                            "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                        },
-                                        "event": null,
-                                        "output_": true,
-                                        "_id": 140211622923584,
-                                        "_obj_type": "builtins.dict",
-                                        "_name": "GeneralPickUpDetector_start_condition_checker"
-                                    },
-                                    "conclusion_name": null,
-                                    "weight": "except if",
-                                    "uid": "185374571278911955422500089733244334209",
-                                    "refinement": null,
-                                    "alternative": null
-                                },
-                                "corner_case": {
-                                    "_type": "ripple_down_rules.datastructures.case.Case",
-                                    "cls_": {
-                                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "event": null,
-                                    "output_": true,
-                                    "_id": 139710319900224,
-                                    "_obj_type": "builtins.dict",
-                                    "_name": "GeneralPickUpDetector_start_condition_checker"
-                                },
-                                "conclusion_name": null,
-                                "weight": "else if",
-                                "uid": "259334668447470890319338447268411809573",
-                                "refinement": null,
-                                "alternative": null
-                            },
+                            "parent": null,
                             "corner_case": {
                                 "_type": "ripple_down_rules.datastructures.case.Case",
                                 "cls_": {
@@ -1067,7 +258,72 @@
                             "weight": "else if",
                             "uid": "1084517150588802996811823834978763787",
                             "refinement": null,
-                            "alternative": null
+                            "alternative": {
+                                "_type": "ripple_down_rules.rules.SingleClassRule",
+                                "conditions": {
+                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        translation_event = event.object_tracker.get_first_event_of_type_before_event(TranslationEvent, event)\n        if translation_event is None:\n            # logerr(\"No translation event found for GeneralPickUpDetector_start_condition_checker\")\n            return True\n        if (translation_event.current_pose.position.z - translation_event.start_pose.position.z) >= (3 * 1e-3):\n            return False\n        else:\n            return True\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                    "conclusion_type": [
+                                        "builtins.bool"
+                                    ],
+                                    "scope": {
+                                        "Event": "segmind.datastructures.events.Event",
+                                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
+                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                        "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                                        "get_support": "segmind.utils.get_support",
+                                        "Type": "typing.Type",
+                                        "logerr": "pycram.ros.ros1.logging.logerr"
+                                    },
+                                    "conclusion": {
+                                        "_type": "builtins.NoneType",
+                                        "value": null
+                                    },
+                                    "mutually_exclusive": true
+                                },
+                                "conclusion": {
+                                    "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
+                                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                    "conclusion_type": [
+                                        "builtins.bool"
+                                    ],
+                                    "scope": {
+                                        "Event": "segmind.datastructures.events.Event",
+                                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
+                                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
+                                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
+                                        "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
+                                        "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
+                                        "get_support": "segmind.utils.get_support",
+                                        "Type": "typing.Type",
+                                        "logerr": "pycram.ros.ros1.logging.logerr"
+                                    },
+                                    "conclusion": {
+                                        "_type": "builtins.NoneType",
+                                        "value": null
+                                    },
+                                    "mutually_exclusive": true
+                                },
+                                "parent": null,
+                                "corner_case": {
+                                    "_type": "ripple_down_rules.datastructures.case.Case",
+                                    "cls_": {
+                                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
+                                    },
+                                    "event": null,
+                                    "output_": true,
+                                    "_id": 140103132011520,
+                                    "_obj_type": "builtins.dict",
+                                    "_name": "GeneralPickUpDetector_start_condition_checker"
+                                },
+                                "conclusion_name": null,
+                                "weight": "else if",
+                                "uid": "257426441376249650265480473188288026956",
+                                "refinement": null,
+                                "alternative": null
+                            }
                         }
                     }
                 },

@@ -374,7 +374,7 @@
     </collision>
   </link>
   <joint name="montessori_disk_hole_joint" type="fixed">
-    <origin xyz="-0.018 0.091 0.04" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.025 0.091 0.04" rpy="0.0 0.0 0.0"/>
     <parent link="montessori_box"/>
     <child link="disk_hole"/>
   </joint>
@@ -387,7 +387,7 @@
     <collision name="disk_hole_shape">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.01 0.03 0.001"/>
+        <box size="0.005 0.04 0.001"/>
       </geometry>
     </collision>
   </link>
