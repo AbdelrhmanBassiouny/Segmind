@@ -106,7 +106,6 @@ class EventLogger:
         self.update_object_trackers_with_event(event)
         self.event_queue.put(event)
         self.annotate_scene_with_event(event)
-        self.add_event_to_timeline_of_thread(event)
         self.call_event_callbacks(event)
 
     def call_event_callbacks(self, event: Event) -> None:
@@ -164,7 +163,10 @@ class EventLogger:
         :return: True if the event is in the timeline, False otherwise.
         """
         with self.timeline_lock:
-            return event in self.timeline
+            if event in self.timeline:
+                return True
+            else:
+                self.add_event_to_timeline_of_thread(event)
 
     def plot_events(self, show: bool = True, save_path: Optional[str] = None):
         """

@@ -575,36 +575,8 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         return Color(1, 0, 1, 1)
 
 
-class ContainmentEvent(EventWithOneTrackedObject):
-
-    def __init__(self, inserted_object: Object,
-                 contained_in_bodies: List[PhysicalBody],
-                 timestamp: Optional[float] = None):
-        super().__init__(inserted_object, timestamp)
-        self.contained_in_bodies: List[PhysicalBody] = contained_in_bodies
-
-    @property
-    def involved_bodies(self) -> List[PhysicalBody]:
-        return self.tracked_objects + self.contained_in_bodies
-
-    def set_color(self, color: Optional[Color] = None):
-        pass
-
-    def hash_tuple(self):
-        hash_tuple = (self.__class__.__name__,
-                      self.tracked_object.name, *(obj.name for obj in self.contained_in_bodies))
-        return hash_tuple
-
-    def __hash__(self):
-        return hash(self.hash_tuple())
-
-    def __str__(self):
-        with_object_name = " - " + f" - ".join([obj.name for obj in self.inserted_into_objects])
-        return f"{self.__class__.__name__}: {self.tracked_object.name}{with_object_name} - {self.timestamp}"
-
-    @property
-    def color(self) -> Color:
-        return Color(1, 0, 1, 1)
+class ContainmentEvent(DefaultEventWithTwoTrackedObjects):
+    ...
 
 
 # Create a type that is the union of all event types

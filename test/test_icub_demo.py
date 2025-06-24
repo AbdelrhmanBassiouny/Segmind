@@ -12,7 +12,7 @@ from typing_extensions import Tuple
 
 from segmind.datastructures.events import AbstractAgentObjectInteractionEvent
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
-from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector
+from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 
 try:
@@ -63,7 +63,8 @@ def set_up_demo_fixture(episode_name: str = "icub_montessori_no_hands"):
                                                     plot_timeline=True,
                                                     plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
                                                     detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
-                                                    initial_detectors=[InsertionDetector, SupportDetector])
+                                                    # initial_detectors=[SupportDetector, ContainmentDetector])
+                                                    initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector])
     # episode_segmenter.start()
 
     # while not multiverse_player.ready:
