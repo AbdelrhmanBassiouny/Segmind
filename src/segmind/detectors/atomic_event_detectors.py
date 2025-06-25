@@ -625,12 +625,14 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         # if self.start_pose is None:
         #     self.event_time: float = latest_time
         #     self.start_pose: Pose = latest_pose
-
-        try:
-            self.data_queue.put_nowait((latest_time, latest_pose))
-        except Full:
-            self.data_queue.get_nowait()
-            self.data_queue.put_nowait((latest_time, latest_pose))
+        repeat = True
+        while repeat:
+            try:
+                self.data_queue.put_nowait((latest_time, latest_pose))
+                repeat = False
+            except Full:
+                self.data_queue.get_nowait()
+                self.data_queue.task_done()
 
     def get_current_pose_and_time(self) -> Tuple[Pose, float]:
         """
