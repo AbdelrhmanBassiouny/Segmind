@@ -7,7 +7,7 @@
                 "_type": "ripple_down_rules.rules.SingleClassRule",
                 "conditions": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return isinstance(event, LossOfSupportEvent)\n    \n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def has_object_lost_support(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return isinstance(event, LossOfSupportEvent)\n    \n    return has_object_lost_support(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
@@ -30,7 +30,7 @@
                 },
                 "conclusion": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return True\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def is_a_pick_up(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return True\n    \n    return is_a_pick_up(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
@@ -70,7 +70,7 @@
                     "_type": "ripple_down_rules.rules.SingleClassRule",
                     "conditions": {
                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                        "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True, intersection_ratio=0.9)\n    \n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                        "user_input": "def _get_value(case):\n    def does_the_support_spatially_contain_the_object(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        support = event.with_object\n        return support.contains_body(event.tracked_object, update=True, intersection_ratio=0.9)\n    \n    return does_the_support_spatially_contain_the_object(**case)\n    ",
                         "conclusion_type": [
                             "builtins.bool"
                         ],
@@ -93,7 +93,7 @@
                     },
                     "conclusion": {
                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                        "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                        "user_input": "def _get_value(case):\n    def is_not_a_pick_up(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return is_not_a_pick_up(**case)\n    ",
                         "conclusion_type": [
                             "builtins.bool"
                         ],
@@ -134,7 +134,7 @@
                         "_type": "ripple_down_rules.rules.SingleClassRule",
                         "conditions": {
                             "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                            "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return \"hole\" in event.with_object.name\n    \n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                            "user_input": "def _get_value(case):\n    def is_the_support_a_virtual_hole(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return \"hole\" in event.with_object.name\n    \n    return is_the_support_a_virtual_hole(**case)\n    ",
                             "conclusion_type": [
                                 "builtins.bool"
                             ],
@@ -157,7 +157,7 @@
                         },
                         "conclusion": {
                             "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                            "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                            "user_input": "def _get_value(case):\n    def is_not_a_pick_up(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return is_not_a_pick_up(**case)\n    ",
                             "conclusion_type": [
                                 "builtins.bool"
                             ],
@@ -198,7 +198,7 @@
                             "_type": "ripple_down_rules.rules.SingleClassRule",
                             "conditions": {
                                 "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return any([\"hole\" in b.name for b in event.tracked_object.contact_points.get_all_bodies()])\n    \n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                "user_input": "def _get_value(case):\n    def is_the_object_in_contact_with_a_virtual_hole(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return any([\"hole\" in b.name for b in event.tracked_object.contact_points.get_all_bodies()])\n    \n    return is_the_object_in_contact_with_a_virtual_hole(**case)\n    ",
                                 "conclusion_type": [
                                     "builtins.bool"
                                 ],
@@ -221,7 +221,7 @@
                             },
                             "conclusion": {
                                 "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                "user_input": "def _get_value(case):\n    def is_not_a_pick_up(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return is_not_a_pick_up(**case)\n    ",
                                 "conclusion_type": [
                                     "builtins.bool"
                                 ],
@@ -262,7 +262,7 @@
                                 "_type": "ripple_down_rules.rules.SingleClassRule",
                                 "conditions": {
                                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def conditions_for_general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        translation_event = event.object_tracker.get_first_event_of_type_before_event(TranslationEvent, event)\n        if translation_event is None:\n            # logerr(\"No translation event found for GeneralPickUpDetector_start_condition_checker\")\n            return True\n        if (translation_event.current_pose.position.z - translation_event.start_pose.position.z) >= (3 * 1e-3):\n            return False\n        else:\n            return True\n    return conditions_for_general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                    "user_input": "def _get_value(case):\n    def did_the_object_move_against_gravity(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                                        output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        translation_event = event.object_tracker.get_first_event_of_type_before_event(TranslationEvent, event)\n        if translation_event is None:\n            return True\n        if (translation_event.current_pose.position.z - translation_event.start_pose.position.z) >= (3 * 1e-3):\n            return False\n        else:\n            return True\n    return did_the_object_move_against_gravity(**case)\n    ",
                                     "conclusion_type": [
                                         "builtins.bool"
                                     ],
@@ -285,7 +285,7 @@
                                 },
                                 "conclusion": {
                                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                                    "user_input": "def _get_value(case):\n    def general_pick_up_detector_start_condition_checker(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return general_pick_up_detector_start_condition_checker(**case)\n    ",
+                                    "user_input": "def _get_value(case):\n    def is_not_a_pick_up(cls_: Type[GeneralPickUpDetector], event: Event,\n                                                         output_: bool) -> bool:\n        \"\"\"Get possible value(s) for GeneralPickUpDetector_start_condition_checker.output_  of type .\"\"\"\n        return False\n    \n    return is_not_a_pick_up(**case)\n    ",
                                     "conclusion_type": [
                                         "builtins.bool"
                                     ],

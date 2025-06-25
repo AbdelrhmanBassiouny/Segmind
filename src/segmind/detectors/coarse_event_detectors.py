@@ -277,7 +277,8 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
         event = case_dict["event"]
         return isinstance(event, LossOfSupportEvent)
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
+     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now,
+                                                     generate_dot_file=True)
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
