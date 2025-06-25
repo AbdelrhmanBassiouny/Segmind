@@ -531,8 +531,9 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         """
         DetectorWithTrackedObject.__init__(self, logger, tracked_object, *args, **kwargs)
         if self.episode_player is not None:
-            # self.episode_player.add_frame_callback(self.update_with_latest_motion_data)
-            self.time_between_frames = self.episode_player.time_between_frames
+            self.episode_player.add_frame_callback(self.update_with_latest_motion_data)
+            # self.time_between_frames = self.episode_player.time_between_frames
+            self.time_between_frames: timedelta = time_between_frames
         else:
             self.time_between_frames: timedelta = time_between_frames
         self.window_size: int = round(window_size_in_seconds / self.time_between_frames.total_seconds())
@@ -618,12 +619,12 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         Update the latest pose and time of the object.
         """
         latest_pose, latest_time = self.get_current_pose_and_time()
-        return latest_pose, latest_time
+        # return latest_pose, latest_time
         # if current_time is not None:
         # latest_time = current_time
-        if self.start_pose is None:
-            self.event_time: float = latest_time
-            self.start_pose: Pose = latest_pose
+        # if self.start_pose is None:
+        #     self.event_time: float = latest_time
+        #     self.start_pose: Pose = latest_pose
 
         try:
             self.data_queue.put_nowait((latest_time, latest_pose))
@@ -645,9 +646,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
         try:
-            latest_pose, latest_time = self.update_with_latest_motion_data()
-            # latest_time, latest_pose = self.data_queue.get_nowait()
-            # self.data_queue.task_done()
+            # latest_pose, latest_time = self.update_with_latest_motion_data()
+            _, _ = self.data_queue.get_nowait()
+            self.data_queue.task_done()
+            latest_pose, latest_time = self.get_current_pose_and_time()
             self.poses.append(latest_pose)
             self.times.append(latest_time)
             if len(self.poses) > 1:
@@ -748,14 +750,14 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.latest_distances = []
         self.latest_times = []
 
-    def update_start_pose_and_event_time(self, index: int = 0):
+    def update_start_pose_and_event_time(self, index: int = -1):
         """
         Update the start pose and event time.
 
         :param index: The index of the latest pose, and time.
         """
-        self.start_pose = self.poses[index]
-        self.event_time = self.latest_times[index]
+        self.start_pose = self.poses[-self.window_size]
+        self.event_time = self.latest_times[-self.window_size]
 
     def filter_data(self) -> np.ndarray:
         """

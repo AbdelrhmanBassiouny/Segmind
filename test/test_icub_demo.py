@@ -44,7 +44,7 @@ def set_up_demo_fixture(episode_name: str = "icub_montessori_no_hands"):
     rdm = RobotDescriptionManager()
     rdm.load_description("iCub")
 
-    world: BulletWorld = BulletWorld(WorldMode.GUI)
+    world: BulletWorld = BulletWorld(WorldMode.DIRECT)
     # viz_marker_publisher = VizMarkerPublisher()
     pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
 

@@ -111,8 +111,8 @@ class ContainmentDetector(SpatialRelationDetector):
         """
         if isinstance(body, Object):
             for link in body.links.values():
-                self.bodies_states[link] = link.update_containment()
-        self.bodies_states[body] = body.update_containment()
+                self.bodies_states[link] = link.update_containment(intersection_ratio=0.9)
+        self.bodies_states[body] = body.update_containment(intersection_ratio=0.9)
 
     def detect_events(self) -> None:
         """
