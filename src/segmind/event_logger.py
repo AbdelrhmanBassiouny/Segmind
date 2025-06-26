@@ -407,21 +407,7 @@ class EventAnnotationThread(threading.Thread):
                 hole_name = event.through_hole.name.replace('_', ' ').strip()
                 hole_name = re.sub(r'\d+', '', hole_name).strip()
                 text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {hole_name}")
-            # if len(self.current_annotations) >= self.max_annotations:
-            #     # Move all annotations up and remove the oldest one
-            #     for text_ann in self.current_annotations:
-            #         World.current_world.remove_text(text_ann.id)
-            #     self.current_annotations.pop(0)
-            #     for text_ann in self.current_annotations:
-            #         text_ann.position[2] += self.step_z_offset
-            #         text_ann.id = World.current_world.add_text(text_ann.text,
-            #                                                    text_ann.position,
-            #                                                    color=text_ann.color,
-            #                                                    size=text_ann.size)
-            # z_offset = self.get_next_z_offset()
-            # text_ann = event.annotate([1.5, 1, z_offset])
-            # self.current_annotations.append(text_ann)
-            # time.sleep(0.1)
+            event.annotate()
 
     def stop(self):
         self.kill_event.set()

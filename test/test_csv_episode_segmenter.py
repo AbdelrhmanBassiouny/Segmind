@@ -13,10 +13,12 @@ from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from pycram.robot_description import RobotDescriptionManager
 from pycram.world_concepts.world_object import Object
+
+from segmind.datastructures.events import SupportEvent
 from segmind.players.csv_player import CSVEpisodePlayer
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
-from segmind.detectors.spatial_relation_detector import InsertionDetector
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
+from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
 from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
@@ -54,8 +56,8 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
                                                         plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}',
-                                                        detectors_to_start=[GeneralPickUpDetector],
-                                                        initial_detectors=[InsertionDetector])
+                                                        detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
+                                                        initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector])
 
     @classmethod
     def spawn_objects(cls, models_dir):

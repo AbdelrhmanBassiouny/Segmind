@@ -1,5 +1,6 @@
 import time
 from abc import abstractmethod, ABC
+from dataclasses import dataclass,field
 
 from typing_extensions import Optional, List, Union, Type
 
@@ -18,17 +19,17 @@ from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object, Link
 
 
+@dataclass
 class Event(ABC):
 
-    annotation_size: float = 1
+    timestamp: float = field(default_factory=time.time)
     """
-    The size of the annotation text.
+    The time at which the event occurred, defaults to current time.
     """
-
-    def __init__(self, timestamp: Optional[float] = None):
-        self.timestamp = time.time() if timestamp is None else timestamp
-        self.text_id: Optional[int] = None
-        self.detector_thread_id: Optional[str] = None
+    detector_thread_id: Optional[str] = None
+    """
+    The id of the detector that detected the event.
+    """
 
     @abstractmethod
     def __eq__(self, other):
@@ -38,38 +39,24 @@ class Event(ABC):
     def __hash__(self):
         pass
 
-    def annotate(self, position: Optional[List[float]] = None, size: Optional[float] = None,
-                 color: Optional[Color] = None) -> TextAnnotation:
+    def annotate(self, color: Optional[Color] = None) -> None:
         """
-        Annotates the event with the text from the :meth:`__str__` method using the specified position, size, and color.
+        Annotates the object with the given color.
 
-        :param position: The position of the annotation text.
-        :param size: The size of the annotation text.
         :param color: The color of the annotation text and/or object.
         :return: The TextAnnotation object that references the annotation text.
         """
-        position = position if position is not None else [2, 1, 2]
-        size = size if size is not None else self.annotation_size
+        color = color or self.color
         self.set_color(color)
-        self.text_id = World.current_world.add_text(
-            self.annotation_text,
-            position,
-            color=self.color,
-            size=size)
-        return TextAnnotation(self.annotation_text, position, self.text_id, color=self.color, size=size)
 
     @abstractmethod
-    def set_color(self, color: Optional[Color] = None):
+    def set_color(self, color: Color):
         pass
 
     @property
     @abstractmethod
     def color(self) -> Color:
         pass
-
-    @property
-    def annotation_text(self) -> str:
-        return self.__str__()
 
     @abstractmethod
     def __str__(self):
@@ -79,6 +66,7 @@ class Event(ABC):
         return self.__str__()
 
 
+@dataclass
 class EventWithTrackedObjects(Event, ABC):
     """
     An abstract class that represents an event that involves one or more tracked objects.
@@ -107,13 +95,11 @@ class EventWithTrackedObjects(Event, ABC):
         pass
 
 
+@dataclass
 class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject, ABC):
     """
     An abstract class that represents an event that involves one tracked object.
     """
-    def __init__(self, tracked_object: Object, timestamp: Optional[float] = None):
-        EventWithTrackedObjects.__init__(self, timestamp)
-        HasPrimaryTrackedObject.__init__(self, tracked_object)
 
     @property
     def tracked_objects(self) -> List[Object]:
@@ -134,13 +120,11 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject
         return hash((self.__class__, self.tracked_object, round(self.timestamp, 1)))
 
 
-class EventWithTwoTrackedObjects(EventWithOneTrackedObject, HasSecondaryTrackedObject, ABC):
+@dataclass
+class EventWithTwoTrackedObjects(HasSecondaryTrackedObject, EventWithOneTrackedObject, ABC):
     """
     An abstract class that represents an event that involves two tracked objects.
     """
-    def __init__(self, tracked_object: Object, with_object: Optional[Object] = None, timestamp: Optional[float] = None):
-        EventWithOneTrackedObject.__init__(self, tracked_object, timestamp)
-        HasSecondaryTrackedObject.__init__(self, with_object)
 
     @property
     def tracked_objects(self) -> List[Object]:
@@ -168,6 +152,7 @@ class EventWithTwoTrackedObjects(EventWithOneTrackedObject, HasSecondaryTrackedO
         return hash(hash_tuple)
 
 
+@dataclass
 class DefaultEventWithTwoTrackedObjects(EventWithTwoTrackedObjects):
     """
     A default implementation of EventWithTwoTrackedObjects that does not require a with_object.
@@ -178,7 +163,7 @@ class DefaultEventWithTwoTrackedObjects(EventWithTwoTrackedObjects):
     def involved_bodies(self) -> List[PhysicalBody]:
         return self.tracked_objects
 
-    def set_color(self, color: Optional[Color] = None):
+    def set_color(self, color: Color):
         ...
 
     @property
@@ -186,19 +171,17 @@ class DefaultEventWithTwoTrackedObjects(EventWithTwoTrackedObjects):
         return self.tracked_object.color
 
 
+@dataclass
 class NewObjectEvent(EventWithOneTrackedObject):
     """
     The NewObjectEvent class is used to represent an event that involves the addition of a new object to the world.
     """
 
-    def __init__(self, new_object: Object, timestamp: Optional[float] = None):
-        EventWithOneTrackedObject.__init__(self, new_object, timestamp)
-
     @property
     def involved_bodies(self) -> List[Object]:
         return self.tracked_objects
 
-    def set_color(self, color: Optional[Color] = None):
+    def set_color(self, color: Color):
         ...
 
     @property
@@ -206,6 +189,7 @@ class NewObjectEvent(EventWithOneTrackedObject):
         return self.tracked_object.color
 
 
+@dataclass
 class SupportEvent(DefaultEventWithTwoTrackedObjects):
     """
     The SupportEvent class is used to represent an event that involves an object that is supported by another object.
@@ -213,6 +197,7 @@ class SupportEvent(DefaultEventWithTwoTrackedObjects):
     ...
 
 
+@dataclass
 class LossOfSupportEvent(DefaultEventWithTwoTrackedObjects):
     """
     The LossOfSupportEvent class is used to represent an event that involves an object that was supported by another
@@ -221,6 +206,7 @@ class LossOfSupportEvent(DefaultEventWithTwoTrackedObjects):
     ...
 
 
+@dataclass
 class MotionEvent(EventWithOneTrackedObject, ABC):
     """
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
@@ -237,37 +223,42 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
     def involved_bodies(self) -> List[PhysicalBody]:
         return self.tracked_objects
 
-    def set_color(self, color: Optional[Color] = None):
-        color = color if color is not None else self.color
+    def set_color(self, color: Color):
         self.tracked_object.set_color(color)
 
 
+@dataclass
 class TranslationEvent(MotionEvent):
     @property
     def color(self) -> Color:
         return Color(0, 1, 1, 1)
 
 
+@dataclass
 class RotationEvent(MotionEvent):
     @property
     def color(self) -> Color:
         return Color(0, 1, 1, 1)
 
 
+@dataclass
 class StopMotionEvent(MotionEvent):
     @property
     def color(self) -> Color:
         return Color(1, 0, 0, 1)
 
 
+@dataclass
 class StopTranslationEvent(StopMotionEvent):
     ...
 
 
+@dataclass
 class StopRotationEvent(StopMotionEvent):
     ...
 
 
+@dataclass(init=False)
 class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
     with_object_bounding_box: Optional[AxisAlignedBoundingBox] = None
     with_object_pose: Optional[PoseStamped] = None
@@ -292,8 +283,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
     def involved_bodies(self) -> List[PhysicalBody]:
         return list(set(self.links))
 
-    def set_color(self, color: Optional[Color] = None):
-        color = color if color is not None else self.color
+    def set_color(self, color: Color):
         self.main_link.color = color
         [link.set_color(color) for link in self.links]
 
@@ -321,6 +311,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         pass
 
 
+@dataclass
 class ContactEvent(AbstractContactEvent):
 
     @property
@@ -343,10 +334,12 @@ class ContactEvent(AbstractContactEvent):
         return self.contact_points.get_all_bodies()
 
 
+@dataclass
 class InterferenceEvent(ContactEvent):
     ...
 
 
+@dataclass
 class LossOfContactEvent(AbstractContactEvent):
 
     @property
@@ -373,10 +366,12 @@ class LossOfContactEvent(AbstractContactEvent):
         return self.contact_points.get_objects_that_got_removed(self.latest_contact_points)
 
 
+@dataclass
 class LossOfInterferenceEvent(LossOfContactEvent):
     ...
 
 
+@dataclass
 class AbstractAgentContact(AbstractContactEvent, ABC):
     @property
     def agent(self) -> Object:
@@ -396,6 +391,7 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
         pass
 
 
+@dataclass
 class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
     @property
@@ -406,10 +402,12 @@ class AgentContactEvent(ContactEvent, AbstractAgentContact):
             return self.contact_points[0].link_b
 
 
+@dataclass
 class AgentInterferenceEvent(InterferenceEvent, AgentContactEvent):
     ...
 
 
+@dataclass
 class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
@@ -420,10 +418,12 @@ class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
             return self.latest_contact_points[0].link_b
 
 
+@dataclass
 class AgentLossOfInterferenceEvent(LossOfInterferenceEvent, AgentLossOfContactEvent):
     ...
 
 
+@dataclass
 class LossOfSurfaceEvent(LossOfContactEvent):
     def __init__(self, contact_points: ContactPointsList,
                  latest_contact_points: ContactPointsList,
@@ -434,18 +434,13 @@ class LossOfSurfaceEvent(LossOfContactEvent):
         self.surface: Optional[PhysicalBody] = surface
 
 
+@dataclass
 class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
 
+    agent: Optional[Object] = None,
+    timestamp: Optional[float] = None,
+    end_timestamp: Optional[float] = None
     _action_description: Optional[PartialDesignator[ActionDescription]] = None
-
-    def __init__(self, participating_object: Object,
-                 agent: Optional[Object] = None,
-                 timestamp: Optional[float] = None,
-                 end_timestamp: Optional[float] = None):
-        EventWithTwoTrackedObjects.__init__(self, participating_object, agent, timestamp)
-        self.end_timestamp: Optional[float] = end_timestamp
-        self.text_id: Optional[int] = None
-        self.agent: Optional[Object] = agent
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
@@ -481,8 +476,7 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
             return None
         return self.end_timestamp - self.timestamp
 
-    def set_color(self, color: Optional[Color] = None):
-        color = color if color is not None else self.color
+    def set_color(self, color: Color):
         if self.agent is not None:
             self.agent.set_color(color)
         self.tracked_object.set_color(color)
@@ -504,6 +498,7 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         pass
 
 
+@dataclass
 class PickUpEvent(AbstractAgentObjectInteractionEvent):
 
     _action_description: Optional[PickUpActionDescription] = None
@@ -520,6 +515,7 @@ class PickUpEvent(AbstractAgentObjectInteractionEvent):
         return PickUpAction
 
 
+@dataclass
 class PlacingEvent(AbstractAgentObjectInteractionEvent):
 
     _action_description: Optional[PlaceActionDescription] = None
@@ -540,6 +536,7 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
         return PlaceAction
 
 
+@dataclass(init=False)
 class InsertionEvent(AbstractAgentObjectInteractionEvent):
 
     _action_description: Optional[PlaceActionDescription] = None
@@ -575,6 +572,7 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         return Color(1, 0, 1, 1)
 
 
+@dataclass
 class ContainmentEvent(DefaultEventWithTwoTrackedObjects):
     ...
 

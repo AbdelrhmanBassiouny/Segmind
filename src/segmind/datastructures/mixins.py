@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from dataclasses import dataclass
 from functools import cached_property
 
 from typing_extensions import List, Optional, TYPE_CHECKING
@@ -12,12 +13,12 @@ if TYPE_CHECKING:
     from pycram.datastructures.dataclasses import ObjectState
 
 
+@dataclass
 class HasTrackedObjects(ABC):
     """
     A mixin class that provides the tracked object for the event.
     """
-    def __init__(self, tracked_objects: List[Object]):
-        self._involved_objects = tracked_objects
+    _involved_objects: List[Object]
 
     @property
     def involved_objects(self) -> List[Object]:
@@ -27,26 +28,32 @@ class HasTrackedObjects(ABC):
         return self._involved_objects
 
 
+@dataclass(unsafe_hash=True)
 class HasPrimaryTrackedObject(ABC):
     """
     A mixin class that provides the tracked object for the event.
     """
-    def __init__(self, tracked_object: Object):
-        self.tracked_object: Object = tracked_object
-        self.tracked_object_state: ObjectState = tracked_object.current_state
+    tracked_object: Object
+
+    @property
+    def tracked_object_state(self) -> ObjectState:
+        return self.tracked_object.current_state
 
     @cached_property
     def object_tracker(self) -> ObjectTracker:
         return ObjectTrackerFactory.get_tracker(self.tracked_object)
 
 
+@dataclass
 class HasSecondaryTrackedObject(ABC):
     """
     A mixin class that provides the tracked objects for the event.
     """
-    def __init__(self, with_object: Optional[Object] = None):
-        self.with_object: Optional[Object] = with_object
-        self.with_object_state: Optional[ObjectState] = with_object.current_state if with_object is not None else None
+    with_object: Optional[Object] = None
+
+    @property
+    def with_object_state(self) -> Optional[ObjectState]:
+        return self.with_object.current_state if self.with_object is not None else None
 
     @cached_property
     def with_object_tracker(self) -> Optional[ObjectTracker]:
