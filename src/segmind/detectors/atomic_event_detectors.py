@@ -501,17 +501,6 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     The threshold for the velocity to detect movement.
     """
 
-    def _ask_now(case_dict) -> bool:
-        self_ = case_dict["self_"]
-        if any(abs(d) >= 0.001 for d in self_.calculate_distance()):
-            return True
-        return False
-
-    models_path = os.path.join(os.path.dirname(__file__), "models")
-    is_moving_rdr = RDRDecorator(models_path, (bool,), True, package_name="segmind", fit=False,
-                                 use_generated_classifier=False,
-                                 ask_now=_ask_now)
-
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  velocity_threshold: Optional[float] = None,
                  time_between_frames: timedelta = timedelta(milliseconds=200),
@@ -619,20 +608,17 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         Update the latest pose and time of the object.
         """
         latest_pose, latest_time = self.get_current_pose_and_time()
-        # return latest_pose, latest_time
-        # if current_time is not None:
-        # latest_time = current_time
-        # if self.start_pose is None:
-        #     self.event_time: float = latest_time
-        #     self.start_pose: Pose = latest_pose
         repeat = True
         while repeat:
             try:
                 self.data_queue.put_nowait((latest_time, latest_pose))
                 repeat = False
             except Full:
-                self.data_queue.get_nowait()
-                self.data_queue.task_done()
+                try:
+                    self.data_queue.get_nowait()
+                    self.data_queue.task_done()
+                except Empty:
+                    pass
 
     def get_current_pose_and_time(self) -> Tuple[Pose, float]:
         """
@@ -689,8 +675,6 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
         :return: A boolean value that indicates if the object motion state has changed.
         """
-        # distances = self.filter_data() if self.filter else self.latest_distances
-        # consistent_direction = has_consistent_direction(distances)
         if self.was_moving:
             stopped = is_stopped(self.latest_distances, self.stop_distance_threshold)
             return stopped
