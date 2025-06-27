@@ -176,16 +176,9 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
          start the event detector.
         """
         DetectorWithTrackedObjectAndStarterEvent.__init__(self, logger, starter_event, *args, **kwargs)
-        self.interaction_event: Optional[EventUnion] = self._init_interaction_event()
+        self.interaction_event: Optional[EventUnion] = None
         self.end_timestamp: Optional[float] = None
         self.run_once = True
-
-    @abstractmethod
-    def _init_interaction_event(self) -> EventUnion:
-        """
-        Initialize the interaction event.
-        """
-        pass
 
     def detect_events(self) -> List[EventUnion]:
         """
@@ -242,9 +235,6 @@ class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
     An abstract detector that detects if the tracked_object was picked up.
     """
     currently_tracked_objects: Dict[Object, AbstractPickUpDetector] = {}
-
-    def _init_interaction_event(self) -> EventUnion:
-        return PickUpEvent(self.tracked_object, timestamp=self.start_timestamp)
 
     @classmethod
     def action_type(cls):
@@ -340,9 +330,6 @@ class PlacingDetector(AbstractInteractionDetector):
     @classmethod
     def event_type(cls):
         return PlacingEvent
-
-    def _init_interaction_event(self) -> EventUnion:
-        return PlacingEvent(self.tracked_object, timestamp=self.start_timestamp)
 
     @interaction_checks_rdr.decorator
     def get_interaction_event(self) -> Optional[PlacingEvent]:

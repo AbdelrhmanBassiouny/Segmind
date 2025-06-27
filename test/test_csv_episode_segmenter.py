@@ -1,29 +1,21 @@
 import datetime
 import os
 import shutil
-from datetime import timedelta
+from os.path import dirname
 from pathlib import Path
 from unittest import TestCase
-from os.path import dirname
-
 
 import pycram.ros
+from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
-from pycram.datastructures.enums import WorldMode
 from pycram.robot_description import RobotDescriptionManager
-from pycram.world_concepts.world_object import Object
-
-from segmind.datastructures.events import SupportEvent
-from segmind.players.csv_player import CSVEpisodePlayer
-from segmind.episode_segmenter import NoAgentEpisodeSegmenter
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
-from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
-from pycram.datastructures.enums import WorldMode
-from pycram.datastructures.world import World
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
+from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
-from pycrap.ontologies import Container, Bowl, Cup, Location, Robot, PhysicalObject
+from pycrap.ontologies import Location, Robot, PhysicalObject
+from segmind.episode_segmenter import NoAgentEpisodeSegmenter
+from segmind.players.csv_player import CSVEpisodePlayer
 
 try:
     from pycram.worlds.multiverse2 import Multiverse
@@ -52,12 +44,14 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.spawn_objects(models_dir)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.INFO)
         cls.viz_marker_publisher = VizMarkerPublisher()
-        cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world, time_between_frames=datetime.timedelta(milliseconds=4))
+        cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world,
+                                           time_between_frames=datetime.timedelta(milliseconds=4),
+                                           position_shift=Vector3(0, 0, -0.05))
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
-                                                        plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}',
-                                                        detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
-                                                        initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector])
+                                                        plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}')
+        # detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
+        # initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector])
 
     @classmethod
     def spawn_objects(cls, models_dir):
@@ -78,7 +72,8 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             try:
                 obj = Object(obj_name, obj_type, path=file, pose=pose)
             except Exception as e:
-                import pdb; pdb.set_trace()
+                import pdb;
+                pdb.set_trace()
                 print(e)
                 continue
 

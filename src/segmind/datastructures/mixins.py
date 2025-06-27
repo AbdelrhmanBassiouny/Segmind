@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class HasTrackedObjects(ABC):
+class HasTrackedObjects:
     """
     A mixin class that provides the tracked object for the event.
     """
@@ -28,8 +28,8 @@ class HasTrackedObjects(ABC):
         return self._involved_objects
 
 
-@dataclass(unsafe_hash=True)
-class HasPrimaryTrackedObject(ABC):
+@dataclass(unsafe_hash=True, kw_only=True)
+class HasPrimaryTrackedObject:
     """
     A mixin class that provides the tracked object for the event.
     """
@@ -44,8 +44,8 @@ class HasPrimaryTrackedObject(ABC):
         return ObjectTrackerFactory.get_tracker(self.tracked_object)
 
 
-@dataclass
-class HasSecondaryTrackedObject(ABC):
+@dataclass(unsafe_hash=True, kw_only=True)
+class HasSecondaryTrackedObject:
     """
     A mixin class that provides the tracked objects for the event.
     """

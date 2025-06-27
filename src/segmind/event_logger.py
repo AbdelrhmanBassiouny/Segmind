@@ -126,7 +126,7 @@ class EventLogger:
 
         :param event: The event to annotate the scene with.
         """
-        # logerr(f"Logging event: {event}")
+        logerr(f"Logging event: {event}")
         if self.events_to_annotate is not None and (type(event) in self.events_to_annotate):
             logerr(f"Logging event: {event}")
             if self.annotate_events and World.current_world.mode == WorldMode.GUI:

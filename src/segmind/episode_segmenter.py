@@ -194,7 +194,7 @@ class EpisodeSegmenter(ABC):
                 #         Imaginator.imagine_support_for_object(obj)
                 #         logdebug(f"Imagined support for object {obj.name}.")
         for obj in set_of_objects:
-            self.start_motion_threads_for_object(obj)
+            # self.start_motion_threads_for_object(obj)
             self.start_contact_threads_for_object(obj)
         self.episode_player.resume()
 

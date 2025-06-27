@@ -31,6 +31,10 @@ class Event(ABC):
     The id of the detector that detected the event.
     """
 
+    def __post_init__(self):
+        if self.timestamp is None:
+            self.timestamp = time.time()
+
     @abstractmethod
     def __eq__(self, other):
         pass
@@ -95,7 +99,7 @@ class EventWithTrackedObjects(Event, ABC):
         pass
 
 
-@dataclass
+@dataclass(kw_only=True)
 class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject, ABC):
     """
     An abstract class that represents an event that involves one tracked object.
@@ -120,7 +124,7 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject
         return hash((self.__class__, self.tracked_object, round(self.timestamp, 1)))
 
 
-@dataclass
+@dataclass(kw_only=True)
 class EventWithTwoTrackedObjects(HasSecondaryTrackedObject, EventWithOneTrackedObject, ABC):
     """
     An abstract class that represents an event that involves two tracked objects.
@@ -260,8 +264,8 @@ class StopRotationEvent(StopMotionEvent):
 
 @dataclass(init=False)
 class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
-    with_object_bounding_box: Optional[AxisAlignedBoundingBox] = None
-    with_object_pose: Optional[PoseStamped] = None
+    # with_object_bounding_box: Optional[AxisAlignedBoundingBox] = None
+    # with_object_pose: Optional[PoseStamped] = None
 
     def __init__(self,
                  contact_points: ContactPointsList,
@@ -270,14 +274,13 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
                  with_object: Optional[Object] = None,
                  timestamp: Optional[float] = None):
 
-        EventWithTwoTrackedObjects.__init__(self, of_object, with_object, timestamp)
+        EventWithTwoTrackedObjects.__init__(self, tracked_object=of_object, with_object=with_object, timestamp=timestamp)
         self.contact_points = contact_points
         self.latest_contact_points = latest_contact_points
         self.bounding_box: AxisAlignedBoundingBox = of_object.get_axis_aligned_bounding_box()
         self.pose: PoseStamped = of_object.pose
-        if with_object is not None:
-            self.with_object_bounding_box = with_object.get_axis_aligned_bounding_box()
-            self.with_object_pose = with_object.pose
+        self.with_object_bounding_box = with_object.get_axis_aligned_bounding_box() if with_object is not None else None
+        self.with_object_pose = with_object.pose if with_object is not None else None
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
@@ -311,7 +314,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         pass
 
 
-@dataclass
+@dataclass(init=False)
 class ContactEvent(AbstractContactEvent):
 
     @property
@@ -334,12 +337,12 @@ class ContactEvent(AbstractContactEvent):
         return self.contact_points.get_all_bodies()
 
 
-@dataclass
+@dataclass(init=False)
 class InterferenceEvent(ContactEvent):
     ...
 
 
-@dataclass
+@dataclass(init=False)
 class LossOfContactEvent(AbstractContactEvent):
 
     @property
@@ -366,12 +369,12 @@ class LossOfContactEvent(AbstractContactEvent):
         return self.contact_points.get_objects_that_got_removed(self.latest_contact_points)
 
 
-@dataclass
+@dataclass(init=False)
 class LossOfInterferenceEvent(LossOfContactEvent):
     ...
 
 
-@dataclass
+@dataclass(init=False)
 class AbstractAgentContact(AbstractContactEvent, ABC):
     @property
     def agent(self) -> Object:
@@ -391,7 +394,7 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
         pass
 
 
-@dataclass
+@dataclass(init=False)
 class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
     @property
@@ -402,12 +405,12 @@ class AgentContactEvent(ContactEvent, AbstractAgentContact):
             return self.contact_points[0].link_b
 
 
-@dataclass
+@dataclass(init=False)
 class AgentInterferenceEvent(InterferenceEvent, AgentContactEvent):
     ...
 
 
-@dataclass
+@dataclass(init=False)
 class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
@@ -418,12 +421,12 @@ class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
             return self.latest_contact_points[0].link_b
 
 
-@dataclass
+@dataclass(init=False)
 class AgentLossOfInterferenceEvent(LossOfInterferenceEvent, AgentLossOfContactEvent):
     ...
 
 
-@dataclass
+@dataclass(init=False)
 class LossOfSurfaceEvent(LossOfContactEvent):
     def __init__(self, contact_points: ContactPointsList,
                  latest_contact_points: ContactPointsList,

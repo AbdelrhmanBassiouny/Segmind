@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from math import ceil
 from queue import Queue, Empty, Full
+from threading import RLock
 
 import numpy as np
 
@@ -26,7 +27,7 @@ from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object, Link
-from pycram.ros import logdebug
+from pycram.ros import logdebug, logerr
 from pycrap.ontologies import PhysicalObject, Agent
 from ripple_down_rules.rdr_decorators import RDRDecorator
 from ..event_logger import EventLogger
@@ -251,7 +252,7 @@ class DetectorWithTrackedObject(AtomicEventDetector, HasPrimaryTrackedObject, AB
         :param tracked_object: An Object instance that represents the object to track.
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
-        HasPrimaryTrackedObject.__init__(self, tracked_object)
+        HasPrimaryTrackedObject.__init__(self, tracked_object=tracked_object)
         AtomicEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
 
     def __str__(self):
@@ -272,7 +273,7 @@ class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrack
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         DetectorWithTrackedObject.__init__(self, logger, tracked_object, wait_time, *args, **kwargs)
-        HasSecondaryTrackedObject.__init__(self, with_object)
+        HasSecondaryTrackedObject.__init__(self, with_object=with_object)
 
     def __str__(self):
         with_object_name = f" - {self.with_object.name}" if self.with_object is not None else ""
@@ -280,6 +281,7 @@ class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrack
 
 
 class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
+    events_lock: RLock = RLock()
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05,
@@ -318,7 +320,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
                 event_type = agent_interference_event_type
             else:
                 event_type = interference_event_type
-            events.append(event_type(interference_points.get_points_of_body(body),
+            events.append(event_type(contact_points=interference_points.get_points_of_body(body),
                                         latest_contact_points=self.latest_interference_points,
                                         of_object=self.tracked_object, with_object=body))
         for obj in new_objects_contact:
@@ -329,9 +331,9 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
                     event_type = agent_contact_event_type
                 else:
                     event_type = contact_event_type
-                events.append(event_type(contact_points.get_points_of_object(obj),
-                                         latest_contact_points=self.latest_contact_points,
-                                         of_object=self.tracked_object, with_object=obj))
+                events.append(event_type(contact_points=contact_points.get_points_of_object(obj),
+                                        latest_contact_points=self.latest_contact_points,
+                                        of_object=self.tracked_object, with_object=obj))
         return events
 
     @property
