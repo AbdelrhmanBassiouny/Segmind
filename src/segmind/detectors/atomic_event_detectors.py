@@ -1,17 +1,14 @@
 import queue
-import os
-import queue
 import time
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from math import ceil
 from queue import Queue, Empty, Full
-from threading import RLock
 
 import numpy as np
 
 from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
-from ..detectors.motion_detection_helpers import is_displaced, has_consistent_direction, is_stopped, \
+from ..detectors.motion_detection_helpers import is_displaced, is_stopped, \
     ExponentialMovingAverage
 from ..episode_player import EpisodePlayer
 
@@ -26,18 +23,16 @@ from pycram.datastructures.world import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world_entity import PhysicalBody
-from pycram.world_concepts.world_object import Object, Link
-from pycram.ros import logdebug, logerr
+from pycram.world_concepts.world_object import Object
 from pycrap.ontologies import PhysicalObject, Agent
-from ripple_down_rules.rdr_decorators import RDRDecorator
 from ..event_logger import EventLogger
 from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
+    AgentLossOfContactEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, MotionEvent, AgentInterferenceEvent, InterferenceEvent, AbstractContactEvent, \
-    AgentLossOfInterferenceEvent, AbstractAgentContact, LossOfInterferenceEvent
+    AgentLossOfInterferenceEvent, LossOfInterferenceEvent
 from .motion_detection_helpers import DataFilter
 from ..utils import calculate_quaternion_difference, \
-    get_support, calculate_translation, PropagatingThread
+    calculate_translation, PropagatingThread
 
 
 class AtomicEventDetector(PropagatingThread):
@@ -281,7 +276,6 @@ class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrack
 
 
 class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
-    events_lock: RLock = RLock()
     def __init__(self, logger: EventLogger, tracked_object: Object,
                  with_object: Optional[Object] = None,
                  max_closeness_distance: Optional[float] = 0.05,
@@ -321,8 +315,8 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
             else:
                 event_type = interference_event_type
             events.append(event_type(contact_points=interference_points.get_points_of_body(body),
-                                        latest_contact_points=self.latest_interference_points,
-                                        of_object=self.tracked_object, with_object=body))
+                                     latest_contact_points=self.latest_interference_points,
+                                     of_object=self.tracked_object, with_object=body))
         for obj in new_objects_contact:
             if obj in new_bodies_interference or (len(obj.links) == 1 and obj.root_link in new_bodies_interference):
                 continue
@@ -332,8 +326,8 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
                 else:
                     event_type = contact_event_type
                 events.append(event_type(contact_points=contact_points.get_points_of_object(obj),
-                                        latest_contact_points=self.latest_contact_points,
-                                        of_object=self.tracked_object, with_object=obj))
+                                         latest_contact_points=self.latest_contact_points,
+                                         of_object=self.tracked_object, with_object=obj))
         return events
 
     @property
@@ -400,7 +394,8 @@ class ContactDetector(AbstractContactDetector):
         new_bodies_in_interference = interference_points.get_new_bodies(self.latest_interference_points)
         if self.with_object is not None:
             new_objects_in_contact = [obj for obj in new_objects_in_contact if obj == self.with_object]
-            new_bodies_in_interference = [body for body in new_bodies_in_interference if body.parent_entity == self.with_object]
+            new_bodies_in_interference = [body for body in new_bodies_in_interference if
+                                          body.parent_entity == self.with_object]
         if len(new_objects_in_contact) == 0 and len(new_bodies_in_interference) == 0:
             return []
         return self.get_events(new_objects_in_contact, new_bodies_in_interference,
@@ -412,7 +407,7 @@ class LossOfContactDetector(AbstractContactDetector):
     A thread that detects if the object lost contact with another object.
     """
 
-    def trigger_events(self, contact_points: ContactPointsList, interference_points: ContactPointsList)\
+    def trigger_events(self, contact_points: ContactPointsList, interference_points: ContactPointsList) \
             -> List[LossOfContactEvent]:
         """
         Check if the object lost contact with another object.
@@ -423,13 +418,13 @@ class LossOfContactDetector(AbstractContactDetector):
          object lost contact, else None.
         """
         objects_that_lost_contact, bodies_that_lost_interference = self.get_bodies_that_lost_contact(contact_points,
-                                                                                                    interference_points)
+                                                                                                     interference_points)
         if len(objects_that_lost_contact) == 0 and len(bodies_that_lost_interference) == 0:
             return []
         return self.get_events(objects_that_lost_contact, bodies_that_lost_interference,
                                contact_points, interference_points, LossOfContactEvent)
 
-    def get_bodies_that_lost_contact(self, contact_points: ContactPointsList, interference_points: ContactPointsList)\
+    def get_bodies_that_lost_contact(self, contact_points: ContactPointsList, interference_points: ContactPointsList) \
             -> Tuple[List[PhysicalBody], List[PhysicalBody]]:
         """
         Get the objects that lost contact with the object to track.
@@ -442,31 +437,10 @@ class LossOfContactDetector(AbstractContactDetector):
         bodies_that_lost_interference = interference_points.get_bodies_that_got_removed(self.latest_interference_points)
         if self.with_object is not None:
             objects_that_lost_contact = [obj for obj in objects_that_lost_contact
-                                        if obj == self.with_object]
+                                         if obj == self.with_object]
             bodies_that_lost_interference = [body for body in bodies_that_lost_interference
                                              if body.parent_entity == self.with_object]
         return objects_that_lost_contact, bodies_that_lost_interference
-
-
-class LossOfSurfaceDetector(LossOfContactDetector):
-
-    def trigger_events(self, contact_points: ContactPointsList) -> List[LossOfSurfaceEvent]:
-        """
-        Check if the object lost contact with the surface.
-
-        :param contact_points: The current contact points.
-        :return: An instance of the LossOfSurfaceEvent class that represents the event if the object lost contact with
-        the surface, else None.
-        """
-        bodies_that_lost_contact = self.get_bodies_that_lost_contact(contact_points)
-        if len(bodies_that_lost_contact) == 0:
-            return []
-        supporting_surface = get_support(self.tracked_object,
-                                         bodies_that_lost_contact)
-        if supporting_surface is None:
-            return []
-        return [LossOfSurfaceEvent(contact_points, self.latest_contact_points, of_object=self.tracked_object,
-                                   surface=supporting_surface)]
 
 
 class MotionDetector(DetectorWithTrackedObject, ABC):
@@ -547,7 +521,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.plot_frequencies: bool = False
 
     @property
-    def window_size_in_seconds(self) -> int:
+    def window_size_in_seconds(self) -> float:
         return self.window_size * self.time_between_frames.total_seconds()
 
     @property

@@ -49,7 +49,7 @@ class DetectorWithStarterEvent(AtomicEventDetector, ABC):
 
     @classmethod
     @abstractmethod
-    def event_type(cls) -> Type[Event]:
+    def event_types(cls) -> List[Type[Event]]:
         """
         The event type that this detector invokes.
         """
@@ -96,10 +96,13 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
         """
         DetectorWithStarterEvent.__init__(self, logger, starter_event, wait_time, *args, **kwargs)
         object_to_track = self.get_object_to_track_from_starter_event(starter_event)
-        HasPrimaryTrackedObject.__init__(self, object_to_track)
+        HasPrimaryTrackedObject.__init__(self, tracked_object=object_to_track)
         if self.currently_tracked_objects is None:
             self.currently_tracked_objects = {}
         self.currently_tracked_objects[self.tracked_object] = self
+
+    def __hash__(self):
+        return DetectorWithStarterEvent.__hash__(self)
 
     def reset(self):
         self.currently_tracked_objects = {}
@@ -176,9 +179,7 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
          start the event detector.
         """
         DetectorWithTrackedObjectAndStarterEvent.__init__(self, logger, starter_event, *args, **kwargs)
-        self.interaction_event: Optional[EventUnion] = None
-        self.end_timestamp: Optional[float] = None
-        self.run_once = True
+        self.run_once: bool = True
 
     def detect_events(self) -> List[EventUnion]:
         """
@@ -189,13 +190,11 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
         event = None
         while not self.kill_event.is_set():
 
-            interaction_event = self.get_interaction_event()
-            if not interaction_event:
+            event = self.get_interaction_event()
+            if not event:
                 time.sleep(0.01)
                 continue
-            interaction_event.update_action_description()
             self.currently_tracked_objects.pop(self.tracked_object, None)
-            event = interaction_event
             break
 
         if event:
@@ -241,8 +240,8 @@ class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
         return PickUpAction
 
     @classmethod
-    def event_type(cls):
-        return PickUpEvent
+    def event_types(cls) -> List[Type[PickUpEvent]]:
+        return [PickUpEvent]
 
 
 class GeneralPickUpDetector(AbstractPickUpDetector):
@@ -328,8 +327,8 @@ class PlacingDetector(AbstractInteractionDetector):
         return PlaceAction
 
     @classmethod
-    def event_type(cls):
-        return PlacingEvent
+    def event_types(cls) -> List[Type[PlacingEvent]]:
+        return [PlacingEvent]
 
     @interaction_checks_rdr.decorator
     def get_interaction_event(self) -> Optional[PlacingEvent]:
@@ -422,9 +421,9 @@ def select_transportable_objects(objects: List[Object], not_contained: bool = Fa
     return transportable_objects
 
 
-EventDetectorUnion = Union[NewObjectDetector, ContactDetector, LossOfContactDetector, LossOfSurfaceDetector,
+EventDetectorUnion = Union[NewObjectDetector, ContactDetector, LossOfContactDetector,
 MotionDetector, TranslationDetector, RotationDetector, PlacingDetector]
-TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
+TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector],
 Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
 Type[NewObjectDetector],
 Type[PlacingDetector]]

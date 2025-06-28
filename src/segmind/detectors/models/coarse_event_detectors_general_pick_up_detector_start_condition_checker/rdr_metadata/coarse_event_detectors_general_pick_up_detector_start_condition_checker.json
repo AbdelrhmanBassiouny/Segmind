@@ -52,17 +52,7 @@
                     "mutually_exclusive": true
                 },
                 "parent": null,
-                "corner_case": {
-                    "_type": "ripple_down_rules.datastructures.case.Case",
-                    "cls_": {
-                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                    },
-                    "event": null,
-                    "output_": null,
-                    "_id": 140117233030080,
-                    "_obj_type": "builtins.dict",
-                    "_name": "GeneralPickUpDetector_start_condition_checker"
-                },
+                "corner_case": null,
                 "conclusion_name": "output_",
                 "weight": null,
                 "uid": "313968436519149281932112885344716145224",
@@ -115,17 +105,7 @@
                         "mutually_exclusive": true
                     },
                     "parent": null,
-                    "corner_case": {
-                        "_type": "ripple_down_rules.datastructures.case.Case",
-                        "cls_": {
-                            "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                        },
-                        "event": null,
-                        "output_": true,
-                        "_id": 140211622923584,
-                        "_obj_type": "builtins.dict",
-                        "_name": "GeneralPickUpDetector_start_condition_checker"
-                    },
+                    "corner_case": null,
                     "conclusion_name": null,
                     "weight": "except if",
                     "uid": "185374571278911955422500089733244334209",
@@ -179,17 +159,7 @@
                             "mutually_exclusive": true
                         },
                         "parent": null,
-                        "corner_case": {
-                            "_type": "ripple_down_rules.datastructures.case.Case",
-                            "cls_": {
-                                "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                            },
-                            "event": null,
-                            "output_": true,
-                            "_id": 139710319900224,
-                            "_obj_type": "builtins.dict",
-                            "_name": "GeneralPickUpDetector_start_condition_checker"
-                        },
+                        "corner_case": null,
                         "conclusion_name": null,
                         "weight": "else if",
                         "uid": "259334668447470890319338447268411809573",
@@ -243,17 +213,7 @@
                                 "mutually_exclusive": true
                             },
                             "parent": null,
-                            "corner_case": {
-                                "_type": "ripple_down_rules.datastructures.case.Case",
-                                "cls_": {
-                                    "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                },
-                                "event": null,
-                                "output_": true,
-                                "_id": 139709554087616,
-                                "_obj_type": "builtins.dict",
-                                "_name": "GeneralPickUpDetector_start_condition_checker"
-                            },
+                            "corner_case": null,
                             "conclusion_name": null,
                             "weight": "else if",
                             "uid": "1084517150588802996811823834978763787",
@@ -307,17 +267,7 @@
                                     "mutually_exclusive": true
                                 },
                                 "parent": null,
-                                "corner_case": {
-                                    "_type": "ripple_down_rules.datastructures.case.Case",
-                                    "cls_": {
-                                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                                    },
-                                    "event": null,
-                                    "output_": true,
-                                    "_id": 140103132011520,
-                                    "_obj_type": "builtins.dict",
-                                    "_name": "GeneralPickUpDetector_start_condition_checker"
-                                },
+                                "corner_case": null,
                                 "conclusion_name": null,
                                 "weight": "else if",
                                 "uid": "257426441376249650265480473188288026956",

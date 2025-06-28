@@ -14,6 +14,8 @@ from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Location, Robot, PhysicalObject
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
+from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.csv_player import CSVEpisodePlayer
 
@@ -42,16 +44,17 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
 
         cls.spawn_objects(models_dir)
-        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.INFO)
+        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world,
                                            time_between_frames=datetime.timedelta(milliseconds=4),
                                            position_shift=Vector3(0, 0, -0.05))
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
-                                                        plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}')
-        # detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
-        # initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector])
+                                                        plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}',
+                                                        detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
+                                                        initial_detectors=[InsertionDetector, SupportDetector,
+                                                                           ContainmentDetector])
 
     @classmethod
     def spawn_objects(cls, models_dir):

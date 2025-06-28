@@ -35,7 +35,9 @@ class EpisodeSegmenter(ABC):
         self.episode_player: EpisodePlayer = episode_player
         self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start if detectors_to_start else []
         self.initial_detectors: List[Type[AtomicEventDetector]] = initial_detectors if initial_detectors else []
-        self.logger = EventLogger(annotate_events, [detector.event_type() for detector in self.detectors_to_start + self.initial_detectors])
+        self.logger = EventLogger(annotate_events, [event_type
+                                                    for detector in self.detectors_to_start + self.initial_detectors
+                                                    for event_type in detector.event_types()],)
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']
         self.starter_event_to_detector_thread_map: Dict[Tuple[Event, Type[DetectorWithStarterEvent]], DetectorWithStarterEvent] = {}
         self.detector_threads_list: List[EventDetectorUnion] = []
@@ -194,7 +196,7 @@ class EpisodeSegmenter(ABC):
                 #         Imaginator.imagine_support_for_object(obj)
                 #         logdebug(f"Imagined support for object {obj.name}.")
         for obj in set_of_objects:
-            # self.start_motion_threads_for_object(obj)
+            self.start_motion_threads_for_object(obj)
             self.start_contact_threads_for_object(obj)
         self.episode_player.resume()
 

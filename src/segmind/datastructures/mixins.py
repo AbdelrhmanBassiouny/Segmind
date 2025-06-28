@@ -28,7 +28,7 @@ class HasTrackedObjects:
         return self._involved_objects
 
 
-@dataclass(unsafe_hash=True, kw_only=True)
+@dataclass(kw_only=True, unsafe_hash=True)
 class HasPrimaryTrackedObject:
     """
     A mixin class that provides the tracked object for the event.
@@ -44,7 +44,7 @@ class HasPrimaryTrackedObject:
         return ObjectTrackerFactory.get_tracker(self.tracked_object)
 
 
-@dataclass(unsafe_hash=True, kw_only=True)
+@dataclass(kw_only=True, unsafe_hash=True)
 class HasSecondaryTrackedObject:
     """
     A mixin class that provides the tracked objects for the event.
