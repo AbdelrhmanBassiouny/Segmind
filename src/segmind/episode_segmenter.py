@@ -88,7 +88,7 @@ class EpisodeSegmenter(ABC):
         self.logger.events_to_annotate = list(event_types)
 
     def reset(self, reset_logger: bool = True) -> None:
-        self.join_detectors()
+        # self.join_detectors()
         self.starter_event_to_detector_thread_map = {}
         self.detector_threads_list = []
         time.sleep(0.5)

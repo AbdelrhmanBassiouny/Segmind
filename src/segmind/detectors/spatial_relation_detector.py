@@ -162,7 +162,11 @@ class InsertionDetector(SpatialRelationDetector):
                     latest_interference_with_hole = self.get_latest_interference_with_hole(event)
                     hole = latest_interference_with_hole.with_object
                     if not self.hole_insertion_verifier(hole, event):
-                        break
+                        if event.tracked_object.is_moving:
+                            time.sleep(self.wait_time.total_seconds())
+                            continue
+                        else:
+                            break
                     agent = event.agent if hasattr(event, "agent") else None
                     end_timestamp = event.end_timestamp if hasattr(event, "end_timestamp") else None
                     insertion_event = InsertionEvent(inserted_object=event.tracked_object,

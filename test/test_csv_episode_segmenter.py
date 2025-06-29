@@ -11,6 +11,7 @@ from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
 from pycram.robot_description import RobotDescriptionManager
+from pycram.ros import logdebug
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
@@ -93,11 +94,14 @@ class TestMultiverseEpisodeSegmenter(TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.viz_marker_publisher._stop_publishing()
+        logdebug("Viz marker publisher has been stopped, exiting the world...")
         cls.world.exit()
+        logdebug("World has been exited.")
 
     def tearDown(self):
         self.episode_segmenter.reset()
         self.file_player.reset()
+        logdebug("File player and episode segmenter have been reset.")
 
     def test_containment_detector(self):
         """

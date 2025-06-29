@@ -225,7 +225,8 @@ class NewObjectDetector(AtomicEventDetector):
         """
         Remove the callback on the add object event and resume the thread to be able to join.
         """
-        World.current_world.remove_callback_on_add_object(self.on_add_object)
+        if self.world is not None:
+            self.world.remove_callback_on_add_object(self.on_add_object)
         super().stop()
 
     def _join(self, timeout=None):
