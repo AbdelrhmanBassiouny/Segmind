@@ -1,6 +1,7 @@
 import datetime
 import os
 import shutil
+import threading
 from os.path import dirname
 from pathlib import Path
 from unittest import TestCase
@@ -14,6 +15,7 @@ from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Location, Robot, PhysicalObject
+from segmind.datastructures.events import ContainmentEvent
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
@@ -44,11 +46,11 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
 
         cls.spawn_objects(models_dir)
-        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
+        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world,
                                            time_between_frames=datetime.timedelta(milliseconds=4),
-                                           position_shift=Vector3(0, 0, -0.05))
+                                           position_shift=Vector3(0, 0, -0.035))
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
                                                         plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}',
@@ -92,7 +94,20 @@ class TestMultiverseEpisodeSegmenter(TestCase):
     def tearDownClass(cls):
         cls.viz_marker_publisher._stop_publishing()
         cls.world.exit()
-        cls.episode_segmenter.join()
+
+    def tearDown(self):
+        self.episode_segmenter.reset()
+        self.file_player.reset()
+
+    def test_containment_detector(self):
+        """
+        Test the ContainmentDetector by checking if the iCub is contained within the scene.
+        """
+        self.episode_segmenter.reset()
+        self.episode_segmenter.detectors_to_start = [PlacingDetector]
+        self.episode_segmenter.initial_detectors = [ContainmentDetector, SupportDetector]
+        self.episode_segmenter.start()
+        self.assertTrue(any([isinstance(e, ContainmentEvent) for e in self.episode_segmenter.logger.get_events()]))
 
     def test_csv_replay(self):
         self.episode_segmenter.start()

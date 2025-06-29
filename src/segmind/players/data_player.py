@@ -60,6 +60,14 @@ class DataPlayer(EpisodePlayer, ABC):
         self.frame_data_generator: FrameDataGenerator = self.get_frame_data_generator()
         self.sync_robot_only: bool = False
 
+    def reset(self):
+        """
+        Reset the player to its initial state.
+        """
+        self.ready = False
+        self.frame_callbacks = []
+        self.frame_data_generator = self.get_frame_data_generator()
+
     @abstractmethod
     def get_frame_data_generator(self) -> FrameDataGenerator:
         """
@@ -75,6 +83,16 @@ class DataPlayer(EpisodePlayer, ABC):
         """
         with self.frame_callback_lock:
             self.frame_callbacks.append(callback)
+
+    def remove_frame_callback(self, callback: Callable):
+        """
+        Remove a callback that is called when a frame is processed.
+
+        :param callback: The callback.
+        """
+        with self.frame_callback_lock:
+            if callback in self.frame_callbacks:
+                self.frame_callbacks.remove(callback)
 
     def _run(self):
         is_first_frame = True

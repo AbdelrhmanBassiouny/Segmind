@@ -6,7 +6,7 @@ from ripple_down_rules.rdr_decorators import RDRDecorator
 from typing_extensions import Any, Dict, List, Optional, Type, Callable, Union
 
 from pycram.datastructures.world_entity import abstractmethod, PhysicalBody
-from pycram.ros import logdebug
+from pycram.ros import logdebug, logerr
 from pycram.world_concepts.world_object import Object
 from segmind.datastructures.events import PlacingEvent
 from segmind.episode_player import EpisodePlayer
@@ -20,15 +20,11 @@ from ..utils import get_support
 EventCondition = Callable[[EventUnion], bool]
 
 
-def default_condition(event: EventUnion) -> bool:
-    return True
-
-
 class SpatialRelationDetector(AtomicEventDetector):
     """
     A class that detects spatial relations between objects.
     """
-    check_on_events = {NewObjectEvent: default_condition, StopMotionEvent: default_condition}
+    check_on_events = {NewObjectEvent: None, StopMotionEvent: None}
 
     def __init__(self, check_on_events: Optional[Dict[Type[Event], EventCondition]] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -97,8 +93,8 @@ class ContainmentDetector(SpatialRelationDetector):
         """
         if isinstance(body, Object):
             for link in body.links.values():
-                self.bodies_states[link] = link.update_containment(intersection_ratio=0.9)
-        self.bodies_states[body] = body.update_containment(intersection_ratio=0.9)
+                self.bodies_states[link] = link.update_containment(intersection_ratio=0.95)
+        self.bodies_states[body] = body.update_containment(intersection_ratio=0.95)
 
     def detect_events(self) -> None:
         """
@@ -166,10 +162,7 @@ class InsertionDetector(SpatialRelationDetector):
                     latest_interference_with_hole = self.get_latest_interference_with_hole(event)
                     hole = latest_interference_with_hole.with_object
                     if not self.hole_insertion_verifier(hole, event):
-                        if event.tracked_object.is_moving:
-                            continue
-                        else:
-                            break
+                        break
                     agent = event.agent if hasattr(event, "agent") else None
                     end_timestamp = event.end_timestamp if hasattr(event, "end_timestamp") else None
                     insertion_event = InsertionEvent(inserted_object=event.tracked_object,
@@ -177,7 +170,6 @@ class InsertionDetector(SpatialRelationDetector):
                                                      through_hole=hole,
                                                      agent=agent, timestamp=event.timestamp,
                                                      end_timestamp=end_timestamp)
-                    insertion_event.update_action_description()
                     self.logger.log_event(insertion_event)
                     break
                 time.sleep(self.wait_time.total_seconds())

@@ -8,7 +8,7 @@ from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.designator import ActionDescription, ObjectDesignatorDescription
 from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
     PlaceAction
-from pycram.ros import logwarn
+from pycram.ros import logwarn, logdebug
 from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState, AxisAlignedBoundingBox
@@ -426,11 +426,11 @@ class AgentLossOfInterferenceEvent(LossOfInterferenceEvent, AgentLossOfContactEv
     ...
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
 
-    agent: Optional[Object] = None,
-    timestamp: Optional[float] = None,
+    agent: Optional[Object] = None
+    timestamp: Optional[float] = None
     end_timestamp: Optional[float] = None
 
     @property
@@ -465,6 +465,7 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         return self.end_timestamp - self.timestamp
 
     def set_color(self, color: Color):
+        logdebug(f"Setting color {color} for {self.__class__.__name__} event with agent {self.agent} and object {self.tracked_object}")
         if self.agent is not None:
             self.agent.set_color(color)
         self.tracked_object.set_color(color)

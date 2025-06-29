@@ -250,7 +250,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     models_path: str = AbstractInteractionDetector.models_path
     interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind",
-     fit=False, update_existing_rules=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+     fit=False, update_existing_rules=False, use_generated_classifier=True, fitting_decorator=EpisodePlayer.pause_resume)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
@@ -264,7 +264,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        return isinstance(event, LossOfSupportEvent)
+        return isinstance(event, LossOfSupportEvent) and event.tracked_object.name == "montessori_object_5"
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
      fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now,
                                                      generate_dot_file=True)
