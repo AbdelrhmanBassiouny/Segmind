@@ -7,7 +7,8 @@ from queue import Queue, Empty, Full
 
 import numpy as np
 
-from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
+from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject, \
+    HasPrimaryAndSecondaryTrackedObjects
 from ..detectors.motion_detection_helpers import is_displaced, is_stopped, \
     ExponentialMovingAverage
 from ..episode_player import EpisodePlayer
@@ -255,7 +256,7 @@ class DetectorWithTrackedObject(AtomicEventDetector, HasPrimaryTrackedObject, AB
         return f"{self.thread_id} - {self.tracked_object.name}"
 
 
-class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrackedObject, ABC):
+class DetectorWithTwoTrackedObjects(AtomicEventDetector, HasPrimaryAndSecondaryTrackedObjects, ABC):
     """
     A mixin class that provides two tracked objects for the event detector.
     """
@@ -268,12 +269,12 @@ class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrack
         :param with_object: An optional Object instance that represents the object to track.
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
-        DetectorWithTrackedObject.__init__(self, logger, tracked_object, wait_time, *args, **kwargs)
-        HasSecondaryTrackedObject.__init__(self, with_object=with_object)
+        HasPrimaryAndSecondaryTrackedObjects.__init__(self, tracked_object=tracked_object, with_object=with_object)
+        AtomicEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
 
     def __str__(self):
         with_object_name = f" - {self.with_object.name}" if self.with_object is not None else ""
-        return super().__str__() + with_object_name
+        return f"{self.thread_id} - {self.tracked_object.name}" + with_object_name
 
 
 class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):

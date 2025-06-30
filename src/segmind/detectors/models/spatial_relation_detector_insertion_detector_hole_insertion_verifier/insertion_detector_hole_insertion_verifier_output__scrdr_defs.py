@@ -10,7 +10,6 @@ from typing_extensions import Dict, Optional, Union
 from types import NoneType
 from ....detectors.spatial_relation_detector import InsertionDetector
 from pycram.datastructures.world_entity import PhysicalBody
-from semantic_world.views.views import Container
 
 from ....utils import is_object_supported_by_container_body
 

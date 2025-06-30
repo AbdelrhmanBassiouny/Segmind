@@ -218,7 +218,7 @@ def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Obj
     """
     if contact_points is None:
         contact_points = obj.get_contact_points_with_body(support_obj)
-    normals = [cp.normal for cp in contact_points if any(cp.normal)]
+    normals = [cp.normal.to_list() for cp in contact_points if any(cp.normal.to_list())]
     if len(normals) > 0:
         average_normal = np.mean(normals, axis=0)
         return is_vector_opposite_to_gravity(average_normal)

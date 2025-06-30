@@ -1,16 +1,16 @@
 from ripple_down_rules.datastructures.case import Case
 from typing_extensions import Dict, Optional, Type, Union
-from segmind.detectors.coarse_event_detectors import PlacingDetector
+from ....detectors.coarse_event_detectors import PlacingDetector
 from pycram.world_concepts.world_object import Object
-from segmind.datastructures.mixins import HasSecondaryTrackedObject
-from segmind.datastructures.events import ContactEvent, EventWithOneTrackedObject, StopTranslationEvent
+from ....datastructures.mixins import HasSecondaryTrackedObject, HasPrimaryTrackedObject
+from ....datastructures.events import ContactEvent, EventWithOneTrackedObject, StopTranslationEvent
 from types import NoneType
 
 
 def conditions_157980724165316319734190707637955950660(case) -> bool:
     def conditions_for_placing_detector_get_object_to_track_from_starter_event(cls_: Type[PlacingDetector], starter_event: ContactEvent, output_: Union[NoneType, Object]) -> bool:
         """Get conditions on whether it's possible to conclude a value for PlacingDetector_get_object_to_track_from_starter_event.output_  of type Object."""
-        return isinstance(starter_event, EventWithOneTrackedObject)
+        return isinstance(starter_event, HasPrimaryTrackedObject)
     return conditions_for_placing_detector_get_object_to_track_from_starter_event(**case)
 
 

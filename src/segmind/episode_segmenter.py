@@ -95,11 +95,14 @@ class EpisodeSegmenter(ABC):
         if reset_logger:
             self.logger.reset()
 
-    def join_detectors(self):
+    def join_detectors(self, atomic_only: bool = False) -> None:
         atomic_detectors = [detector for detector in self.detector_threads_list
                             if not isinstance(detector, DetectorWithStarterEvent)]
-        non_atomic_detectors = [detector for detector in self.detector_threads_list
-                                if isinstance(detector, DetectorWithStarterEvent)]
+        if atomic_only:
+            non_atomic_detectors = []
+        else:
+            non_atomic_detectors = [detector for detector in self.detector_threads_list
+                                    if isinstance(detector, DetectorWithStarterEvent)]
         for detector_thread in atomic_detectors + non_atomic_detectors:
             detector_thread.stop()
             logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
@@ -135,8 +138,8 @@ class EpisodeSegmenter(ABC):
 
         while (not closed_threads) or (self.logger.event_queue.unfinished_tasks > 0):
             if (not self.episode_player.is_alive() or self.kill_event.is_set()) and not closed_threads:
-                time.sleep(0.5)
-                self.join_detectors()
+                time.sleep(1)
+                self.join_detectors(atomic_only=True)
                 closed_threads = True
 
             next_event = self.logger.get_next_event()
@@ -150,6 +153,7 @@ class EpisodeSegmenter(ABC):
         if self.plot_timeline:
             self.logger.plot_events(show=self.show_plots, save_path=self.plot_save_path)
 
+        self.join_detectors()
         self.join()
 
     def process_event(self, event: EventUnion) -> None:

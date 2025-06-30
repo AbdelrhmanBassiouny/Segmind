@@ -51,7 +51,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world,
                                            time_between_frames=datetime.timedelta(milliseconds=4),
-                                           position_shift=Vector3(0, 0, -0.035))
+                                           position_shift=Vector3(0, 0, -0.05))
         cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=True,
                                                         plot_timeline=True,
                                                         plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}',

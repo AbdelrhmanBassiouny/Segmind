@@ -24,7 +24,6 @@
                         "NoneType": "builtins.NoneType",
                         "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                         "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                        "Container": "semantic_world.views.views.Container",
                         "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                     },
                     "conclusion": {
@@ -52,7 +51,6 @@
                         "NoneType": "builtins.NoneType",
                         "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                         "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                        "Container": "semantic_world.views.views.Container",
                         "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                     },
                     "conclusion": {
@@ -96,7 +94,6 @@
                             "NoneType": "builtins.NoneType",
                             "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                             "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                            "Container": "semantic_world.views.views.Container",
                             "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                         },
                         "conclusion": {
@@ -124,7 +121,6 @@
                             "NoneType": "builtins.NoneType",
                             "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                             "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                            "Container": "semantic_world.views.views.Container",
                             "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                         },
                         "conclusion": {
@@ -168,7 +164,6 @@
                                 "NoneType": "builtins.NoneType",
                                 "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                                 "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                                "Container": "semantic_world.views.views.Container",
                                 "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                             },
                             "conclusion": {
@@ -196,7 +191,6 @@
                                 "NoneType": "builtins.NoneType",
                                 "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                                 "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                                "Container": "semantic_world.views.views.Container",
                                 "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
                             },
                             "conclusion": {

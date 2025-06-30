@@ -7,7 +7,7 @@
                 "_type": "ripple_down_rules.rules.SingleClassRule",
                 "conditions": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def conditions_for_placing_detector_get_object_to_track_from_starter_event(cls_: Type[PlacingDetector], starter_event: ContactEvent, output_: Union[NoneType, Object]) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for PlacingDetector_get_object_to_track_from_starter_event.output_  of type Object.\"\"\"\n        return isinstance(starter_event, EventWithOneTrackedObject)\n    return conditions_for_placing_detector_get_object_to_track_from_starter_event(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def conditions_for_placing_detector_get_object_to_track_from_starter_event(cls_: Type[PlacingDetector], starter_event: ContactEvent, output_: Union[NoneType, Object]) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for PlacingDetector_get_object_to_track_from_starter_event.output_  of type Object.\"\"\"\n        return isinstance(starter_event, HasPrimaryTrackedObject)\n    return conditions_for_placing_detector_get_object_to_track_from_starter_event(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
@@ -20,6 +20,7 @@
                         "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
                         "Object": "pycram.world_concepts.world_object.Object",
                         "HasSecondaryTrackedObject": "segmind.datastructures.mixins.HasSecondaryTrackedObject",
+                        "HasPrimaryTrackedObject": "segmind.datastructures.mixins.HasPrimaryTrackedObject",
                         "ContactEvent": "segmind.datastructures.events.ContactEvent",
                         "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
                         "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
@@ -47,6 +48,7 @@
                         "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
                         "Object": "pycram.world_concepts.world_object.Object",
                         "HasSecondaryTrackedObject": "segmind.datastructures.mixins.HasSecondaryTrackedObject",
+                        "HasPrimaryTrackedObject": "segmind.datastructures.mixins.HasPrimaryTrackedObject",
                         "ContactEvent": "segmind.datastructures.events.ContactEvent",
                         "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
                         "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",

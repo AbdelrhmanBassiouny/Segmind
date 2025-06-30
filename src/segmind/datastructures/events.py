@@ -9,9 +9,11 @@ from pycram.designator import ActionDescription, ObjectDesignatorDescription
 from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
     PlaceAction
 from pycram.ros import logwarn, logdebug
-from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
+from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject, \
+    HasPrimaryAndSecondaryTrackedObjects
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState, AxisAlignedBoundingBox
+from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState, AxisAlignedBoundingBox, \
+    FrozenObject, FrozenBody
 from pycram.datastructures.dataclasses import Color
 from pycram.datastructures.pose import Pose, PoseStamped
 from pycram.datastructures.world import World
@@ -121,7 +123,7 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject
 
 
 @dataclass(kw_only=True)
-class EventWithTwoTrackedObjects(HasSecondaryTrackedObject, EventWithOneTrackedObject, ABC):
+class EventWithTwoTrackedObjects(HasPrimaryAndSecondaryTrackedObjects, EventWithTrackedObjects, ABC):
     """
     An abstract class that represents an event that involves two tracked objects.
     """
@@ -432,6 +434,12 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
     agent: Optional[Object] = None
     timestamp: Optional[float] = None
     end_timestamp: Optional[float] = None
+    agent_frozen_cp: Optional[FrozenObject] = field(init=False, default=None, repr=False, hash=False)
+
+    def __post_init__(self):
+        EventWithTwoTrackedObjects.__post_init__(self)
+        if self.agent is not None:
+            self.agent_frozen_cp = self.agent.frozen_copy()
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
@@ -529,6 +537,8 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         self.inserted_into_objects: List[Object] = inserted_into_objects
         self.through_hole: PhysicalBody = through_hole
         self.with_object: PhysicalBody = through_hole
+        self.through_hole_frozen_cp: FrozenBody = through_hole.frozen_copy()
+        self.inserted_into_objects_frozen_cp: List[FrozenObject] = [obj.frozen_copy() for obj in inserted_into_objects]
 
     @property
     def action_type(self) -> Type[PlaceAction]:

@@ -378,7 +378,7 @@ def check_for_supporting_surface(tracked_object: Object,
     smallest_angle = np.pi / 8
     for obj_name in possible_surface_names:
         obj = World.current_world.get_object_by_name(obj_name)
-        normals = contact_points.get_normals_of_object(contacted_bodies[obj_name])
+        normals = [n.to_list() for n in contact_points.get_normals_of_object(contacted_bodies[obj_name])]
         normal = np.mean(np.array(normals), axis=0)
         angle = get_angle_between_vectors(normal, opposite_gravity)
         if 0 <= angle <= smallest_angle:
