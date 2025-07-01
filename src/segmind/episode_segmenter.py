@@ -8,6 +8,7 @@ from pycram.ros import logerr
 from .datastructures.events import *
 from .datastructures.object_tracker import ObjectTracker
 from .detectors.coarse_event_detectors import *
+from .detectors.spatial_relation_detector import SpatialRelationDetector
 from .episode_player import EpisodePlayer
 from .event_logger import EventLogger
 from .utils import check_if_object_is_supported, Imaginator
@@ -97,7 +98,7 @@ class EpisodeSegmenter(ABC):
 
     def join_detectors(self, atomic_only: bool = False) -> None:
         atomic_detectors = [detector for detector in self.detector_threads_list
-                            if not isinstance(detector, DetectorWithStarterEvent)]
+                            if not isinstance(detector, (DetectorWithStarterEvent, SpatialRelationDetector))]
         if atomic_only:
             non_atomic_detectors = []
         else:
@@ -138,7 +139,7 @@ class EpisodeSegmenter(ABC):
 
         while (not closed_threads) or (self.logger.event_queue.unfinished_tasks > 0):
             if (not self.episode_player.is_alive() or self.kill_event.is_set()) and not closed_threads:
-                time.sleep(1)
+                time.sleep(5)
                 self.join_detectors(atomic_only=True)
                 closed_threads = True
 

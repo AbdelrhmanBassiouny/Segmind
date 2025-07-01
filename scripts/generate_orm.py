@@ -35,7 +35,7 @@ pycram_dataclasses = set(classes_of_module(pycram.datastructures.dataclasses))
 pycram_dataclasses -= {RayResult, MultiverseRayResult, MultiverseContactPoint, ReasoningResult, MultiverseMetaData,
                        VirtualMobileBaseJoints, Rotations, TextAnnotation, VirtualJoint,
                        MultiBody, CollisionCallbacks, Colors, ManipulatorData}
-pycram_dataclasses -= set(recursive_subclasses(State))
+pycram_dataclasses -= set(recursive_subclasses(State)) | {State}
 classes |= pycram_dataclasses
 classes |= set(classes_of_module(pose))
 classes -= set(recursive_subclasses(AtomicEventDetector)) | {AtomicEventDetector}

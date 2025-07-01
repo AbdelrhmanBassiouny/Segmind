@@ -121,7 +121,7 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject
 
 
 @dataclass(kw_only=True)
-class EventWithTwoTrackedObjects(HasPrimaryAndSecondaryTrackedObjects, EventWithTrackedObjects, ABC):
+class EventWithTwoTrackedObjects(EventWithTrackedObjects, HasPrimaryAndSecondaryTrackedObjects, ABC):
     """
     An abstract class that represents an event that involves two tracked objects.
     """

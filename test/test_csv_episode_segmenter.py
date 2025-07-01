@@ -24,7 +24,7 @@ from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, Plac
 from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.csv_player import CSVEpisodePlayer
-from segmind.orm.ormatic_interface import *
+# from segmind.orm.ormatic_interface import *
 try:
     from pycram.worlds.multiverse2 import Multiverse
 except ImportError:
@@ -98,7 +98,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
     def tearDownClass(cls):
         cls.viz_marker_publisher._stop_publishing()
         logdebug("Viz marker publisher has been stopped, exiting the world...")
-        cls.world.exit()
+        # cls.world.exit()
         logdebug("World has been exited.")
 
     def tearDown(self):

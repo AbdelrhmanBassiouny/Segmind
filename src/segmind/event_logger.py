@@ -75,7 +75,7 @@ class EventLogger:
         self.event_callbacks_lock: RLock = RLock()
         self.annotate_events = annotate_events
         self.events_to_annotate = events_to_annotate
-        if annotate_events and World.current_world.mode == WorldMode.GUI:
+        if annotate_events:
             self.annotation_queue = queue.Queue()
             self.annotation_thread = EventAnnotationThread(self)
             self.annotation_thread.start()
@@ -363,7 +363,7 @@ class EventLogger:
         """
         Wait for all events to be processed and all annotations to be added.
         """
-        if World.current_world.mode == WorldMode.GUI and self.annotation_thread is not None:
+        if self.annotation_thread is not None:
             self.annotation_thread.stop()
             self.annotation_thread.join()
             while self.annotation_queue.unfinished_tasks > 0:
