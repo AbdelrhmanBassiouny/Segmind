@@ -1,22 +1,15 @@
 import logging
 import os
 import sys
+from dataclasses import dataclass
+from os.path import dirname
+from typing import Optional
 
-import pycram
 from ormatic.ormatic import logger, ORMatic
-from ormatic.utils import classes_of_module, recursive_subclasses, ORMaticExplicitMapping
-from pycram.datastructures import pose
-from pycram.datastructures.dataclasses import FrozenObject, RayResult, MultiverseRayResult, MultiverseContactPoint, \
-    ReasoningResult, \
-    MultiverseMetaData, VirtualMobileBaseJoints, Rotations, TextAnnotation, VirtualJoint, ContactPointsList, \
-    ClosestPointsList, State, CollisionCallbacks, MultiBody, Colors, ManipulatorData
+from ormatic.utils import recursive_subclasses, ORMaticExplicitMapping
 from sqlacodegen.generators import TablesGenerator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import registry, Session
-
-from segmind.datastructures import events, mixins
-from segmind.datastructures.events import InsertionEvent
-from segmind.detectors.atomic_event_detectors import AtomicEventDetector
 
 # ----------------------------------------------------------------------------------------------------------------------
 # This script generates the ORM classes for the segmind package.
@@ -26,19 +19,25 @@ from segmind.detectors.atomic_event_detectors import AtomicEventDetector
 # information on how to map them.
 # ----------------------------------------------------------------------------------------------------------------------
 
+@dataclass
+class ParentMappedClass:
+    a: int
+    b: Optional[int] = None
+
+@dataclass
+class ChildMappedClass(ParentMappedClass):
+    c: Optional[int] = None
+
+@dataclass
+class ChildNotMappedClass(ParentMappedClass):
+    d: Optional[int] = None
+
+
 # create set of classes that should be mapped
 classes = set()
 classes |= set(recursive_subclasses(ORMaticExplicitMapping))
-classes |= set(classes_of_module(events)) - {InsertionEvent}
-# classes |= set(classes_of_module(mixins))
-pycram_dataclasses = set(classes_of_module(pycram.datastructures.dataclasses))
-pycram_dataclasses -= {RayResult, MultiverseRayResult, MultiverseContactPoint, ReasoningResult, MultiverseMetaData,
-                       VirtualMobileBaseJoints, Rotations, TextAnnotation, VirtualJoint,
-                       MultiBody, CollisionCallbacks, Colors, ManipulatorData}
-pycram_dataclasses -= set(recursive_subclasses(State))
-classes |= pycram_dataclasses
-classes |= set(classes_of_module(pose))
-classes -= set(recursive_subclasses(AtomicEventDetector)) | {AtomicEventDetector}
+classes |= {ParentMappedClass, ChildMappedClass}
+
 
 def generate_orm():
     """
@@ -67,10 +66,23 @@ def generate_orm():
     # Write the generated code to a file
     generator = TablesGenerator(mapper_registry.metadata, session.bind, [])
 
-    path = os.path.abspath(os.path.join(os.getcwd(), '../src/segmind/orm/'))
-    with open(os.path.join(path, 'ormatic_interface.py'), 'w') as f:
+    with open(os.path.join(dirname(__file__), 'ormatic_interface.py'), 'w') as f:
         ormatic.to_python_file(generator, f)
 
 
-if __name__ == '__main__':
+def test_generate_orm():
+    # This will Succeed
+    child_not_mapped = ChildNotMappedClass(a=1, b=2 , d=3)
+    assert child_not_mapped.a == 1
+    assert child_not_mapped.b == 2
+    assert child_not_mapped.d == 3
     generate_orm()
+    child_mapped = ChildMappedClass(a=1, b=2, c=3)
+    assert child_mapped.a == 1
+    assert child_mapped.b == 2
+    assert child_mapped.c == 3
+    # This will Fail
+    child_not_mapped = ChildNotMappedClass(a=1, b=2, d=3)
+    assert child_not_mapped.a == 1
+    assert child_not_mapped.b == 2
+    assert child_not_mapped.d == 3

@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import dataclass, field
 from functools import cached_property
 
+from pycram.world_concepts.world_object import Object
 from typing_extensions import List, Optional, TYPE_CHECKING
 
 from .object_tracker import ObjectTrackerFactory, ObjectTracker
-from pycram.world_concepts.world_object import Object
 
-if TYPE_CHECKING:
-    from pycram.datastructures.dataclasses import ObjectState, FrozenObject, FrozenWorldState
+from pycram.datastructures.dataclasses import ObjectState, FrozenObject, FrozenWorldState
 
 
 @dataclass
@@ -76,6 +74,7 @@ class HasPrimaryAndSecondaryTrackedObjects(HasPrimaryTrackedObject, HasSecondary
     """
     A mixin class that provides the tracked objects for the event.
     """
+
     def __post_init__(self):
         HasPrimaryTrackedObject.__post_init__(self)
         HasSecondaryTrackedObject.__post_init__(self)

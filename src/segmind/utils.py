@@ -12,7 +12,7 @@ from pycram.datastructures.dataclasses import Color
 from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
 from pycram.datastructures.enums import Arms, Grasp, AxisIdentifier
 from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.pose import Transform
+from pycram.datastructures.pose import Transform, Vector3
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
@@ -286,8 +286,8 @@ class Imaginator:
         print(f"support index: {cls.latest_surface_idx}")
         support_name = f"imagined_support_{cls.latest_surface_idx}"
         support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
-        box_vis_shape = BoxVisualShape(Color(1, 1, 0, 1), [0, 0, 0],
-                                       [obj_aabb.width, obj_aabb.depth, support_thickness * 0.5])
+        box_vis_shape = BoxVisualShape(Color(1, 1, 0, 1), Vector3(0, 0, 0),
+                                       Vector3(obj_aabb.width, obj_aabb.depth, support_thickness * 0.5))
         support = GenericObjectDescription(support_name, box_vis_shape)
         support_obj = Object(support_name, Supporter, None, support, color=support.color)
         support_position = obj_aabb.base_origin

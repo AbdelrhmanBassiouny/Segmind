@@ -363,7 +363,7 @@ class EventLogger:
         """
         Wait for all events to be processed and all annotations to be added.
         """
-        if self.annotation_thread is not None:
+        if World.current_world.mode == WorldMode.GUI and self.annotation_thread is not None:
             self.annotation_thread.stop()
             self.annotation_thread.join()
             while self.annotation_queue.unfinished_tasks > 0:

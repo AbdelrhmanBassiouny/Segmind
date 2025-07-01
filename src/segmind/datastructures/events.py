@@ -1,29 +1,26 @@
 import time
 from abc import abstractmethod, ABC
-from dataclasses import dataclass,field
+from dataclasses import dataclass, field
 
-from typing_extensions import Optional, List, Union, Type
-
+from pycram.datastructures.dataclasses import Color, ContactPoint
+from pycram.datastructures.dataclasses import ContactPointsList, ObjectState, AxisAlignedBoundingBox, \
+    FrozenObject, FrozenBody
 from pycram.datastructures.partial_designator import PartialDesignator
-from pycram.designator import ActionDescription, ObjectDesignatorDescription
+from pycram.datastructures.pose import Pose, PoseStamped
+from pycram.datastructures.world_entity import PhysicalBody
+from pycram.designator import ActionDescription
 from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
     PlaceAction
 from pycram.ros import logwarn, logdebug
-from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject, \
-    HasPrimaryAndSecondaryTrackedObjects
-from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState, AxisAlignedBoundingBox, \
-    FrozenObject, FrozenBody
-from pycram.datastructures.dataclasses import Color
-from pycram.datastructures.pose import Pose, PoseStamped
-from pycram.datastructures.world import World
-from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object, Link
+from typing_extensions import Optional, List, Union, Type
+
+from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasPrimaryAndSecondaryTrackedObjects
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
 
 
 @dataclass
 class Event(ABC):
-
     timestamp: float = field(default_factory=time.time)
     """
     The time at which the event occurred, defaults to current time.
@@ -73,6 +70,7 @@ class EventWithTrackedObjects(Event, ABC):
     """
     An abstract class that represents an event that involves one or more tracked objects.
     """
+
     @property
     @abstractmethod
     def tracked_objects(self) -> List[Object]:
@@ -214,13 +212,15 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
     vice versa.
     """
+    start_pose: PoseStamped = field(init=False)
+    current_pose: PoseStamped = field(init=False)
 
-    def __init__(self, tracked_object: Object, start_pose: Pose, current_pose: Pose,
+    def __init__(self, tracked_object: Object, start_pose: PoseStamped, current_pose: PoseStamped,
                  timestamp: Optional[float] = None):
         EventWithOneTrackedObject.__init__(self, tracked_object=tracked_object,
                                            timestamp=timestamp if timestamp is not None else time.time())
-        self.start_pose: Pose = start_pose
-        self.current_pose: Pose = current_pose
+        self.start_pose: PoseStamped = start_pose
+        self.current_pose: PoseStamped = current_pose
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
@@ -263,6 +263,12 @@ class StopRotationEvent(StopMotionEvent):
 
 @dataclass(init=False, unsafe_hash=True)
 class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
+    contact_points: ContactPointsList = field(init=False, default_factory=ContactPointsList)
+    latest_contact_points: ContactPointsList = field(init=False, default_factory=ContactPointsList)
+    bounding_box: AxisAlignedBoundingBox = field(init=False)
+    pose: PoseStamped = field(init=False)
+    with_object_bounding_box: Optional[AxisAlignedBoundingBox] = field(init=False, default=None)
+    with_object_pose: Optional[PoseStamped] = field(init=False, default=None)
 
     def __init__(self,
                  contact_points: ContactPointsList,
@@ -278,7 +284,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         self.latest_contact_points: ContactPointsList = latest_contact_points
         self.bounding_box: AxisAlignedBoundingBox = of_object.get_axis_aligned_bounding_box()
         self.pose: PoseStamped = of_object.pose
-        self.with_object_bounding_box: Optional[AxisAlignedBoundingBox] = with_object.get_axis_aligned_bounding_box()\
+        self.with_object_bounding_box: Optional[AxisAlignedBoundingBox] = with_object.get_axis_aligned_bounding_box() \
             if with_object is not None else None
         self.with_object_pose: Optional[PoseStamped] = with_object.pose if with_object is not None else None
 
@@ -430,7 +436,6 @@ class AgentLossOfInterferenceEvent(LossOfInterferenceEvent, AgentLossOfContactEv
 
 @dataclass(kw_only=True)
 class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
-
     agent: Optional[Object] = None
     timestamp: Optional[float] = None
     end_timestamp: Optional[float] = None
@@ -456,7 +461,7 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
             return super().__eq__(other)
         return (super().__eq__(other)
                 and round(self.end_timestamp, 1) == round(other.end_timestamp, 1))
-    
+
     @property
     def hash_tuple(self):
         hash_tuple = (self.__class__, self.agent, self.tracked_object, round(self.timestamp, 1))
@@ -473,7 +478,6 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         return self.end_timestamp - self.timestamp
 
     def set_color(self, color: Color):
-        logdebug(f"Setting color {color} for {self.__class__.__name__} event with agent {self.agent} and object {self.tracked_object}")
         if self.agent is not None:
             self.agent.set_color(color)
         self.tracked_object.set_color(color)
@@ -506,7 +510,6 @@ class PickUpEvent(AbstractAgentObjectInteractionEvent):
 
 @dataclass(unsafe_hash=True)
 class PlacingEvent(AbstractAgentObjectInteractionEvent):
-
     placement_pose: Optional[PoseStamped] = None
 
     @property
@@ -525,6 +528,8 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
 
 @dataclass(init=False, unsafe_hash=True)
 class InsertionEvent(AbstractAgentObjectInteractionEvent):
+    inserted_into_objects: List[Object] = field(init=False, default_factory=list, repr=False, hash=False)
+    inserted_into_objects_frozen_cp: List[FrozenObject] = field(init=False, default_factory=list, repr=False, hash=False)
 
     def __init__(self, inserted_object: Object,
                  inserted_into_objects: List[Object],
@@ -533,12 +538,13 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
                  timestamp: Optional[float] = None,
                  end_timestamp: Optional[float] = None):
         super().__init__(tracked_object=inserted_object, agent=agent,
-                         timestamp=timestamp, end_timestamp=end_timestamp)
+                         timestamp=timestamp, end_timestamp=end_timestamp, with_object=through_hole)
         self.inserted_into_objects: List[Object] = inserted_into_objects
-        self.through_hole: PhysicalBody = through_hole
-        self.with_object: PhysicalBody = through_hole
-        self.through_hole_frozen_cp: FrozenBody = through_hole.frozen_copy()
         self.inserted_into_objects_frozen_cp: List[FrozenObject] = [obj.frozen_copy() for obj in inserted_into_objects]
+
+    @property
+    def through_hole(self) -> PhysicalBody:
+        return self.with_object
 
     @property
     def action_type(self) -> Type[PlaceAction]:
@@ -567,13 +573,13 @@ class ContainmentEvent(DefaultEventWithTwoTrackedObjects):
 
 # Create a type that is the union of all event types
 EventUnion = Union[NewObjectEvent,
-                   MotionEvent,
-                   StopMotionEvent,
-                   ContactEvent,
-                   LossOfContactEvent,
-                   AgentContactEvent,
-                   AgentLossOfContactEvent,
-                   PickUpEvent,
-                   PlacingEvent,
-                   ContainmentEvent,
-                   InsertionEvent]
+MotionEvent,
+StopMotionEvent,
+ContactEvent,
+LossOfContactEvent,
+AgentContactEvent,
+AgentLossOfContactEvent,
+PickUpEvent,
+PlacingEvent,
+ContainmentEvent,
+InsertionEvent]

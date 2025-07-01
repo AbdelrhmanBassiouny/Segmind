@@ -16,12 +16,15 @@ from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Location, Robot, PhysicalObject
+from sqlalchemy import create_engine
+from sqlalchemy.orm.session import Session
+
 from segmind.datastructures.events import ContainmentEvent
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.csv_player import CSVEpisodePlayer
-
+from segmind.orm.ormatic_interface import *
 try:
     from pycram.worlds.multiverse2 import Multiverse
 except ImportError:
@@ -44,7 +47,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         scene_file_path = os.path.join(models_dir, f"scene.xml")
         rdm = RobotDescriptionManager()
         rdm.load_description("iCub")
-        cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
+        cls.world: BulletWorld = BulletWorld(WorldMode.DIRECT)
 
         cls.spawn_objects(models_dir)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
@@ -114,4 +117,10 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         self.assertTrue(any([isinstance(e, ContainmentEvent) for e in self.episode_segmenter.logger.get_events()]))
 
     def test_csv_replay(self):
+        # engine = create_engine('sqlite:///:memory:')
+        # session = Session(engine)
+        # mapper_registry.metadata.create_all(engine)
+        #
         self.episode_segmenter.start()
+        # session.add_all(self.episode_segmenter.logger.get_events())
+        # session.commit()
