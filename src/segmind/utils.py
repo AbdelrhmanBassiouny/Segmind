@@ -187,11 +187,6 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
     for body in contact_bodies:
         if body in excluded_bodies:
             continue
-        # if isinstance(body, Link):
-        #     parent_obj = body.parent_entity
-        # else:
-        #     parent_obj = body
-        # if issubclass(obj.obj_type, (Supporter, Location)):
         if is_object_supported_by_container_body(obj, bodies_to_check=[body]):
             return body
         body_aabb = body.get_axis_aligned_bounding_box()
@@ -204,6 +199,7 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
             logdebug(f"Object {obj.name} IS supported by {body.name}")
             return body
     logdebug(f"Object {obj.name} IS NOT supported")
+    return None
 
 
 def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Object,

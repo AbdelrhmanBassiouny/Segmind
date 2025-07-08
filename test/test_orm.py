@@ -6,7 +6,7 @@ from os.path import dirname
 from typing import Optional
 
 from ormatic.ormatic import logger, ORMatic
-from ormatic.utils import recursive_subclasses, ORMaticExplicitMapping
+from ormatic.utils import recursive_subclasses
 from sqlacodegen.generators import TablesGenerator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import registry, Session
@@ -33,13 +33,7 @@ class ChildNotMappedClass(ParentMappedClass):
     d: Optional[int] = None
 
 
-# create set of classes that should be mapped
-classes = set()
-classes |= set(recursive_subclasses(ORMaticExplicitMapping))
-classes |= {ParentMappedClass, ChildMappedClass}
-
-
-def generate_orm():
+def generate_orm(classes):
     """
     Generate the ORM classes for the pycram package.
     """
@@ -50,33 +44,58 @@ def generate_orm():
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
-    mapper_registry = registry()
-    engine = create_engine('sqlite:///:memory:')
-    session = Session(engine)
-
     # Create an ORMatic object with the classes to be mapped
-    ormatic = ORMatic(list(classes), mapper_registry)
+    ormatic = ORMatic(list(classes))
 
     # Generate the ORM classes
     ormatic.make_all_tables()
 
-    # Create the tables in the database
-    mapper_registry.metadata.create_all(session.bind)
-
-    # Write the generated code to a file
-    generator = TablesGenerator(mapper_registry.metadata, session.bind, [])
-
     with open(os.path.join(dirname(__file__), 'ormatic_interface.py'), 'w') as f:
-        ormatic.to_python_file(generator, f)
+        ormatic.to_sqlalchemy_file(f)
 
 
 def test_generate_orm():
+
+    import pycram
+    from ormatic.utils import classes_of_module, recursive_subclasses
+    from pycram.datastructures import pose
+    from pycram.datastructures.dataclasses import FrozenObject, RayResult, MultiverseRayResult, MultiverseContactPoint, \
+        ReasoningResult, \
+        MultiverseMetaData, VirtualMobileBaseJoints, Rotations, TextAnnotation, VirtualJoint, ContactPointsList, \
+        ClosestPointsList, State, CollisionCallbacks, MultiBody, Colors, ManipulatorData
+
+    from segmind.datastructures import events, mixins
+    from segmind.datastructures.events import InsertionEvent
+    from segmind.detectors.atomic_event_detectors import AtomicEventDetector
+
+    # create set of classes that should be mapped
+    classes = set()
+    # classes |= set(recursive_subclasses(ORMaticExplicitMapping))
+    classes |= set(classes_of_module(events)) - {InsertionEvent}
+    # classes |= set(classes_of_module(mixins))
+    pycram_dataclasses = set(classes_of_module(pycram.datastructures.dataclasses))
+    pycram_dataclasses -= {RayResult, MultiverseRayResult, MultiverseContactPoint, ReasoningResult, MultiverseMetaData,
+                           VirtualMobileBaseJoints, Rotations, TextAnnotation, VirtualJoint,
+                           MultiBody, CollisionCallbacks, Colors, ManipulatorData}
+    pycram_dataclasses -= set(recursive_subclasses(State)) | {State}
+    classes |= pycram_dataclasses
+    # classes |= {pycram.has_parameters.HasParameters}
+    classes |= set(classes_of_module(pose))
+    classes -= set(recursive_subclasses(AtomicEventDetector)) | {AtomicEventDetector}
+    generate_orm(classes)
+
+
+
+def test_generate_rm_with_multiple_inheritance():
     # This will Succeed
     child_not_mapped = ChildNotMappedClass(a=1, b=2 , d=3)
     assert child_not_mapped.a == 1
     assert child_not_mapped.b == 2
     assert child_not_mapped.d == 3
-    generate_orm()
+    # create set of classes that should be mapped
+    classes = set()
+    classes |= {ParentMappedClass, ChildMappedClass}
+    generate_orm(classes)
     child_mapped = ChildMappedClass(a=1, b=2, c=3)
     assert child_mapped.a == 1
     assert child_mapped.b == 2

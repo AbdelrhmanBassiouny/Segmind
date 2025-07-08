@@ -1,10 +1,11 @@
 import logging
 import os
 import sys
+from abc import ABC
 
 import pycram
 from ormatic.ormatic import logger, ORMatic
-from ormatic.utils import classes_of_module, recursive_subclasses, ORMaticExplicitMapping
+from ormatic.utils import classes_of_module, recursive_subclasses
 from pycram.datastructures import pose
 from pycram.datastructures.dataclasses import FrozenObject, RayResult, MultiverseRayResult, MultiverseContactPoint, \
     ReasoningResult, \
@@ -28,7 +29,7 @@ from segmind.detectors.atomic_event_detectors import AtomicEventDetector
 
 # create set of classes that should be mapped
 classes = set()
-classes |= set(recursive_subclasses(ORMaticExplicitMapping))
+# classes |= set(recursive_subclasses(ORMaticExplicitMapping))
 classes |= set(classes_of_module(events)) - {InsertionEvent}
 # classes |= set(classes_of_module(mixins))
 pycram_dataclasses = set(classes_of_module(pycram.datastructures.dataclasses))
@@ -37,6 +38,7 @@ pycram_dataclasses -= {RayResult, MultiverseRayResult, MultiverseContactPoint, R
                        MultiBody, CollisionCallbacks, Colors, ManipulatorData}
 pycram_dataclasses -= set(recursive_subclasses(State)) | {State}
 classes |= pycram_dataclasses
+classes |= {pycram.has_parameters.HasParameters}
 classes |= set(classes_of_module(pose))
 classes -= set(recursive_subclasses(AtomicEventDetector)) | {AtomicEventDetector}
 
@@ -56,7 +58,7 @@ def generate_orm():
     session = Session(engine)
 
     # Create an ORMatic object with the classes to be mapped
-    ormatic = ORMatic(list(classes), mapper_registry)
+    ormatic = ORMatic(list(classes))
 
     # Generate the ORM classes
     ormatic.make_all_tables()

@@ -29,16 +29,16 @@ class EpisodePlayer(PropagatingThread, ABC):
     A class that represents the thread that steps the world.
     """
 
-    _instance: Optional[EpisodePlayer] = None
+    current_player: Optional[EpisodePlayer] = None
     pause_resume_lock: RLock = RLock()
     
     def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            EpisodePlayer._instance = cls._instance
+        if cls.current_player is None:
+            cls.current_player = super().__new__(cls)
+            EpisodePlayer.current_player = cls.current_player
             # Initialize only once when instance is first created
-            cls._instance._initialized = False
-        return cls._instance
+            cls.current_player._initialized = False
+        return cls.current_player
 
     def __init__(self, time_between_frames: Optional[datetime.timedelta] = None, use_realtime: bool = False,
                  stop_after_ready: bool = False, world: Optional[World] = None,
@@ -133,11 +133,11 @@ class EpisodePlayer(PropagatingThread, ABC):
         """
         def wrapper(*args, **kwargs) -> Any:
             with cls.pause_resume_lock:
-                if cls._instance.status == PlayerStatus.PLAYING:
+                if cls.current_player.status == PlayerStatus.PLAYING:
                     logdebug("Pausing player")
-                    cls._instance.pause()
+                    cls.current_player.pause()
                     result = func(*args, **kwargs)
-                    cls._instance.resume()
+                    cls.current_player.resume()
                     logdebug("Resuming player")
                     return result
                 else:
@@ -145,4 +145,4 @@ class EpisodePlayer(PropagatingThread, ABC):
         return wrapper
     
     def _join(self, timeout=None):
-        self._instance = None
+        self.current_player = None
