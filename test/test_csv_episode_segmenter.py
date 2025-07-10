@@ -19,6 +19,8 @@ from pycrap.ontologies import Location, Robot, PhysicalObject
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
 
+from ormatic.dao import to_dao, get_dao_class
+from segmind.orm.ormatic_interface import *
 from segmind.datastructures.events import ContainmentEvent
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
@@ -117,10 +119,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         self.assertTrue(any([isinstance(e, ContainmentEvent) for e in self.episode_segmenter.logger.get_events()]))
 
     def test_csv_replay(self):
-        # engine = create_engine('sqlite:///:memory:')
-        # session = Session(engine)
-        # mapper_registry.metadata.create_all(engine)
-        #
         self.episode_segmenter.start()
-        # session.add_all(self.episode_segmenter.logger.get_events())
-        # session.commit()
+        query = select(PickUpEventDAO)
+        result = self.episode_segmenter.logger.session.scalars(query).all()
+        assert len(result) == 4

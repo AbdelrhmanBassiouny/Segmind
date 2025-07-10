@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import queue
 import threading
+import warnings
 from collections import UserDict
 from threading import RLock
 import time
@@ -10,8 +11,12 @@ from datetime import timedelta
 from os.path import dirname, abspath
 import re
 
+import sqlalchemy
 from owlready2_optimized import defaultdict
 from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable, Tuple
+from sqlalchemy import create_engine, select, Engine
+from sqlalchemy.orm.session import Session
+from ormatic.dao import to_dao, get_dao_class
 
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.enums import WorldMode
@@ -23,6 +28,8 @@ from .datastructures.events import Event, EventUnion, EventWithTrackedObjects, E
 from .datastructures.mixins import HasPrimaryTrackedObject
 from .datastructures.object_tracker import ObjectTrackerFactory
 from .utils import text_to_speech
+from .orm.ormatic_interface import *
+
 
 if TYPE_CHECKING:
     from .detectors.coarse_event_detectors import DetectorWithStarterEvent
@@ -81,6 +88,9 @@ class EventLogger:
             self.annotation_thread.start()
         if EventLogger.current_logger is None:
             EventLogger.current_logger = self
+        self.engine: Optional[Engine] = None
+        self.session: Optional[Session] = None
+        self.sql_uri: Optional[str] = None or 'sqlite:///:memory:'
 
     def reset(self):
         self.timeline = []
@@ -88,8 +98,17 @@ class EventLogger:
         self.timeline_per_thread = {}
         for obj_tracker in ObjectTrackerFactory.get_all_trackers():
             obj_tracker.reset()
+        if self.engine is not None and self.sql_uri == 'sqlite:///:memory:':
+            Base.metadata.drop_all(self.engine)
 
-    def add_callback(self, event_type: Type[Event], callback: CallbackFunction, condition: Optional[ConditionFunction] = None) -> None:
+    def set_timeline(self, timeline: List[Event]) -> None:
+        with self.timeline_lock:
+            self.timeline = timeline
+            for event in timeline:
+                self.update_object_trackers_with_event(event)
+
+    def add_callback(self, event_type: Type[Event], callback: CallbackFunction,
+                     condition: Optional[ConditionFunction] = None) -> None:
         """
         Add a callback for an event type.
 
@@ -372,6 +391,22 @@ class EventLogger:
                 self.annotation_queue.task_done()
             self.annotation_queue.join()
         self.event_queue.join()
+
+    def log_to_sql(self, uri: str = 'sqlite:///:memory:') -> None:
+        self.sql_uri = uri
+        self.engine = create_engine(uri)
+        self.session = Session(self.engine)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=sqlalchemy.exc.SAWarning)
+            Base.metadata.create_all(self.engine)
+        daos = []
+        memo = {}
+        for event in self.get_events():
+            dao_class = get_dao_class(type(event))
+            if dao_class is not None:
+                daos.append(to_dao(event, memo))
+        self.session.add_all(daos)
+        self.session.commit()
 
     def __str__(self):
         return '\n'.join([str(event) for event in self.get_events()])

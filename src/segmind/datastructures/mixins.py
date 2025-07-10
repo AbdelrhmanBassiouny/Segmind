@@ -8,7 +8,7 @@ from typing_extensions import List, Optional, TYPE_CHECKING
 
 from .object_tracker import ObjectTrackerFactory, ObjectTracker
 
-from pycram.datastructures.dataclasses import ObjectState, FrozenObject, FrozenWorldState
+from pycram.datastructures.dataclasses import ObjectState, FrozenObject, FrozenWorldState, FrozenBody
 
 
 @dataclass
@@ -54,7 +54,7 @@ class HasSecondaryTrackedObject:
     A mixin class that provides the tracked objects for the event.
     """
     with_object: Optional[Object] = None
-    with_object_frozen_cp: Optional[FrozenObject] = field(init=False, default=None, repr=False, hash=False)
+    with_object_frozen_cp: Optional[FrozenBody] = field(init=False, default=None, repr=False, hash=False)
 
     def __post_init__(self):
         if self.with_object is not None:

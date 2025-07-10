@@ -22,7 +22,8 @@ class EpisodeSegmenter(ABC):
                  annotate_events: bool = False,
                  plot_timeline: bool = False,
                  show_plots: bool = False,
-                 plot_save_path: Optional[str] = None):
+                 plot_save_path: Optional[str] = None,
+                 sql_uri: Optional[str] = None):
         """
         Initializes the EpisodeSegmenter class.
 
@@ -32,6 +33,7 @@ class EpisodeSegmenter(ABC):
         :param plot_timeline: A boolean value that indicates if the events timeline should be plotted.
         :param show_plots: A boolean value that indicates if the plots should be shown.
         :param plot_save_path: The path where the plots should be saved.
+        :param sql_uri: The URI of the SQL database to use.
         """
         self._detectors_to_start: List[Type[DetectorWithStarterEvent]] = []
         self._initial_detectors: List[Type[AtomicEventDetector]] = []
@@ -47,6 +49,7 @@ class EpisodeSegmenter(ABC):
         self.show_plots = show_plots
         self.plot_save_path = plot_save_path
         self.kill_event: threading.Event = threading.Event()
+        self.sql_uri: Optional[str] = sql_uri or 'sqlite:///:memory:'
 
     @property
     def detectors_to_start(self) -> List[Type[DetectorWithStarterEvent]]:
@@ -402,6 +405,7 @@ class EpisodeSegmenter(ABC):
         Join all the threads.
         """
         self.logger.print_events()
+        self.logger.log_to_sql(self.sql_uri)
         self.logger.join()
         logdebug("All threads joined.")
 

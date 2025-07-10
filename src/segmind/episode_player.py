@@ -6,9 +6,15 @@ from threading import RLock
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing_extensions import Callable, Any, Optional, Dict, Generator
+
+from pycram.datastructures.dataclasses import FrozenWorldState
+from sqlalchemy import Select
+from typing_extensions import Callable, Any, Optional, Dict, Generator, List
 from pycram.ros import logdebug
 from pycram.datastructures.world import World
+
+from .datastructures.events import EventWithOneTrackedObject, Event
+from .datastructures.mixins import HasPrimaryTrackedObject
 
 try:
     from pycram.worlds.multiverse import Multiverse
@@ -22,6 +28,7 @@ except ImportError:
 
 from .utils import PropagatingThread
 from .datastructures.enums import PlayerStatus
+from .event_logger import EventLogger
 
 
 class EpisodePlayer(PropagatingThread, ABC):
@@ -53,6 +60,7 @@ class EpisodePlayer(PropagatingThread, ABC):
             self.time_between_frames: datetime.timedelta = time_between_frames if time_between_frames is not None else datetime.timedelta(seconds=0.01)
             self.use_realtime: bool = use_realtime
             self._initialized = True
+            self.original_state: Optional[FrozenWorldState] = None
 
     @property
     def status(self):
@@ -75,7 +83,31 @@ class EpisodePlayer(PropagatingThread, ABC):
     def run(self):
         self._status = PlayerStatus.PLAYING
         super().run()
-    
+
+    def go_to_moment_of_event(self, event: HasPrimaryTrackedObject, event_history: Optional[List[Event]] = None):
+        """
+        Set the world state to be the one at which the given event occurred.
+
+        :param event: The event to set the world state to.
+        :param event_history: (Optional) The event history that replaces the current timeline.
+        """
+        self.pause()
+        self.original_state = self.world.frozen_copy()
+        self.world.set_state_from_frozen_cp(event.world_frozen_cp)
+        if event_history is not None:
+            EventLogger.current_logger.set_timeline(event_history)
+
+    def go_to_original_world_state(self, resume: bool = False):
+        """
+        Set the world state to be the one saved in the original world state.
+
+        :param resume: (Optional) Whether to resume the episode player frame processing.
+        """
+        if self.original_state is not None:
+            self.world.set_state_from_frozen_cp(self.original_state)
+        if resume and self.status == PlayerStatus.PAUSED:
+            self.resume()
+
     def pause(self):
         """
         Pause the episode player frame processing.

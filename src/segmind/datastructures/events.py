@@ -15,8 +15,8 @@ from pycram.ros import logwarn, logdebug
 from pycram.world_concepts.world_object import Object, Link
 from typing_extensions import Optional, List, Union, Type
 
-from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasPrimaryAndSecondaryTrackedObjects
-from segmind.datastructures.object_tracker import ObjectTrackerFactory
+from .mixins import HasPrimaryTrackedObject, HasPrimaryAndSecondaryTrackedObjects
+from .object_tracker import ObjectTrackerFactory
 
 
 @dataclass

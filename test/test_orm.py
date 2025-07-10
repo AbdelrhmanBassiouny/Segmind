@@ -50,7 +50,7 @@ def generate_orm(classes):
     # Generate the ORM classes
     ormatic.make_all_tables()
 
-    with open(os.path.join(dirname(__file__), 'ormatic_interface.py'), 'w') as f:
+    with open(os.path.join(dirname(__file__), '../src/segmind/orm/ormatic_interface.py'), 'w') as f:
         ormatic.to_sqlalchemy_file(f)
 
 
@@ -71,7 +71,7 @@ def test_generate_orm():
     # create set of classes that should be mapped
     classes = set()
     # classes |= set(recursive_subclasses(ORMaticExplicitMapping))
-    classes |= set(classes_of_module(events)) - {InsertionEvent}
+    classes |= set(classes_of_module(events)) # - {InsertionEvent}
     # classes |= set(classes_of_module(mixins))
     pycram_dataclasses = set(classes_of_module(pycram.datastructures.dataclasses))
     pycram_dataclasses -= {RayResult, MultiverseRayResult, MultiverseContactPoint, ReasoningResult, MultiverseMetaData,
