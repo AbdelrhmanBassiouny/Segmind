@@ -529,7 +529,7 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
 @dataclass(init=False, unsafe_hash=True)
 class InsertionEvent(AbstractAgentObjectInteractionEvent):
     inserted_into_objects: List[Object] = field(init=False, default_factory=list, repr=False, hash=False)
-    inserted_into_objects_frozen_cp: List[FrozenObject] = field(init=False, default_factory=list, repr=False, hash=False)
+    inserted_into_objects_frozen_cp: List[FrozenBody] = field(init=False, default_factory=list, repr=False, hash=False)
 
     def __init__(self, inserted_object: Object,
                  inserted_into_objects: List[Object],

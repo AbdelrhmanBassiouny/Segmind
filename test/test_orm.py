@@ -38,11 +38,11 @@ def generate_orm(classes):
     Generate the ORM classes for the pycram package.
     """
     # Set up logging
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+    # handler = logging.StreamHandler(sys.stdout)
+    # handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    #
+    # logger.addHandler(handler)
+    # logger.setLevel(logging.INFO)
 
     # Create an ORMatic object with the classes to be mapped
     ormatic = ORMatic(list(classes))
