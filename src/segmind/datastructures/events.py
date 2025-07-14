@@ -559,7 +559,8 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
 
     def __str__(self):
         with_object_name = " - " + f" - ".join([obj.name for obj in self.inserted_into_objects])
-        return f"{self.__class__.__name__}: {self.tracked_object.name}{with_object_name} - {self.timestamp}"
+        through_hole_name = f" - through_hole: {self.through_hole.name}" if self.through_hole is not None else ""
+        return f"{self.__class__.__name__}: {self.tracked_object.name}{with_object_name}{through_hole_name} - {self.timestamp}"
 
     @property
     def color(self) -> Color:

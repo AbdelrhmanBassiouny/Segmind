@@ -12,19 +12,9 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "SimpleEvent": "random_events.product_algebra.SimpleEvent",
-                        "Case": "ripple_down_rules.datastructures.case.Case",
-                        "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
-                        "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
-                        "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
-                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Union": "typing.Union",
-                        "NoneType": "builtins.NoneType",
                         "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                         "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
+                        "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -39,19 +29,9 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "SimpleEvent": "random_events.product_algebra.SimpleEvent",
-                        "Case": "ripple_down_rules.datastructures.case.Case",
-                        "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
-                        "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
-                        "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
-                        "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Union": "typing.Union",
-                        "NoneType": "builtins.NoneType",
                         "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                         "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                        "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
+                        "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -60,16 +40,6 @@
                     "mutually_exclusive": true
                 },
                 "parent": null,
-                "corner_case": {
-                    "_type": "ripple_down_rules.datastructures.case.Case",
-                    "self_": null,
-                    "hole": null,
-                    "event": null,
-                    "output_": null,
-                    "_id": 140500062508288,
-                    "_obj_type": "builtins.dict",
-                    "_name": "InsertionDetector_hole_insertion_verifier"
-                },
                 "conclusion_name": "output_",
                 "weight": null,
                 "uid": "38355037295796650033371896063976531277",
@@ -82,19 +52,9 @@
                             "builtins.bool"
                         ],
                         "scope": {
-                            "SimpleEvent": "random_events.product_algebra.SimpleEvent",
-                            "Case": "ripple_down_rules.datastructures.case.Case",
-                            "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
-                            "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
-                            "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
-                            "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                            "Dict": "typing.Dict",
-                            "Optional": "typing.Optional",
-                            "Union": "typing.Union",
-                            "NoneType": "builtins.NoneType",
                             "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                             "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
+                            "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -109,19 +69,9 @@
                             "builtins.bool"
                         ],
                         "scope": {
-                            "SimpleEvent": "random_events.product_algebra.SimpleEvent",
-                            "Case": "ripple_down_rules.datastructures.case.Case",
-                            "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
-                            "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
-                            "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
-                            "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                            "Dict": "typing.Dict",
-                            "Optional": "typing.Optional",
-                            "Union": "typing.Union",
-                            "NoneType": "builtins.NoneType",
                             "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                             "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                            "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
+                            "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -130,17 +80,7 @@
                         "mutually_exclusive": true
                     },
                     "parent": null,
-                    "corner_case": {
-                        "_type": "ripple_down_rules.datastructures.case.Case",
-                        "self_": null,
-                        "hole": null,
-                        "event": null,
-                        "output_": false,
-                        "_id": 140167537882368,
-                        "_obj_type": "builtins.dict",
-                        "_name": "InsertionDetector_hole_insertion_verifier"
-                    },
-                    "conclusion_name": null,
+                    "conclusion_name": "output_",
                     "weight": "except if",
                     "uid": "21738774625860220488991060484462427733",
                     "refinement": {
@@ -152,19 +92,11 @@
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "SimpleEvent": "random_events.product_algebra.SimpleEvent",
-                                "Case": "ripple_down_rules.datastructures.case.Case",
-                                "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
                                 "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
-                                "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
-                                "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                                "Dict": "typing.Dict",
-                                "Optional": "typing.Optional",
-                                "Union": "typing.Union",
-                                "NoneType": "builtins.NoneType",
                                 "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                                 "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                                "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
+                                "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
+                                "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -179,19 +111,9 @@
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "SimpleEvent": "random_events.product_algebra.SimpleEvent",
-                                "Case": "ripple_down_rules.datastructures.case.Case",
-                                "AxisAlignedBoundingBox": "pycram.datastructures.dataclasses.AxisAlignedBoundingBox",
-                                "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
-                                "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent",
-                                "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
-                                "Dict": "typing.Dict",
-                                "Optional": "typing.Optional",
-                                "Union": "typing.Union",
-                                "NoneType": "builtins.NoneType",
                                 "InsertionDetector": "segmind.detectors.spatial_relation_detector.InsertionDetector",
                                 "PhysicalBody": "pycram.datastructures.world_entity.PhysicalBody",
-                                "is_object_supported_by_container_body": "segmind.utils.is_object_supported_by_container_body"
+                                "InterferenceEvent": "segmind.datastructures.events.InterferenceEvent"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -200,17 +122,7 @@
                             "mutually_exclusive": true
                         },
                         "parent": null,
-                        "corner_case": {
-                            "_type": "ripple_down_rules.datastructures.case.Case",
-                            "self_": null,
-                            "hole": null,
-                            "event": null,
-                            "output_": true,
-                            "_id": 139785553017728,
-                            "_obj_type": "builtins.dict",
-                            "_name": "InsertionDetector_hole_insertion_verifier"
-                        },
-                        "conclusion_name": null,
+                        "conclusion_name": "output_",
                         "weight": "except if",
                         "uid": "313966059252436144481394373657043070884",
                         "refinement": null,

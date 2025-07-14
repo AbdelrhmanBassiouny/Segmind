@@ -5,11 +5,11 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Float, Boolean, Date
 from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
 from typing_extensions import Optional, List, Type
 
-import pycram.datastructures.pose
-import pycram.datastructures.enums
-import segmind.datastructures.events
 import datetime
 import pycram.datastructures.dataclasses
+import pycram.datastructures.enums
+import pycram.datastructures.pose
+import segmind.datastructures.events
 from pycram.datastructures.enums import Arms, JointType
 
 from ormatic.dao import DataAccessObject
@@ -21,69 +21,33 @@ class Base(DeclarativeBase):
     }
 
 
-class LateralFrictionDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.LateralFriction]):
-    __tablename__ = 'LateralFrictionDAO'
+class EventDAO(Base, DataAccessObject[segmind.datastructures.events.Event]):
+    __tablename__ = 'EventDAO'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    lateral_friction: Mapped[float]
-
-
-    lateral_friction_direction_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=False)
-
-    lateral_friction_direction: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[lateral_friction_direction_id])
-
-
-class PoseStampedDAO(Base, DataAccessObject[pycram.datastructures.pose.PoseStamped]):
-    __tablename__ = 'PoseStampedDAO'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
+    timestamp: Mapped[float]
+    detector_thread_id: Mapped[Optional[str]]
     polymorphic_type: Mapped[str]
 
 
-    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseDAO.id'), nullable=False)
-    header_id: Mapped[int] = mapped_column(ForeignKey('HeaderDAO.id'), nullable=False)
 
-    pose: Mapped[PoseDAO] = relationship('PoseDAO', uselist=False, foreign_keys=[pose_id])
-    header: Mapped[HeaderDAO] = relationship('HeaderDAO', uselist=False, foreign_keys=[header_id])
 
     __mapper_args__ = {
         'polymorphic_on': 'polymorphic_type',
-        'polymorphic_identity': 'PoseStampedDAO',
+        'polymorphic_identity': 'EventDAO',
     }
 
-class ContactPointDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.ContactPoint]):
-    __tablename__ = 'ContactPointDAO'
+class FrozenWorldStateDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.FrozenWorldState]):
+    __tablename__ = 'FrozenWorldStateDAO'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    distance: Mapped[Optional[float]]
-    normal_force: Mapped[Optional[float]]
-    polymorphic_type: Mapped[str]
 
 
-    position_on_body_a_id: Mapped[Optional[int]] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=True)
-    position_on_body_b_id: Mapped[Optional[int]] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=True)
-    normal_on_body_b_id: Mapped[Optional[int]] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=True)
-    lateral_friction_1_id: Mapped[Optional[int]] = mapped_column(ForeignKey('LateralFrictionDAO.id'), nullable=True)
-    lateral_friction_2_id: Mapped[Optional[int]] = mapped_column(ForeignKey('LateralFrictionDAO.id'), nullable=True)
-    body_a_frozen_cp_id: Mapped[int] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=False)
-    body_b_frozen_cp_id: Mapped[int] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=False)
-    contactpointslistdao_points_id: Mapped[Optional[int]] = mapped_column(ForeignKey('ContactPointsListDAO.id'))
 
-    position_on_body_a: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[position_on_body_a_id])
-    position_on_body_b: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[position_on_body_b_id])
-    normal_on_body_b: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[normal_on_body_b_id])
-    lateral_friction_1: Mapped[LateralFrictionDAO] = relationship('LateralFrictionDAO', uselist=False, foreign_keys=[lateral_friction_1_id])
-    lateral_friction_2: Mapped[LateralFrictionDAO] = relationship('LateralFrictionDAO', uselist=False, foreign_keys=[lateral_friction_2_id])
-    body_a_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[body_a_frozen_cp_id])
-    body_b_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[body_b_frozen_cp_id])
+    objects: Mapped[List[FrozenObjectDAO]] = relationship('FrozenObjectDAO', foreign_keys='[FrozenObjectDAO.frozenworldstatedao_objects_id]')
 
-    __mapper_args__ = {
-        'polymorphic_on': 'polymorphic_type',
-        'polymorphic_identity': 'ContactPointDAO',
-    }
 
 class VisualShapeDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.VisualShape]):
     __tablename__ = 'VisualShapeDAO'
@@ -93,27 +57,42 @@ class VisualShapeDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.Vi
     polymorphic_type: Mapped[str]
 
 
-    rgba_color_id: Mapped[int] = mapped_column(ForeignKey('ColorDAO.id'), nullable=False)
-    visual_frame_position_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=False)
+    rgba_color_id: Mapped[int] = mapped_column(ForeignKey('ColorDAO.id', use_alter=True), nullable=True)
+    visual_frame_position_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
     frozenlinkdao_geometry_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenLinkDAO.id'))
 
-    rgba_color: Mapped[ColorDAO] = relationship('ColorDAO', uselist=False, foreign_keys=[rgba_color_id])
-    visual_frame_position: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[visual_frame_position_id])
+    rgba_color: Mapped[ColorDAO] = relationship('ColorDAO', uselist=False, foreign_keys=[rgba_color_id], post_update=True)
+    visual_frame_position: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[visual_frame_position_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_on': 'polymorphic_type',
         'polymorphic_identity': 'VisualShapeDAO',
     }
 
-class QuaternionDAO(Base, DataAccessObject[pycram.datastructures.pose.Quaternion]):
-    __tablename__ = 'QuaternionDAO'
+class ContactPointsListDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.ContactPointsList]):
+    __tablename__ = 'ContactPointsListDAO'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    x: Mapped[float]
-    y: Mapped[float]
-    z: Mapped[float]
-    w: Mapped[float]
+    polymorphic_type: Mapped[str]
+
+
+
+    points: Mapped[List[ContactPointDAO]] = relationship('ContactPointDAO', foreign_keys='[ContactPointDAO.contactpointslistdao_points_id]')
+
+    __mapper_args__ = {
+        'polymorphic_on': 'polymorphic_type',
+        'polymorphic_identity': 'ContactPointsListDAO',
+    }
+
+class HeaderDAO(Base, DataAccessObject[pycram.datastructures.pose.Header]):
+    __tablename__ = 'HeaderDAO'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    frame_id: Mapped[str]
+    stamp: Mapped[datetime.datetime]
+    sequence: Mapped[int]
 
 
 
@@ -140,17 +119,105 @@ class BoundingBoxDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.Bo
         'polymorphic_identity': 'BoundingBoxDAO',
     }
 
-class ColorDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.Color]):
-    __tablename__ = 'ColorDAO'
+class FrozenBodyDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.FrozenBody]):
+    __tablename__ = 'FrozenBodyDAO'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    R: Mapped[float]
-    G: Mapped[float]
-    B: Mapped[float]
-    A: Mapped[float]
+    name: Mapped[str]
+    is_moving: Mapped[Optional[bool]]
+    is_translating: Mapped[Optional[bool]]
+    is_rotating: Mapped[Optional[bool]]
+    polymorphic_type: Mapped[str]
+
+    concept: Mapped[TypeType] = mapped_column(TypeType, nullable=False)
+
+    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    velocity_id: Mapped[Optional[int]] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+    bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    insertioneventdao_inserted_into_objects_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('InsertionEventDAO.id'))
+
+    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id], post_update=True)
+    velocity: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[velocity_id], post_update=True)
+    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_on': 'polymorphic_type',
+        'polymorphic_identity': 'FrozenBodyDAO',
+    }
+
+class LateralFrictionDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.LateralFriction]):
+    __tablename__ = 'LateralFrictionDAO'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    lateral_friction: Mapped[float]
 
 
+    lateral_friction_direction_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+
+    lateral_friction_direction: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[lateral_friction_direction_id], post_update=True)
+
+
+class QuaternionDAO(Base, DataAccessObject[pycram.datastructures.pose.Quaternion]):
+    __tablename__ = 'QuaternionDAO'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    x: Mapped[float]
+    y: Mapped[float]
+    z: Mapped[float]
+    w: Mapped[float]
+
+
+
+
+
+class ContactPointDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.ContactPoint]):
+    __tablename__ = 'ContactPointDAO'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    distance: Mapped[Optional[float]]
+    normal_force: Mapped[Optional[float]]
+    polymorphic_type: Mapped[str]
+
+
+    contactpointslistdao_points_id: Mapped[Optional[int]] = mapped_column(ForeignKey('ContactPointsListDAO.id'))
+    position_on_body_a_id: Mapped[Optional[int]] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+    position_on_body_b_id: Mapped[Optional[int]] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+    normal_on_body_b_id: Mapped[Optional[int]] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+    lateral_friction_1_id: Mapped[Optional[int]] = mapped_column(ForeignKey('LateralFrictionDAO.id', use_alter=True), nullable=True)
+    lateral_friction_2_id: Mapped[Optional[int]] = mapped_column(ForeignKey('LateralFrictionDAO.id', use_alter=True), nullable=True)
+    body_a_frozen_cp_id: Mapped[int] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    body_b_frozen_cp_id: Mapped[int] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+
+    position_on_body_a: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[position_on_body_a_id], post_update=True)
+    position_on_body_b: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[position_on_body_b_id], post_update=True)
+    normal_on_body_b: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[normal_on_body_b_id], post_update=True)
+    lateral_friction_1: Mapped[LateralFrictionDAO] = relationship('LateralFrictionDAO', uselist=False, foreign_keys=[lateral_friction_1_id], post_update=True)
+    lateral_friction_2: Mapped[LateralFrictionDAO] = relationship('LateralFrictionDAO', uselist=False, foreign_keys=[lateral_friction_2_id], post_update=True)
+    body_a_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[body_a_frozen_cp_id], post_update=True)
+    body_b_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[body_b_frozen_cp_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_on': 'polymorphic_type',
+        'polymorphic_identity': 'ContactPointDAO',
+    }
+
+class FrozenJointDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.FrozenJoint]):
+    __tablename__ = 'FrozenJointDAO'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    name: Mapped[str]
+    type: Mapped[pycram.datastructures.enums.JointType]
+    parent: Mapped[Optional[str]]
+    state: Mapped[float]
+
+    children: Mapped[List[str]] = mapped_column(JSON, nullable=False)
+
+    frozenobjectdao_joints_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'))
 
 
 
@@ -172,79 +239,6 @@ class Vector3DAO(Base, DataAccessObject[pycram.datastructures.pose.Vector3]):
         'polymorphic_identity': 'Vector3DAO',
     }
 
-class EventDAO(Base, DataAccessObject[segmind.datastructures.events.Event]):
-    __tablename__ = 'EventDAO'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-    timestamp: Mapped[float]
-    detector_thread_id: Mapped[Optional[str]]
-    polymorphic_type: Mapped[str]
-
-
-
-
-    __mapper_args__ = {
-        'polymorphic_on': 'polymorphic_type',
-        'polymorphic_identity': 'EventDAO',
-    }
-
-class FrozenJointDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.FrozenJoint]):
-    __tablename__ = 'FrozenJointDAO'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-    name: Mapped[str]
-    type: Mapped[pycram.datastructures.enums.JointType]
-    parent: Mapped[Optional[str]]
-    state: Mapped[float]
-
-    children: Mapped[List[str]] = mapped_column(JSON, nullable=False)
-
-    frozenobjectdao_joints_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'))
-
-
-
-class FrozenBodyDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.FrozenBody]):
-    __tablename__ = 'FrozenBodyDAO'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-    name: Mapped[str]
-    is_moving: Mapped[Optional[bool]]
-    is_translating: Mapped[Optional[bool]]
-    is_rotating: Mapped[Optional[bool]]
-    polymorphic_type: Mapped[str]
-
-    concept: Mapped[TypeType] = mapped_column(TypeType, nullable=False)
-
-    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    velocity_id: Mapped[Optional[int]] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=True)
-    bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=True)
-    insertioneventdao_inserted_into_objects_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('InsertionEventDAO.id'))
-
-    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id])
-    velocity: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[velocity_id])
-    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id])
-
-    __mapper_args__ = {
-        'polymorphic_on': 'polymorphic_type',
-        'polymorphic_identity': 'FrozenBodyDAO',
-    }
-
-class HeaderDAO(Base, DataAccessObject[pycram.datastructures.pose.Header]):
-    __tablename__ = 'HeaderDAO'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-    frame_id: Mapped[str]
-    stamp: Mapped[datetime.datetime]
-    sequence: Mapped[int]
-
-
-
-
-
 class PoseDAO(Base, DataAccessObject[pycram.datastructures.pose.Pose]):
     __tablename__ = 'PoseDAO'
 
@@ -253,104 +247,62 @@ class PoseDAO(Base, DataAccessObject[pycram.datastructures.pose.Pose]):
     polymorphic_type: Mapped[str]
 
 
-    position_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=False)
-    orientation_id: Mapped[int] = mapped_column(ForeignKey('QuaternionDAO.id'), nullable=False)
+    position_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+    orientation_id: Mapped[int] = mapped_column(ForeignKey('QuaternionDAO.id', use_alter=True), nullable=True)
 
-    position: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[position_id])
-    orientation: Mapped[QuaternionDAO] = relationship('QuaternionDAO', uselist=False, foreign_keys=[orientation_id])
+    position: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[position_id], post_update=True)
+    orientation: Mapped[QuaternionDAO] = relationship('QuaternionDAO', uselist=False, foreign_keys=[orientation_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_on': 'polymorphic_type',
         'polymorphic_identity': 'PoseDAO',
     }
 
-class FrozenWorldStateDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.FrozenWorldState]):
-    __tablename__ = 'FrozenWorldStateDAO'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-
-
-
-    objects: Mapped[List[FrozenObjectDAO]] = relationship('FrozenObjectDAO', foreign_keys='[FrozenObjectDAO.frozenworldstatedao_objects_id]')
-
-
-class ContactPointsListDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.ContactPointsList]):
-    __tablename__ = 'ContactPointsListDAO'
+class PoseStampedDAO(Base, DataAccessObject[pycram.datastructures.pose.PoseStamped]):
+    __tablename__ = 'PoseStampedDAO'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
     polymorphic_type: Mapped[str]
 
 
+    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseDAO.id', use_alter=True), nullable=True)
+    header_id: Mapped[int] = mapped_column(ForeignKey('HeaderDAO.id', use_alter=True), nullable=True)
 
-    points: Mapped[List[ContactPointDAO]] = relationship('ContactPointDAO', foreign_keys='[ContactPointDAO.contactpointslistdao_points_id]')
+    pose: Mapped[PoseDAO] = relationship('PoseDAO', uselist=False, foreign_keys=[pose_id], post_update=True)
+    header: Mapped[HeaderDAO] = relationship('HeaderDAO', uselist=False, foreign_keys=[header_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_on': 'polymorphic_type',
-        'polymorphic_identity': 'ContactPointsListDAO',
+        'polymorphic_identity': 'PoseStampedDAO',
     }
 
-class TransformStampedDAO(PoseStampedDAO, DataAccessObject[pycram.datastructures.pose.TransformStamped]):
-    __tablename__ = 'TransformStampedDAO'
+class ColorDAO(Base, DataAccessObject[pycram.datastructures.dataclasses.Color]):
+    __tablename__ = 'ColorDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(PoseStampedDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    child_frame_id: Mapped[str]
-
-
-    pose_id: Mapped[int] = mapped_column(ForeignKey('TransformDAO.id'), nullable=False)
-
-    pose: Mapped[TransformDAO] = relationship('TransformDAO', uselist=False, foreign_keys=[pose_id])
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'TransformStampedDAO',
-        'inherit_condition': id == PoseStampedDAO.id,
-    }
-
-class GraspPoseDAO(PoseStampedDAO, DataAccessObject[pycram.datastructures.pose.GraspPose]):
-    __tablename__ = 'GraspPoseDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(PoseStampedDAO.id), primary_key=True)
-
-    arm: Mapped[pycram.datastructures.enums.Arms]
+    R: Mapped[float]
+    G: Mapped[float]
+    B: Mapped[float]
+    A: Mapped[float]
 
 
 
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'GraspPoseDAO',
-        'inherit_condition': id == PoseStampedDAO.id,
-    }
 
-class ClosestPointDAO(ContactPointDAO, DataAccessObject[pycram.datastructures.dataclasses.ClosestPoint]):
-    __tablename__ = 'ClosestPointDAO'
+class EventWithTrackedObjectsDAO(EventDAO, DataAccessObject[segmind.datastructures.events.EventWithTrackedObjects]):
+    __tablename__ = 'EventWithTrackedObjectsDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(ContactPointDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(EventDAO.id), primary_key=True)
 
 
 
 
 
     __mapper_args__ = {
-        'polymorphic_identity': 'ClosestPointDAO',
-        'inherit_condition': id == ContactPointDAO.id,
-    }
-
-class CapsuleVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.CapsuleVisualShape]):
-    __tablename__ = 'CapsuleVisualShapeDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(VisualShapeDAO.id), primary_key=True)
-
-    radius: Mapped[float]
-    length: Mapped[float]
-
-
-
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'CapsuleVisualShapeDAO',
-        'inherit_condition': id == VisualShapeDAO.id,
+        'polymorphic_identity': 'EventWithTrackedObjectsDAO',
+        'inherit_condition': id == EventDAO.id,
     }
 
 class PlaneVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.PlaneVisualShape]):
@@ -360,45 +312,12 @@ class PlaneVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructures
 
 
 
-    normal_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=False)
+    normal_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
 
-    normal: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[normal_id])
+    normal: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[normal_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'PlaneVisualShapeDAO',
-        'inherit_condition': id == VisualShapeDAO.id,
-    }
-
-class BoxVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.BoxVisualShape]):
-    __tablename__ = 'BoxVisualShapeDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(VisualShapeDAO.id), primary_key=True)
-
-
-
-    half_extents_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=False)
-
-    half_extents: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[half_extents_id])
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'BoxVisualShapeDAO',
-        'inherit_condition': id == VisualShapeDAO.id,
-    }
-
-class MeshVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.MeshVisualShape]):
-    __tablename__ = 'MeshVisualShapeDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(VisualShapeDAO.id), primary_key=True)
-
-    file_name: Mapped[str]
-
-
-    scale_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=False)
-
-    scale: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[scale_id])
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'MeshVisualShapeDAO',
         'inherit_condition': id == VisualShapeDAO.id,
     }
 
@@ -417,18 +336,67 @@ class SphereVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructure
         'inherit_condition': id == VisualShapeDAO.id,
     }
 
-class AxisAlignedBoundingBoxDAO(BoundingBoxDAO, DataAccessObject[pycram.datastructures.dataclasses.AxisAlignedBoundingBox]):
-    __tablename__ = 'AxisAlignedBoundingBoxDAO'
+class CapsuleVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.CapsuleVisualShape]):
+    __tablename__ = 'CapsuleVisualShapeDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(BoundingBoxDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(VisualShapeDAO.id), primary_key=True)
+
+    radius: Mapped[float]
+    length: Mapped[float]
+
+
+
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'CapsuleVisualShapeDAO',
+        'inherit_condition': id == VisualShapeDAO.id,
+    }
+
+class MeshVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.MeshVisualShape]):
+    __tablename__ = 'MeshVisualShapeDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(VisualShapeDAO.id), primary_key=True)
+
+    file_name: Mapped[str]
+
+
+    scale_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+
+    scale: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[scale_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'MeshVisualShapeDAO',
+        'inherit_condition': id == VisualShapeDAO.id,
+    }
+
+class BoxVisualShapeDAO(VisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.BoxVisualShape]):
+    __tablename__ = 'BoxVisualShapeDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(VisualShapeDAO.id), primary_key=True)
+
+
+
+    half_extents_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+
+    half_extents: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[half_extents_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'BoxVisualShapeDAO',
+        'inherit_condition': id == VisualShapeDAO.id,
+    }
+
+class ClosestPointsListDAO(ContactPointsListDAO, DataAccessObject[pycram.datastructures.dataclasses.ClosestPointsList]):
+    __tablename__ = 'ClosestPointsListDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(ContactPointsListDAO.id), primary_key=True)
 
 
 
 
 
     __mapper_args__ = {
-        'polymorphic_identity': 'AxisAlignedBoundingBoxDAO',
-        'inherit_condition': id == BoundingBoxDAO.id,
+        'polymorphic_identity': 'ClosestPointsListDAO',
+        'inherit_condition': id == ContactPointsListDAO.id,
     }
 
 class RotatedBoundingBoxDAO(BoundingBoxDAO, DataAccessObject[pycram.datastructures.dataclasses.RotatedBoundingBox]):
@@ -445,34 +413,18 @@ class RotatedBoundingBoxDAO(BoundingBoxDAO, DataAccessObject[pycram.datastructur
         'inherit_condition': id == BoundingBoxDAO.id,
     }
 
-class Vector3StampedDAO(Vector3DAO, DataAccessObject[pycram.datastructures.pose.Vector3Stamped]):
-    __tablename__ = 'Vector3StampedDAO'
+class AxisAlignedBoundingBoxDAO(BoundingBoxDAO, DataAccessObject[pycram.datastructures.dataclasses.AxisAlignedBoundingBox]):
+    __tablename__ = 'AxisAlignedBoundingBoxDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(Vector3DAO.id), primary_key=True)
-
-
-
-    header_id: Mapped[int] = mapped_column(ForeignKey('HeaderDAO.id'), nullable=False)
-
-    header: Mapped[HeaderDAO] = relationship('HeaderDAO', uselist=False, foreign_keys=[header_id])
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'Vector3StampedDAO',
-        'inherit_condition': id == Vector3DAO.id,
-    }
-
-class EventWithTrackedObjectsDAO(EventDAO, DataAccessObject[segmind.datastructures.events.EventWithTrackedObjects]):
-    __tablename__ = 'EventWithTrackedObjectsDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(EventDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(BoundingBoxDAO.id), primary_key=True)
 
 
 
 
 
     __mapper_args__ = {
-        'polymorphic_identity': 'EventWithTrackedObjectsDAO',
-        'inherit_condition': id == EventDAO.id,
+        'polymorphic_identity': 'AxisAlignedBoundingBoxDAO',
+        'inherit_condition': id == BoundingBoxDAO.id,
     }
 
 class FrozenLinkDAO(FrozenBodyDAO, DataAccessObject[pycram.datastructures.dataclasses.FrozenLink]):
@@ -509,6 +461,36 @@ class FrozenObjectDAO(FrozenBodyDAO, DataAccessObject[pycram.datastructures.data
         'inherit_condition': id == FrozenBodyDAO.id,
     }
 
+class ClosestPointDAO(ContactPointDAO, DataAccessObject[pycram.datastructures.dataclasses.ClosestPoint]):
+    __tablename__ = 'ClosestPointDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(ContactPointDAO.id), primary_key=True)
+
+
+
+
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'ClosestPointDAO',
+        'inherit_condition': id == ContactPointDAO.id,
+    }
+
+class Vector3StampedDAO(Vector3DAO, DataAccessObject[pycram.datastructures.pose.Vector3Stamped]):
+    __tablename__ = 'Vector3StampedDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(Vector3DAO.id), primary_key=True)
+
+
+
+    header_id: Mapped[int] = mapped_column(ForeignKey('HeaderDAO.id', use_alter=True), nullable=True)
+
+    header: Mapped[HeaderDAO] = relationship('HeaderDAO', uselist=False, foreign_keys=[header_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'Vector3StampedDAO',
+        'inherit_condition': id == Vector3DAO.id,
+    }
+
 class TransformDAO(PoseDAO, DataAccessObject[pycram.datastructures.pose.Transform]):
     __tablename__ = 'TransformDAO'
 
@@ -523,36 +505,36 @@ class TransformDAO(PoseDAO, DataAccessObject[pycram.datastructures.pose.Transfor
         'inherit_condition': id == PoseDAO.id,
     }
 
-class ClosestPointsListDAO(ContactPointsListDAO, DataAccessObject[pycram.datastructures.dataclasses.ClosestPointsList]):
-    __tablename__ = 'ClosestPointsListDAO'
+class GraspPoseDAO(PoseStampedDAO, DataAccessObject[pycram.datastructures.pose.GraspPose]):
+    __tablename__ = 'GraspPoseDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(ContactPointsListDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(PoseStampedDAO.id), primary_key=True)
 
+    arm: Mapped[pycram.datastructures.enums.Arms]
 
 
 
 
     __mapper_args__ = {
-        'polymorphic_identity': 'ClosestPointsListDAO',
-        'inherit_condition': id == ContactPointsListDAO.id,
+        'polymorphic_identity': 'GraspPoseDAO',
+        'inherit_condition': id == PoseStampedDAO.id,
     }
 
-class CylinderVisualShapeDAO(CapsuleVisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.CylinderVisualShape]):
-    __tablename__ = 'CylinderVisualShapeDAO'
+class TransformStampedDAO(PoseStampedDAO, DataAccessObject[pycram.datastructures.pose.TransformStamped]):
+    __tablename__ = 'TransformStampedDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(CapsuleVisualShapeDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(PoseStampedDAO.id), primary_key=True)
+
+    child_frame_id: Mapped[str]
 
 
+    pose_id: Mapped[int] = mapped_column(ForeignKey('TransformDAO.id', use_alter=True), nullable=True)
 
-    rgba_color_id: Mapped[int] = mapped_column(ForeignKey('ColorDAO.id'), nullable=False)
-    visual_frame_position_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id'), nullable=False)
-
-    rgba_color: Mapped[ColorDAO] = relationship('ColorDAO', uselist=False, foreign_keys=[rgba_color_id])
-    visual_frame_position: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[visual_frame_position_id])
+    pose: Mapped[TransformDAO] = relationship('TransformDAO', uselist=False, foreign_keys=[pose_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'CylinderVisualShapeDAO',
-        'inherit_condition': id == CapsuleVisualShapeDAO.id,
+        'polymorphic_identity': 'TransformStampedDAO',
+        'inherit_condition': id == PoseStampedDAO.id,
     }
 
 class EventWithTwoTrackedObjectsDAO(EventWithTrackedObjectsDAO, DataAccessObject[segmind.datastructures.events.EventWithTwoTrackedObjects]):
@@ -564,13 +546,13 @@ class EventWithTwoTrackedObjectsDAO(EventWithTrackedObjectsDAO, DataAccessObject
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'EventWithTwoTrackedObjectsDAO',
@@ -586,40 +568,50 @@ class EventWithOneTrackedObjectDAO(EventWithTrackedObjectsDAO, DataAccessObject[
     detector_thread_id: Mapped[Optional[str]]
 
 
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'EventWithOneTrackedObjectDAO',
         'inherit_condition': id == EventWithTrackedObjectsDAO.id,
     }
 
-class AbstractContactEventDAO(EventWithTwoTrackedObjectsDAO, DataAccessObject[segmind.datastructures.events.AbstractContactEvent]):
-    __tablename__ = 'AbstractContactEventDAO'
+class CylinderVisualShapeDAO(CapsuleVisualShapeDAO, DataAccessObject[pycram.datastructures.dataclasses.CylinderVisualShape]):
+    __tablename__ = 'CylinderVisualShapeDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(CapsuleVisualShapeDAO.id), primary_key=True)
+
+
+
+    rgba_color_id: Mapped[int] = mapped_column(ForeignKey('ColorDAO.id', use_alter=True), nullable=True)
+    visual_frame_position_id: Mapped[int] = mapped_column(ForeignKey('Vector3DAO.id', use_alter=True), nullable=True)
+
+    rgba_color: Mapped[ColorDAO] = relationship('ColorDAO', uselist=False, foreign_keys=[rgba_color_id], post_update=True)
+    visual_frame_position: Mapped[Vector3DAO] = relationship('Vector3DAO', uselist=False, foreign_keys=[visual_frame_position_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'CylinderVisualShapeDAO',
+        'inherit_condition': id == CapsuleVisualShapeDAO.id,
+    }
+
+class AbstractAgentObjectInteractionEventDAO(EventWithTwoTrackedObjectsDAO, DataAccessObject[segmind.datastructures.events.AbstractAgentObjectInteractionEvent]):
+    __tablename__ = 'AbstractAgentObjectInteractionEventDAO'
 
     id: Mapped[int] = mapped_column(ForeignKey(EventWithTwoTrackedObjectsDAO.id), primary_key=True)
 
+    timestamp: Mapped[Optional[float]]
+    end_timestamp: Mapped[Optional[float]]
 
 
-    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=False)
-    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=True)
-    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=True)
+    agent_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
 
-    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id])
-    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id])
-    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id])
-    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id])
-    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id])
-    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id])
+    agent_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[agent_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'AbstractContactEventDAO',
+        'polymorphic_identity': 'AbstractAgentObjectInteractionEventDAO',
         'inherit_condition': id == EventWithTwoTrackedObjectsDAO.id,
     }
 
@@ -637,22 +629,48 @@ class DefaultEventWithTwoTrackedObjectsDAO(EventWithTwoTrackedObjectsDAO, DataAc
         'inherit_condition': id == EventWithTwoTrackedObjectsDAO.id,
     }
 
-class AbstractAgentObjectInteractionEventDAO(EventWithTwoTrackedObjectsDAO, DataAccessObject[segmind.datastructures.events.AbstractAgentObjectInteractionEvent]):
-    __tablename__ = 'AbstractAgentObjectInteractionEventDAO'
+class AbstractContactEventDAO(EventWithTwoTrackedObjectsDAO, DataAccessObject[segmind.datastructures.events.AbstractContactEvent]):
+    __tablename__ = 'AbstractContactEventDAO'
 
     id: Mapped[int] = mapped_column(ForeignKey(EventWithTwoTrackedObjectsDAO.id), primary_key=True)
 
-    timestamp: Mapped[Optional[float]]
-    end_timestamp: Mapped[Optional[float]]
 
 
-    agent_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
+    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
 
-    agent_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[agent_frozen_cp_id])
+    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id], post_update=True)
+    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id], post_update=True)
+    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id], post_update=True)
+    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id], post_update=True)
+    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id], post_update=True)
+    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'AbstractAgentObjectInteractionEventDAO',
+        'polymorphic_identity': 'AbstractContactEventDAO',
         'inherit_condition': id == EventWithTwoTrackedObjectsDAO.id,
+    }
+
+class MotionEventDAO(EventWithOneTrackedObjectDAO, DataAccessObject[segmind.datastructures.events.MotionEvent]):
+    __tablename__ = 'MotionEventDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(EventWithOneTrackedObjectDAO.id), primary_key=True)
+
+
+
+    start_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    current_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+
+    start_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[start_pose_id], post_update=True)
+    current_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[current_pose_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'MotionEventDAO',
+        'inherit_condition': id == EventWithOneTrackedObjectDAO.id,
     }
 
 class NewObjectEventDAO(EventWithOneTrackedObjectDAO, DataAccessObject[segmind.datastructures.events.NewObjectEvent]):
@@ -669,110 +687,70 @@ class NewObjectEventDAO(EventWithOneTrackedObjectDAO, DataAccessObject[segmind.d
         'inherit_condition': id == EventWithOneTrackedObjectDAO.id,
     }
 
-class MotionEventDAO(EventWithOneTrackedObjectDAO, DataAccessObject[segmind.datastructures.events.MotionEvent]):
-    __tablename__ = 'MotionEventDAO'
+class PickUpEventDAO(AbstractAgentObjectInteractionEventDAO, DataAccessObject[segmind.datastructures.events.PickUpEvent]):
+    __tablename__ = 'PickUpEventDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(EventWithOneTrackedObjectDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(AbstractAgentObjectInteractionEventDAO.id), primary_key=True)
 
-
-
-    start_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    current_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-
-    start_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[start_pose_id])
-    current_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[current_pose_id])
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'MotionEventDAO',
-        'inherit_condition': id == EventWithOneTrackedObjectDAO.id,
-    }
-
-class ContactEventDAO(AbstractContactEventDAO, DataAccessObject[segmind.datastructures.events.ContactEvent]):
-    __tablename__ = 'ContactEventDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(AbstractContactEventDAO.id), primary_key=True)
-
-    timestamp: Mapped[float]
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'ContactEventDAO',
-        'inherit_condition': id == AbstractContactEventDAO.id,
+        'polymorphic_identity': 'PickUpEventDAO',
+        'inherit_condition': id == AbstractAgentObjectInteractionEventDAO.id,
     }
 
-class LossOfContactEventDAO(AbstractContactEventDAO, DataAccessObject[segmind.datastructures.events.LossOfContactEvent]):
-    __tablename__ = 'LossOfContactEventDAO'
+class PlacingEventDAO(AbstractAgentObjectInteractionEventDAO, DataAccessObject[segmind.datastructures.events.PlacingEvent]):
+    __tablename__ = 'PlacingEventDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(AbstractContactEventDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(AbstractAgentObjectInteractionEventDAO.id), primary_key=True)
 
-    timestamp: Mapped[float]
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
+    placement_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
+    placement_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[placement_pose_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'LossOfContactEventDAO',
-        'inherit_condition': id == AbstractContactEventDAO.id,
+        'polymorphic_identity': 'PlacingEventDAO',
+        'inherit_condition': id == AbstractAgentObjectInteractionEventDAO.id,
     }
 
-class AbstractAgentContactDAO(AbstractContactEventDAO, DataAccessObject[segmind.datastructures.events.AbstractAgentContact]):
-    __tablename__ = 'AbstractAgentContactDAO'
+class InsertionEventDAO(AbstractAgentObjectInteractionEventDAO, DataAccessObject[segmind.datastructures.events.InsertionEvent]):
+    __tablename__ = 'InsertionEventDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(AbstractContactEventDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(AbstractAgentObjectInteractionEventDAO.id), primary_key=True)
 
-    timestamp: Mapped[float]
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'AbstractAgentContactDAO',
-        'inherit_condition': id == AbstractContactEventDAO.id,
-    }
-
-class SupportEventDAO(DefaultEventWithTwoTrackedObjectsDAO, DataAccessObject[segmind.datastructures.events.SupportEvent]):
-    __tablename__ = 'SupportEventDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(DefaultEventWithTwoTrackedObjectsDAO.id), primary_key=True)
-
-    timestamp: Mapped[float]
-    detector_thread_id: Mapped[Optional[str]]
-
-
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
-
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
+    inserted_into_objects_frozen_cp: Mapped[List[FrozenBodyDAO]] = relationship('FrozenBodyDAO', foreign_keys='[FrozenBodyDAO.insertioneventdao_inserted_into_objects_frozen_cp_id]')
 
     __mapper_args__ = {
-        'polymorphic_identity': 'SupportEventDAO',
-        'inherit_condition': id == DefaultEventWithTwoTrackedObjectsDAO.id,
+        'polymorphic_identity': 'InsertionEventDAO',
+        'inherit_condition': id == AbstractAgentObjectInteractionEventDAO.id,
     }
 
 class ContainmentEventDAO(DefaultEventWithTwoTrackedObjectsDAO, DataAccessObject[segmind.datastructures.events.ContainmentEvent]):
@@ -784,13 +762,13 @@ class ContainmentEventDAO(DefaultEventWithTwoTrackedObjectsDAO, DataAccessObject
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'ContainmentEventDAO',
@@ -806,87 +784,109 @@ class LossOfSupportEventDAO(DefaultEventWithTwoTrackedObjectsDAO, DataAccessObje
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'LossOfSupportEventDAO',
         'inherit_condition': id == DefaultEventWithTwoTrackedObjectsDAO.id,
     }
 
-class PlacingEventDAO(AbstractAgentObjectInteractionEventDAO, DataAccessObject[segmind.datastructures.events.PlacingEvent]):
-    __tablename__ = 'PlacingEventDAO'
+class SupportEventDAO(DefaultEventWithTwoTrackedObjectsDAO, DataAccessObject[segmind.datastructures.events.SupportEvent]):
+    __tablename__ = 'SupportEventDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(AbstractAgentObjectInteractionEventDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(DefaultEventWithTwoTrackedObjectsDAO.id), primary_key=True)
 
+    timestamp: Mapped[float]
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
-    placement_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
-    placement_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[placement_pose_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'PlacingEventDAO',
-        'inherit_condition': id == AbstractAgentObjectInteractionEventDAO.id,
+        'polymorphic_identity': 'SupportEventDAO',
+        'inherit_condition': id == DefaultEventWithTwoTrackedObjectsDAO.id,
     }
 
-class InsertionEventDAO(AbstractAgentObjectInteractionEventDAO, DataAccessObject[segmind.datastructures.events.InsertionEvent]):
-    __tablename__ = 'InsertionEventDAO'
+class LossOfContactEventDAO(AbstractContactEventDAO, DataAccessObject[segmind.datastructures.events.LossOfContactEvent]):
+    __tablename__ = 'LossOfContactEventDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(AbstractAgentObjectInteractionEventDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(AbstractContactEventDAO.id), primary_key=True)
 
+    timestamp: Mapped[float]
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
-    inserted_into_objects_frozen_cp: Mapped[List[FrozenBodyDAO]] = relationship('FrozenBodyDAO', foreign_keys='[FrozenBodyDAO.insertioneventdao_inserted_into_objects_frozen_cp_id]')
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'InsertionEventDAO',
-        'inherit_condition': id == AbstractAgentObjectInteractionEventDAO.id,
+        'polymorphic_identity': 'LossOfContactEventDAO',
+        'inherit_condition': id == AbstractContactEventDAO.id,
     }
 
-class PickUpEventDAO(AbstractAgentObjectInteractionEventDAO, DataAccessObject[segmind.datastructures.events.PickUpEvent]):
-    __tablename__ = 'PickUpEventDAO'
+class AbstractAgentContactDAO(AbstractContactEventDAO, DataAccessObject[segmind.datastructures.events.AbstractAgentContact]):
+    __tablename__ = 'AbstractAgentContactDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(AbstractAgentObjectInteractionEventDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(AbstractContactEventDAO.id), primary_key=True)
 
+    timestamp: Mapped[float]
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'PickUpEventDAO',
-        'inherit_condition': id == AbstractAgentObjectInteractionEventDAO.id,
+        'polymorphic_identity': 'AbstractAgentContactDAO',
+        'inherit_condition': id == AbstractContactEventDAO.id,
     }
 
-class StopMotionEventDAO(MotionEventDAO, DataAccessObject[segmind.datastructures.events.StopMotionEvent]):
-    __tablename__ = 'StopMotionEventDAO'
+class ContactEventDAO(AbstractContactEventDAO, DataAccessObject[segmind.datastructures.events.ContactEvent]):
+    __tablename__ = 'ContactEventDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(AbstractContactEventDAO.id), primary_key=True)
+
+    timestamp: Mapped[float]
+    detector_thread_id: Mapped[Optional[str]]
+
+
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
+
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'ContactEventDAO',
+        'inherit_condition': id == AbstractContactEventDAO.id,
+    }
+
+class RotationEventDAO(MotionEventDAO, DataAccessObject[segmind.datastructures.events.RotationEvent]):
+    __tablename__ = 'RotationEventDAO'
 
     id: Mapped[int] = mapped_column(ForeignKey(MotionEventDAO.id), primary_key=True)
 
@@ -894,14 +894,14 @@ class StopMotionEventDAO(MotionEventDAO, DataAccessObject[segmind.datastructures
     detector_thread_id: Mapped[Optional[str]]
 
 
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'StopMotionEventDAO',
+        'polymorphic_identity': 'RotationEventDAO',
         'inherit_condition': id == MotionEventDAO.id,
     }
 
@@ -914,19 +914,19 @@ class TranslationEventDAO(MotionEventDAO, DataAccessObject[segmind.datastructure
     detector_thread_id: Mapped[Optional[str]]
 
 
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'TranslationEventDAO',
         'inherit_condition': id == MotionEventDAO.id,
     }
 
-class RotationEventDAO(MotionEventDAO, DataAccessObject[segmind.datastructures.events.RotationEvent]):
-    __tablename__ = 'RotationEventDAO'
+class StopMotionEventDAO(MotionEventDAO, DataAccessObject[segmind.datastructures.events.StopMotionEvent]):
+    __tablename__ = 'StopMotionEventDAO'
 
     id: Mapped[int] = mapped_column(ForeignKey(MotionEventDAO.id), primary_key=True)
 
@@ -934,67 +934,15 @@ class RotationEventDAO(MotionEventDAO, DataAccessObject[segmind.datastructures.e
     detector_thread_id: Mapped[Optional[str]]
 
 
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'RotationEventDAO',
+        'polymorphic_identity': 'StopMotionEventDAO',
         'inherit_condition': id == MotionEventDAO.id,
-    }
-
-class InterferenceEventDAO(ContactEventDAO, DataAccessObject[segmind.datastructures.events.InterferenceEvent]):
-    __tablename__ = 'InterferenceEventDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(ContactEventDAO.id), primary_key=True)
-
-
-
-    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=False)
-    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=True)
-    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=True)
-
-    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id])
-    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id])
-    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id])
-    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id])
-    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id])
-    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id])
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'InterferenceEventDAO',
-        'inherit_condition': id == ContactEventDAO.id,
-    }
-
-class AgentContactEventDAO(ContactEventDAO, DataAccessObject[segmind.datastructures.events.AgentContactEvent]):
-    __tablename__ = 'AgentContactEventDAO'
-
-    id: Mapped[int] = mapped_column(ForeignKey(ContactEventDAO.id), primary_key=True)
-
-
-
-    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=False)
-    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=True)
-    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=True)
-
-    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id])
-    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id])
-    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id])
-    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id])
-    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id])
-    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id])
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'AgentContactEventDAO',
-        'inherit_condition': id == ContactEventDAO.id,
     }
 
 class AgentLossOfContactEventDAO(LossOfContactEventDAO, DataAccessObject[segmind.datastructures.events.AgentLossOfContactEvent]):
@@ -1004,19 +952,19 @@ class AgentLossOfContactEventDAO(LossOfContactEventDAO, DataAccessObject[segmind
 
 
 
-    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=False)
-    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=True)
-    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=True)
+    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
 
-    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id])
-    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id])
-    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id])
-    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id])
-    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id])
-    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id])
+    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id], post_update=True)
+    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id], post_update=True)
+    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id], post_update=True)
+    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id], post_update=True)
+    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id], post_update=True)
+    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'AgentLossOfContactEventDAO',
@@ -1030,41 +978,75 @@ class LossOfInterferenceEventDAO(LossOfContactEventDAO, DataAccessObject[segmind
 
 
 
-    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id'), nullable=False)
-    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=False)
-    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id'), nullable=True)
-    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=True)
+    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
 
-    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id])
-    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id])
-    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id])
-    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id])
-    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id])
-    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id])
+    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id], post_update=True)
+    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id], post_update=True)
+    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id], post_update=True)
+    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id], post_update=True)
+    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id], post_update=True)
+    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'LossOfInterferenceEventDAO',
         'inherit_condition': id == LossOfContactEventDAO.id,
     }
 
-class StopTranslationEventDAO(StopMotionEventDAO, DataAccessObject[segmind.datastructures.events.StopTranslationEvent]):
-    __tablename__ = 'StopTranslationEventDAO'
+class InterferenceEventDAO(ContactEventDAO, DataAccessObject[segmind.datastructures.events.InterferenceEvent]):
+    __tablename__ = 'InterferenceEventDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(StopMotionEventDAO.id), primary_key=True)
+    id: Mapped[int] = mapped_column(ForeignKey(ContactEventDAO.id), primary_key=True)
 
 
 
-    start_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    current_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
+    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
 
-    start_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[start_pose_id])
-    current_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[current_pose_id])
+    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id], post_update=True)
+    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id], post_update=True)
+    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id], post_update=True)
+    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id], post_update=True)
+    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id], post_update=True)
+    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'StopTranslationEventDAO',
-        'inherit_condition': id == StopMotionEventDAO.id,
+        'polymorphic_identity': 'InterferenceEventDAO',
+        'inherit_condition': id == ContactEventDAO.id,
+    }
+
+class AgentContactEventDAO(ContactEventDAO, DataAccessObject[segmind.datastructures.events.AgentContactEvent]):
+    __tablename__ = 'AgentContactEventDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(ContactEventDAO.id), primary_key=True)
+
+
+
+    contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    latest_contact_points_id: Mapped[int] = mapped_column(ForeignKey('ContactPointsListDAO.id', use_alter=True), nullable=True)
+    bounding_box_id: Mapped[int] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    with_object_bounding_box_id: Mapped[Optional[int]] = mapped_column(ForeignKey('AxisAlignedBoundingBoxDAO.id', use_alter=True), nullable=True)
+    with_object_pose_id: Mapped[Optional[int]] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+
+    contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[contact_points_id], post_update=True)
+    latest_contact_points: Mapped[ContactPointsListDAO] = relationship('ContactPointsListDAO', uselist=False, foreign_keys=[latest_contact_points_id], post_update=True)
+    bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[bounding_box_id], post_update=True)
+    pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[pose_id], post_update=True)
+    with_object_bounding_box: Mapped[AxisAlignedBoundingBoxDAO] = relationship('AxisAlignedBoundingBoxDAO', uselist=False, foreign_keys=[with_object_bounding_box_id], post_update=True)
+    with_object_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[with_object_pose_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'AgentContactEventDAO',
+        'inherit_condition': id == ContactEventDAO.id,
     }
 
 class StopRotationEventDAO(StopMotionEventDAO, DataAccessObject[segmind.datastructures.events.StopRotationEvent]):
@@ -1074,37 +1056,33 @@ class StopRotationEventDAO(StopMotionEventDAO, DataAccessObject[segmind.datastru
 
 
 
-    start_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
-    current_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id'), nullable=False)
+    start_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    current_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
 
-    start_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[start_pose_id])
-    current_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[current_pose_id])
+    start_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[start_pose_id], post_update=True)
+    current_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[current_pose_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'StopRotationEventDAO',
         'inherit_condition': id == StopMotionEventDAO.id,
     }
 
-class AgentInterferenceEventDAO(InterferenceEventDAO, DataAccessObject[segmind.datastructures.events.AgentInterferenceEvent]):
-    __tablename__ = 'AgentInterferenceEventDAO'
+class StopTranslationEventDAO(StopMotionEventDAO, DataAccessObject[segmind.datastructures.events.StopTranslationEvent]):
+    __tablename__ = 'StopTranslationEventDAO'
 
-    id: Mapped[int] = mapped_column(ForeignKey(InterferenceEventDAO.id), primary_key=True)
-
-    timestamp: Mapped[float]
-    detector_thread_id: Mapped[Optional[str]]
+    id: Mapped[int] = mapped_column(ForeignKey(StopMotionEventDAO.id), primary_key=True)
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    start_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+    current_pose_id: Mapped[int] = mapped_column(ForeignKey('PoseStampedDAO.id', use_alter=True), nullable=True)
+
+    start_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[start_pose_id], post_update=True)
+    current_pose: Mapped[PoseStampedDAO] = relationship('PoseStampedDAO', uselist=False, foreign_keys=[current_pose_id], post_update=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'AgentInterferenceEventDAO',
-        'inherit_condition': id == InterferenceEventDAO.id,
+        'polymorphic_identity': 'StopTranslationEventDAO',
+        'inherit_condition': id == StopMotionEventDAO.id,
     }
 
 class AgentLossOfInterferenceEventDAO(LossOfInterferenceEventDAO, DataAccessObject[segmind.datastructures.events.AgentLossOfInterferenceEvent]):
@@ -1116,16 +1094,38 @@ class AgentLossOfInterferenceEventDAO(LossOfInterferenceEventDAO, DataAccessObje
     detector_thread_id: Mapped[Optional[str]]
 
 
-    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id'), nullable=True)
-    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id'), nullable=True)
-    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id'), nullable=True)
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
 
-    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id])
-    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id])
-    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id])
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'AgentLossOfInterferenceEventDAO',
         'inherit_condition': id == LossOfInterferenceEventDAO.id,
+    }
+
+class AgentInterferenceEventDAO(InterferenceEventDAO, DataAccessObject[segmind.datastructures.events.AgentInterferenceEvent]):
+    __tablename__ = 'AgentInterferenceEventDAO'
+
+    id: Mapped[int] = mapped_column(ForeignKey(InterferenceEventDAO.id), primary_key=True)
+
+    timestamp: Mapped[float]
+    detector_thread_id: Mapped[Optional[str]]
+
+
+    with_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenBodyDAO.id', use_alter=True), nullable=True)
+    tracked_object_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenObjectDAO.id', use_alter=True), nullable=True)
+    world_frozen_cp_id: Mapped[Optional[int]] = mapped_column(ForeignKey('FrozenWorldStateDAO.id', use_alter=True), nullable=True)
+
+    with_object_frozen_cp: Mapped[FrozenBodyDAO] = relationship('FrozenBodyDAO', uselist=False, foreign_keys=[with_object_frozen_cp_id], post_update=True)
+    tracked_object_frozen_cp: Mapped[FrozenObjectDAO] = relationship('FrozenObjectDAO', uselist=False, foreign_keys=[tracked_object_frozen_cp_id], post_update=True)
+    world_frozen_cp: Mapped[FrozenWorldStateDAO] = relationship('FrozenWorldStateDAO', uselist=False, foreign_keys=[world_frozen_cp_id], post_update=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'AgentInterferenceEventDAO',
+        'inherit_condition': id == InterferenceEventDAO.id,
     }
 

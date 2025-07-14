@@ -12,19 +12,13 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Case": "ripple_down_rules.datastructures.case.Case",
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Type": "typing.Type",
-                        "Union": "typing.Union",
-                        "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
-                        "Object": "pycram.world_concepts.world_object.Object",
-                        "HasSecondaryTrackedObject": "segmind.datastructures.mixins.HasSecondaryTrackedObject",
                         "HasPrimaryTrackedObject": "segmind.datastructures.mixins.HasPrimaryTrackedObject",
+                        "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
+                        "Type": "typing.Type",
                         "ContactEvent": "segmind.datastructures.events.ContactEvent",
-                        "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
-                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                        "NoneType": "builtins.NoneType"
+                        "Object": "pycram.world_concepts.world_object.Object",
+                        "NoneType": "builtins.NoneType",
+                        "Union": "typing.Union"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -36,23 +30,16 @@
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
                     "user_input": "def _get_value(case):\n    def placing_detector_get_object_to_track_from_starter_event(cls_: Type[PlacingDetector], starter_event: ContactEvent, output_: Union[NoneType, Object]) -> Union[NoneType, Object]:\n        \"\"\"Get possible value(s) for PlacingDetector_get_object_to_track_from_starter_event.output_  of type Object.\"\"\"\n        return starter_event.tracked_object\n    return placing_detector_get_object_to_track_from_starter_event(**case)\n    ",
                     "conclusion_type": [
-                        "builtins.NoneType",
-                        "pycram.world_concepts.world_object.Object"
+                        "pycram.world_concepts.world_object.Object",
+                        "builtins.NoneType"
                     ],
                     "scope": {
-                        "Case": "ripple_down_rules.datastructures.case.Case",
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Type": "typing.Type",
-                        "Union": "typing.Union",
                         "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
-                        "Object": "pycram.world_concepts.world_object.Object",
-                        "HasSecondaryTrackedObject": "segmind.datastructures.mixins.HasSecondaryTrackedObject",
-                        "HasPrimaryTrackedObject": "segmind.datastructures.mixins.HasPrimaryTrackedObject",
+                        "Type": "typing.Type",
                         "ContactEvent": "segmind.datastructures.events.ContactEvent",
-                        "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
-                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                        "NoneType": "builtins.NoneType"
+                        "Object": "pycram.world_concepts.world_object.Object",
+                        "NoneType": "builtins.NoneType",
+                        "Union": "typing.Union"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -61,7 +48,6 @@
                     "mutually_exclusive": true
                 },
                 "parent": null,
-                "corner_case": null,
                 "conclusion_name": "output_",
                 "weight": null,
                 "uid": "157980724165316319734190707637955950660",

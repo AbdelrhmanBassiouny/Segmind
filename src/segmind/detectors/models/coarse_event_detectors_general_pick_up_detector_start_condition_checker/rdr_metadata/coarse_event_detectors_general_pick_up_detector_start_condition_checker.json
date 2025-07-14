@@ -12,15 +12,10 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Event": "segmind.datastructures.events.Event",
-                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                        "get_support": "segmind.utils.get_support",
                         "Type": "typing.Type",
-                        "logerr": "pycram.ros.ros1.logging.logerr"
+                        "Event": "segmind.datastructures.events.Event",
+                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -35,15 +30,9 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Event": "segmind.datastructures.events.Event",
-                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                        "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                        "get_support": "segmind.utils.get_support",
                         "Type": "typing.Type",
-                        "logerr": "pycram.ros.ros1.logging.logerr"
+                        "Event": "segmind.datastructures.events.Event"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -52,7 +41,6 @@
                     "mutually_exclusive": true
                 },
                 "parent": null,
-                "corner_case": null,
                 "conclusion_name": "output_",
                 "weight": null,
                 "uid": "313968436519149281932112885344716145224",
@@ -65,15 +53,9 @@
                             "builtins.bool"
                         ],
                         "scope": {
-                            "Event": "segmind.datastructures.events.Event",
-                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                            "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                            "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                             "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                            "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                            "get_support": "segmind.utils.get_support",
                             "Type": "typing.Type",
-                            "logerr": "pycram.ros.ros1.logging.logerr"
+                            "Event": "segmind.datastructures.events.Event"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -88,15 +70,9 @@
                             "builtins.bool"
                         ],
                         "scope": {
-                            "Event": "segmind.datastructures.events.Event",
-                            "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                            "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                            "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                             "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                            "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                            "get_support": "segmind.utils.get_support",
                             "Type": "typing.Type",
-                            "logerr": "pycram.ros.ros1.logging.logerr"
+                            "Event": "segmind.datastructures.events.Event"
                         },
                         "conclusion": {
                             "_type": "builtins.NoneType",
@@ -105,8 +81,7 @@
                         "mutually_exclusive": true
                     },
                     "parent": null,
-                    "corner_case": null,
-                    "conclusion_name": null,
+                    "conclusion_name": "output_",
                     "weight": "except if",
                     "uid": "185374571278911955422500089733244334209",
                     "refinement": null,
@@ -119,15 +94,9 @@
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "Event": "segmind.datastructures.events.Event",
-                                "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                                "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                                 "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                                "get_support": "segmind.utils.get_support",
                                 "Type": "typing.Type",
-                                "logerr": "pycram.ros.ros1.logging.logerr"
+                                "Event": "segmind.datastructures.events.Event"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -142,15 +111,9 @@
                                 "builtins.bool"
                             ],
                             "scope": {
-                                "Event": "segmind.datastructures.events.Event",
-                                "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                                "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                                 "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                                "get_support": "segmind.utils.get_support",
                                 "Type": "typing.Type",
-                                "logerr": "pycram.ros.ros1.logging.logerr"
+                                "Event": "segmind.datastructures.events.Event"
                             },
                             "conclusion": {
                                 "_type": "builtins.NoneType",
@@ -159,8 +122,7 @@
                             "mutually_exclusive": true
                         },
                         "parent": null,
-                        "corner_case": null,
-                        "conclusion_name": null,
+                        "conclusion_name": "output_",
                         "weight": "else if",
                         "uid": "259334668447470890319338447268411809573",
                         "refinement": null,
@@ -173,15 +135,9 @@
                                     "builtins.bool"
                                 ],
                                 "scope": {
-                                    "Event": "segmind.datastructures.events.Event",
-                                    "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                    "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                                    "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                                     "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                    "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                                    "get_support": "segmind.utils.get_support",
                                     "Type": "typing.Type",
-                                    "logerr": "pycram.ros.ros1.logging.logerr"
+                                    "Event": "segmind.datastructures.events.Event"
                                 },
                                 "conclusion": {
                                     "_type": "builtins.NoneType",
@@ -196,15 +152,9 @@
                                     "builtins.bool"
                                 ],
                                 "scope": {
-                                    "Event": "segmind.datastructures.events.Event",
-                                    "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                    "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                                    "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                                     "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                    "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                                    "get_support": "segmind.utils.get_support",
                                     "Type": "typing.Type",
-                                    "logerr": "pycram.ros.ros1.logging.logerr"
+                                    "Event": "segmind.datastructures.events.Event"
                                 },
                                 "conclusion": {
                                     "_type": "builtins.NoneType",
@@ -213,8 +163,7 @@
                                 "mutually_exclusive": true
                             },
                             "parent": null,
-                            "corner_case": null,
-                            "conclusion_name": null,
+                            "conclusion_name": "output_",
                             "weight": "else if",
                             "uid": "1084517150588802996811823834978763787",
                             "refinement": null,
@@ -227,15 +176,10 @@
                                         "builtins.bool"
                                     ],
                                     "scope": {
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                        "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                                        "get_support": "segmind.utils.get_support",
                                         "Type": "typing.Type",
-                                        "logerr": "pycram.ros.ros1.logging.logerr"
+                                        "Event": "segmind.datastructures.events.Event",
+                                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent"
                                     },
                                     "conclusion": {
                                         "_type": "builtins.NoneType",
@@ -250,15 +194,9 @@
                                         "builtins.bool"
                                     ],
                                     "scope": {
-                                        "Event": "segmind.datastructures.events.Event",
-                                        "LossOfSupportEvent": "segmind.datastructures.events.LossOfSupportEvent",
-                                        "StopTranslationEvent": "segmind.datastructures.events.StopTranslationEvent",
-                                        "TranslationEvent": "segmind.datastructures.events.TranslationEvent",
                                         "GeneralPickUpDetector": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector",
-                                        "EpisodePlayer": "segmind.episode_player.EpisodePlayer",
-                                        "get_support": "segmind.utils.get_support",
                                         "Type": "typing.Type",
-                                        "logerr": "pycram.ros.ros1.logging.logerr"
+                                        "Event": "segmind.datastructures.events.Event"
                                     },
                                     "conclusion": {
                                         "_type": "builtins.NoneType",
@@ -267,8 +205,7 @@
                                     "mutually_exclusive": true
                                 },
                                 "parent": null,
-                                "corner_case": null,
-                                "conclusion_name": null,
+                                "conclusion_name": "output_",
                                 "weight": "else if",
                                 "uid": "257426441376249650265480473188288026956",
                                 "refinement": null,

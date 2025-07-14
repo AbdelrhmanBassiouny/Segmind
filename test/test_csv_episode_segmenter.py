@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest import TestCase
 
 import pycram.ros
-import sqlalchemy.exc
 from pycram.datastructures.enums import WorldMode
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
 from pycram.datastructures.world import World
@@ -18,17 +17,15 @@ from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Location, Robot, PhysicalObject
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm.session import Session
+from sqlalchemy import select
 
-from ormatic.dao import to_dao, get_dao_class
+# from ormatic.dao import to_dao, get_dao_class
 from segmind.orm.ormatic_interface import *
 from segmind.datastructures.events import ContainmentEvent
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector, PlacingDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector, SupportDetector, ContainmentDetector
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.players.csv_player import CSVEpisodePlayer
-# from segmind.orm.ormatic_interface import *
 try:
     from pycram.worlds.multiverse2 import Multiverse
 except ImportError:
@@ -54,7 +51,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.world: BulletWorld = BulletWorld(WorldMode.DIRECT)
 
         cls.spawn_objects(models_dir)
-        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.DEBUG)
+        pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.INFO)
         cls.viz_marker_publisher = VizMarkerPublisher()
         cls.file_player = CSVEpisodePlayer(csv_file, world=cls.world,
                                            time_between_frames=datetime.timedelta(milliseconds=4),

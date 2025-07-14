@@ -12,15 +12,10 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Case": "ripple_down_rules.datastructures.case.Case",
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Type": "typing.Type",
-                        "Union": "typing.Union",
-                        "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
-                        "SupportEvent": "segmind.datastructures.events.SupportEvent",
                         "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
-                        "NoneType": "builtins.NoneType"
+                        "Type": "typing.Type",
+                        "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
+                        "SupportEvent": "segmind.datastructures.events.SupportEvent"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -35,15 +30,9 @@
                         "builtins.bool"
                     ],
                     "scope": {
-                        "Case": "ripple_down_rules.datastructures.case.Case",
-                        "Dict": "typing.Dict",
-                        "Optional": "typing.Optional",
-                        "Type": "typing.Type",
-                        "Union": "typing.Union",
-                        "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
-                        "SupportEvent": "segmind.datastructures.events.SupportEvent",
                         "PlacingDetector": "segmind.detectors.coarse_event_detectors.PlacingDetector",
-                        "NoneType": "builtins.NoneType"
+                        "Type": "typing.Type",
+                        "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject"
                     },
                     "conclusion": {
                         "_type": "builtins.NoneType",
@@ -52,7 +41,6 @@
                     "mutually_exclusive": true
                 },
                 "parent": null,
-                "corner_case": null,
                 "conclusion_name": "output_",
                 "weight": null,
                 "uid": "124701724059586364685260806439568356831",
