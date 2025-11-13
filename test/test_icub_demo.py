@@ -25,9 +25,9 @@ from pycram.datastructures.enums import WorldMode, Arms, Grasp
 from pycram.datastructures.grasp import GraspDescription
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3, Quaternion
 from pycram.datastructures.world import World
-from pycram.designator import ObjectDesignatorDescription
-from pycram.designators.action_designator import PickUpActionDescription, ParkArmsActionDescription, PlaceAction, \
-    PlaceActionDescription
+from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
+    PlaceAction, MoveTorsoActionDescription
 from pycram.external_interfaces import giskard
 from pycram.failures import ObjectNotGraspedError
 from pycram.language import SequentialPlan

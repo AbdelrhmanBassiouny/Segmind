@@ -8,9 +8,10 @@ from math import ceil
 from queue import Queue, Empty, Full
 
 import numpy as np
+from typing import Dict
 
-from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
-from ..detectors.motion_detection_helpers import is_displaced, has_consistent_direction, is_stopped, \
+from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
+from segmind.detectors.motion_detection_helpers import is_displaced, has_consistent_direction, is_stopped, \
     ExponentialMovingAverage
 from ..episode_player import EpisodePlayer
 
@@ -18,9 +19,18 @@ try:
     from matplotlib import pyplot as plt
 except ImportError:
     plt = None
-from pycram.tf_transformations import euler_from_quaternion
 from typing_extensions import Optional, List, Union, Type, Tuple, Callable
+from ripple_down_rules.rdr_decorators import RDRDecorator
+from segmind.event_logger import EventLogger
+from segmind.datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
+    AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
+    RotationEvent, StopRotationEvent, MotionEvent, AgentInterferenceEvent, InterferenceEvent, AbstractContactEvent, \
+    AgentLossOfInterferenceEvent, AbstractAgentContact, LossOfInterferenceEvent
+from segmind.detectors.motion_detection_helpers import DataFilter
+from segmind.utils import calculate_quaternion_difference, \
+    get_support, calculate_translation, PropagatingThread
 
+from pycram.tf_transformations import euler_from_quaternion
 from pycram.datastructures.world import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
@@ -28,15 +38,7 @@ from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object, Link
 from pycram.ros import logdebug
 from pycrap.ontologies import PhysicalObject, Agent
-from ripple_down_rules.rdr_decorators import RDRDecorator
-from ..event_logger import EventLogger
-from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
-    RotationEvent, StopRotationEvent, MotionEvent, AgentInterferenceEvent, InterferenceEvent, AbstractContactEvent, \
-    AgentLossOfInterferenceEvent, AbstractAgentContact, LossOfInterferenceEvent
-from .motion_detection_helpers import DataFilter
-from ..utils import calculate_quaternion_difference, \
-    get_support, calculate_translation, PropagatingThread
+
 
 
 class AtomicEventDetector(PropagatingThread):
@@ -140,7 +142,7 @@ class AtomicEventDetector(PropagatingThread):
         """
         events = self.detect_events()
         if events:
-            [self.log_event(event) for event in events]
+            [self.log_event(event) for event in events] 
 
     def _wait_if_paused(self):
         """

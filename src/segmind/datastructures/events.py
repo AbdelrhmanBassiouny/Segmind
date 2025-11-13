@@ -4,8 +4,8 @@ from abc import abstractmethod, ABC
 from typing_extensions import Optional, List, Union, Type
 
 from pycram.datastructures.partial_designator import PartialDesignator
-from pycram.designator import ActionDescription, ObjectDesignatorDescription
-from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
+from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
     PlaceAction
 from pycram.ros import logwarn
 from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject

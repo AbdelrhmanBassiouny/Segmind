@@ -22,7 +22,7 @@ from pycram.world_concepts.world_object import Object, Link
 from pycrap.ontologies import Supporter, Floor, Location
 from pycram.ros import logdebug
 
-from semantic_world.views import Container
+from semantic_digital_twin.semantic_annotations.semantic_annotations import Container
 
 # Import the required module for text
 # to speech conversion

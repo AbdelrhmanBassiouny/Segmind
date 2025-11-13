@@ -3,7 +3,10 @@ from __future__ import annotations
 import os.path
 
 from pycram.plan import Plan
-from pycram.designators.action_designator import PickUpAction, PlaceAction
+#from pycram.designators.action_designator import PickUpAction, PlaceAction
+from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
+    PlaceAction, MoveTorsoActionDescription
 from pycrap.ontologies import Location, Supporter, Floor, Agent
 from ripple_down_rules.rdr_decorators import RDRDecorator
 
@@ -14,7 +17,7 @@ except ImportError:
     plt = None
 
 from typing_extensions import Optional, List, Union, Dict
-
+from typing import Dict
 from pycram.datastructures.world import UseProspectionWorld
 from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import *

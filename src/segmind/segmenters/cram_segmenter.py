@@ -1,7 +1,9 @@
 from typing_extensions import Type, List, Optional
 from queue import Queue
 
-from pycram.designator import ActionDescription
+from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
+    PlaceAction, MoveTorsoActionDescription
 from pycram.plan import Plan, ResolvedActionNode
 from ..episode_segmenter import AgentEpisodeSegmenter
 from ..players.cram_player import CRAMPlayer

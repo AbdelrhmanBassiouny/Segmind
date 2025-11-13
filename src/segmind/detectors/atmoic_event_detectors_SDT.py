@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+
 import queue
 import os
 import queue
@@ -8,11 +12,12 @@ from datetime import timedelta
 from math import ceil
 from queue import Queue, Empty, Full
 from scipy.spatial.transform import Rotation as R
+import numpy as np
 
 from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
 from segmind.detectors.motion_detection_helpers import is_displaced, has_consistent_direction, is_stopped, \
     ExponentialMovingAverage
-from ..episode_player import EpisodePlayer
+from segmind.episode_player import EpisodePlayer
 
 try:
     from matplotlib import pyplot as plt
@@ -22,7 +27,7 @@ except ImportError:
 from typing_extensions import Optional, List, Union, Type, Tuple, Callable
 from ripple_down_rules.rdr_decorators import RDRDecorator
 from segmind.event_logger import EventLogger
-from ..datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
+from segmind.datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
     AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, MotionEvent, AgentInterferenceEvent, InterferenceEvent, AbstractContactEvent, \
     AgentLossOfInterferenceEvent, AbstractAgentContact, LossOfInterferenceEvent
@@ -34,7 +39,7 @@ from semantic_digital_twin.spatial_types.spatial_types import RotationMatrix
 from semantic_digital_twin.world import World
 from semantic_digital_twin.semantic_annotations.semantic_annotations import SemanticAnnotation
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from semantic_digital_twin.spatial_types.spatial_types import TransformationMatrix
 from semantic_digital_twin.world_description.world_entity import Body
 from semantic_digital_twin.world_description.connections import Connection6DoF, RevoluteConnection
@@ -50,7 +55,7 @@ class AtomicEventDetector(PropagatingThread):
     """
 
     def __init__(self, logger: Optional[logging.Logger] = None, wait_time: Optional[timedelta] = None, 
-                 world: Optional[World] = None, episode_player: Optional[object] = None,
+                 world: Optional[World] = None, episode_player: Optional[EpisodePlayer] = None,
                  fit_mode: bool = False, *args, **kwargs,):
     
         """
@@ -209,27 +214,17 @@ class NewObjectDetector(AtomicEventDetector):
         self.queues.append(self.new_object_queue)
         self.avoid_objects = avoid_objects if avoid_objects else lambda obj: False
 
-        self.world = World.current()
         self._known_bodies = set(self.world.bodies)
 
-#*******************************************
     def detect_events(self) -> List[Event]:
-        """
-        Detect if a new Body is added to the SDT world and create NewObjectEvent instances.
-        """
         events = []
         current_bodies = set(self.world.bodies)
         new_bodies = current_bodies - self._known_bodies
-
         for body in new_bodies:
             if not self.avoid_objects(body):
-                event = NewObjectEvent(body)
-                events.append(event)
-                self.new_object_queue.put(body)
-
-        # Update snapshot for next iteration
+                events.append(NewObjectEvent(body))
         self._known_bodies = current_bodies
-        return events                                  
+        return events              
 
     def stop(self):
         """
@@ -282,7 +277,7 @@ class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrack
         return super().__str__() + with_object_name
 
 @dataclass
-class ContactPoint:     #new class for contact. SDT does not have exclusice contactpointslist
+class ContactPoint:     #new class for contact. SDT does not have exclusice contactpointlist
     point: List[float]  # x, y, z coordinates
     normal: List[float]  # normal vector
 
@@ -308,7 +303,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         self.latest_interference_points: List[ContactPoint] = []
     
     def get_events(self, new_objects_contact: List[Body], new_bodies_interference: List[Body],
-                   contact_points: ContactPoints, interference_points: ContactPoints,
+                   contact_points: ContactPoint, interference_points: ContactPoint,
                    event_type: Type[AbstractContactEvent]):
         if event_type is ContactEvent:
             contact_event_type = ContactEvent
@@ -461,7 +456,7 @@ class LossOfContactDetector(AbstractContactDetector):
     A thread that detects if the object lost contact with another object.
     """
 
-    def trigger_events(self, contact_points: ContactPointsList, interference_points: ContactPointsList)\
+    def trigger_events(self, contact_points: ContactPoint, interference_points: ContactPoint)\
             -> List[LossOfContactEvent]:
         """
         Check if the object lost contact with another object.
@@ -478,8 +473,8 @@ class LossOfContactDetector(AbstractContactDetector):
         return self.get_events(objects_that_lost_contact, bodies_that_lost_interference,
                                contact_points, interference_points, LossOfContactEvent)
 
-    def get_bodies_that_lost_contact(self, contact_points: ContactPointsList, interference_points: ContactPointsList)\
-            -> Tuple[List[PhysicalBody], List[PhysicalBody]]:
+    def get_bodies_that_lost_contact(self, contact_points: ContactPoint, interference_points: ContactPoint)\
+            -> Tuple[List[Body], List[Body]]:
         """
         Get the objects that lost contact with the object to track.
 
@@ -502,7 +497,7 @@ class LossOfSurfaceDetector(LossOfContactDetector):
     Detects if the tracked object lost contact with a surface.
     """
 
-    def trigger_events(self, contact_points: ContactPointsList) -> List[LossOfSurfaceEvent]:
+    def trigger_events(self, contact_points: ContactPoint) -> List[LossOfSurfaceEvent]:
         """
         Check if the object lost contact with the surface.
 
@@ -510,11 +505,9 @@ class LossOfSurfaceDetector(LossOfContactDetector):
         :return: A list of LossOfSurfaceEvent instances if contact lost with surface, else [].
         """
         # Get bodies that lost contact
-        bodies_that_lost_contact, _ = self.get_bodies_that_lost_contact(contact_points, interference_points=[])  # interference empty for surface
-
+        bodies_that_lost_contact, _ = self.get_bodies_that_lost_contact(contact_points)  # interference empty for surface
         if len(bodies_that_lost_contact) == 0:
             return []
-
         supporting_surface = get_support(self.tracked_object,
                                          bodies_that_lost_contact)
         if supporting_surface is None:
@@ -564,7 +557,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     The threshold for the velocity to detect movement.
     """
 
-    def __init__(self, logger: EventLogger, tracked_object: Object,
+    def __init__(self, logger: EventLogger, tracked_object: Body,
              velocity_threshold: Optional[float] = None,
              time_between_frames: timedelta = timedelta(milliseconds=200),
              window_size_in_seconds: float = 0.3,
@@ -678,7 +671,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         Returns the latest SDT TransformationMatrix and timestamp of the tracked object.
         """
         current_time = time.time()
-        current_pose = getattr(self.tracked_object, "pose", TransformationMatrix.identity())
+        current_pose = getattr(self.tracked_object, "pose", TransformationMatrix.from_xyz_rpy())
         return current_pose, current_time
     
     def detect_events(self) -> Optional[List[MotionEvent]]:
@@ -828,6 +821,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         return event
     
     @abstractmethod
+    def calculate_distance(self):
+        pass
+
+    @abstractmethod
     def get_event_type(self):
         pass
 
@@ -929,10 +926,8 @@ class TranslationDetector(MotionDetector):
         if len(self.poses) < 2:
             return 0.0
 
-        prev_pos = self.poses[-2].translation  # [x, y, z] of previous pose
-        curr_pos = self.poses[-1].translation  # [x, y, z] of current pose
-
-        # Compute translation distance
+        prev_pos = self.poses[-2].translation.to_np()
+        curr_pos = self.poses[-1].translation.to_np()
         return calculate_translation(prev_pos, curr_pos)
 
     def get_event_type(self):
@@ -960,8 +955,8 @@ class RotationDetector(MotionDetector):
             return [0.0, 0.0, 0.0]
 
         # Get rotation matrices from the TransformationMatrix
-        prev_rot = R.from_matrix(self.poses[-2].rotation_matrix)
-        curr_rot = R.from_matrix(self.poses[-1].rotation_matrix)
+        prev_rot = R.from_matrix(self.poses[-2].rotation().to_np())
+        curr_rot = R.from_matrix(self.poses[-1].rotation().to_np())
 
         # Relative rotation: curr * prev^-1
         relative_rot = curr_rot * prev_rot.inv()

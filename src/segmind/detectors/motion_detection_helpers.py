@@ -4,6 +4,7 @@ from datetime import timedelta
 import numpy as np
 from scipy.signal import butter, sosfilt
 from typing_extensions import List, Callable
+from typing import Dict
 
 
 Distances = List[List[float]]

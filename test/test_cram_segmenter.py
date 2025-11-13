@@ -5,7 +5,10 @@ from os.path import dirname
 from typing import Optional
 
 from pycram.datastructures.grasp import GraspDescription
-from pycram.designators.action_designator import MoveTorsoActionDescription, PickUpActionDescription
+#from pycram.designators.action_designator import MoveTorsoActionDescription, PickUpActionDescription
+from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
+    PlaceAction, MoveTorsoActionDescription
 from pycram.language import SequentialPlan
 from pycram.datastructures.pose import PoseStamped, Vector3
 from pycram.ros import set_logger_level
@@ -15,7 +18,6 @@ from pycram.datastructures.enums import Arms, Grasp, TorsoState, WorldMode, Logg
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world import UseProspectionWorld
 from pycram.designator import ObjectDesignatorDescription
-from pycram.designators.action_designator import PickUpAction, MoveTorsoAction
 from pycram.process_module import simulated_robot, ProcessModule
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.plan import Plan
