@@ -9,7 +9,7 @@ from semantic_digital_twin.world_description.shape_collection import ShapeCollec
 from semantic_digital_twin.world_description.geometry import Box, Scale, Color
 from semantic_digital_twin.world_description.connections import Connection6DoF
 
-from segmind.detectors.atmoic_event_detectors_SDT import TranslationDetector
+from segmind.detectors.atomic_event_detectors_SDT import TranslationDetector
 
 # --------------------------
 # SDT wrapper for tracked object (uses connection origin)
