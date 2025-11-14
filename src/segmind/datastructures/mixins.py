@@ -1,23 +1,22 @@
 from __future__ import annotations
 
-from abc import ABC
+from dataclasses import dataclass, field
 from functools import cached_property
 
+from pycram.world_concepts.world_object import Object
 from typing_extensions import List, Optional, TYPE_CHECKING
 
 from .object_tracker import ObjectTrackerFactory, ObjectTracker
-from pycram.world_concepts.world_object import Object
 
-if TYPE_CHECKING:
-    from pycram.datastructures.dataclasses import ObjectState
+from pycram.datastructures.dataclasses import ObjectState, FrozenObject, FrozenWorldState
 
 
-class HasTrackedObjects(ABC):
+@dataclass
+class HasTrackedObjects:
     """
     A mixin class that provides the tracked object for the event.
     """
-    def __init__(self, tracked_objects: List[Object]):
-        self._involved_objects = tracked_objects
+    _involved_objects: List[Object]
 
     @property
     def involved_objects(self) -> List[Object]:
@@ -27,27 +26,55 @@ class HasTrackedObjects(ABC):
         return self._involved_objects
 
 
-class HasPrimaryTrackedObject(ABC):
+@dataclass(kw_only=True, unsafe_hash=True)
+class HasPrimaryTrackedObject:
     """
     A mixin class that provides the tracked object for the event.
     """
-    def __init__(self, tracked_object: Object):
-        self.tracked_object: Object = tracked_object
-        self.tracked_object_state: ObjectState = tracked_object.current_state
+    tracked_object: Object
+    tracked_object_frozen_cp: Optional[FrozenObject] = field(init=False, default=None, repr=False, hash=False)
+    world_frozen_cp: Optional[FrozenWorldState] = field(init=False, default=None, repr=False, hash=False)
+
+    def __post_init__(self):
+        self.tracked_object_frozen_cp = self.tracked_object.frozen_copy()
+        self.world_frozen_cp = self.tracked_object.world.frozen_copy()
+
+    @property
+    def tracked_object_state(self) -> ObjectState:
+        return self.tracked_object.current_state
 
     @cached_property
     def object_tracker(self) -> ObjectTracker:
         return ObjectTrackerFactory.get_tracker(self.tracked_object)
 
 
-class HasSecondaryTrackedObject(ABC):
+@dataclass(kw_only=True, unsafe_hash=True)
+class HasSecondaryTrackedObject:
     """
     A mixin class that provides the tracked objects for the event.
     """
-    def __init__(self, with_object: Optional[Object] = None):
-        self.with_object: Optional[Object] = with_object
-        self.with_object_state: Optional[ObjectState] = with_object.current_state if with_object is not None else None
+    with_object: Optional[Object] = None
+    with_object_frozen_cp: Optional[FrozenObject] = field(init=False, default=None, repr=False, hash=False)
+
+    def __post_init__(self):
+        if self.with_object is not None:
+            self.with_object_frozen_cp = self.with_object.frozen_copy()
+
+    @property
+    def with_object_state(self) -> Optional[ObjectState]:
+        return self.with_object.current_state if self.with_object is not None else None
 
     @cached_property
     def with_object_tracker(self) -> Optional[ObjectTracker]:
         return ObjectTrackerFactory.get_tracker(self.with_object) if self.with_object is not None else None
+
+
+@dataclass(kw_only=True, unsafe_hash=True)
+class HasPrimaryAndSecondaryTrackedObjects(HasPrimaryTrackedObject, HasSecondaryTrackedObject):
+    """
+    A mixin class that provides the tracked objects for the event.
+    """
+
+    def __post_init__(self):
+        HasPrimaryTrackedObject.__post_init__(self)
+        HasSecondaryTrackedObject.__post_init__(self)

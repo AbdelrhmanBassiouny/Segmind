@@ -72,17 +72,17 @@ def conclusion_1084517150588802996811823834978763787(case) -> bool:
 
 
 def conditions_257426441376249650265480473188288026956(case) -> bool:
-    def did_the_object_move_against_gravity(cls_: Type[GeneralPickUpDetector], event: Event,
+    def did_the_object_free_fall(cls_: Type[GeneralPickUpDetector], event: Event,
                                                                         output_: bool) -> bool:
         """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
         translation_event = event.object_tracker.get_first_event_of_type_before_event(TranslationEvent, event)
         if translation_event is None:
             return True
-        if (translation_event.current_pose.position.z - translation_event.start_pose.position.z) >= (3 * 1e-3):
+        if (event.tracked_object.pose.position.z - translation_event.start_pose.position.z) >= (3 * 1e-3):
             return False
         else:
             return True
-    return did_the_object_move_against_gravity(**case)
+    return did_the_object_free_fall(**case)
 
 
 def conclusion_257426441376249650265480473188288026956(case) -> bool:

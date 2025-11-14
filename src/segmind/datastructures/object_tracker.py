@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class ObjectTracker:
 
-    def __init__(self, obj: Object):
+    def __init__(self, obj: PhysicalBody):
         self.obj = obj
         self._lock: RLock = RLock()
         self._event_history: List[Event] = []
@@ -217,7 +217,7 @@ class ObjectTracker:
 
 class ObjectTrackerFactory:
 
-    _trackers: Dict[Object, ObjectTracker] = {}
+    _trackers: Dict[PhysicalBody, ObjectTracker] = {}
     _lock: RLock = RLock()
 
     @classmethod
@@ -226,12 +226,8 @@ class ObjectTrackerFactory:
             return list(cls._trackers.values())
 
     @classmethod
-    def get_tracker(cls, obj: Object) -> ObjectTracker:
+    def get_tracker(cls, obj: PhysicalBody) -> ObjectTracker:
         with cls._lock:
-            # if isinstance(obj, Link) and obj.parent_entity in cls._trackers:
-                # return cls._trackers[obj.parent_entity]
-            # elif isinstance(obj, RootLink) and len(obj.parent_entity.links) == 1:
-                # obj = obj.parent_entity
             if obj not in cls._trackers:
                 cls._trackers[obj] = ObjectTracker(obj)
             return cls._trackers[obj]

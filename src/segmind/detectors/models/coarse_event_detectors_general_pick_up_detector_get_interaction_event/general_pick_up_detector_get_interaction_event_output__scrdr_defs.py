@@ -18,7 +18,7 @@ def conclusion_204728260923142752317583736648507389376(case) -> Optional[PickUpE
         nearest_translation_event = self_.object_tracker.get_nearest_event_of_type_to_event(self_.starter_event, TranslationEvent)
         end_timestamp = max(nearest_translation_event.timestamp, self_.starter_event.timestamp) if nearest_translation_event is not None else self_.starter_event.timestamp
         timestamp = min(nearest_translation_event.timestamp, self_.starter_event.timestamp) if nearest_translation_event is not None else self_.starter_event.timestamp - self_.wait_time.total_seconds()
-        return PickUpEvent(self_.tracked_object, timestamp=timestamp, end_timestamp=end_timestamp)
+        return PickUpEvent(tracked_object=self_.tracked_object, timestamp=timestamp, end_timestamp=end_timestamp)
     return general_pick_up_detector_get_interaction_event(**case)
 
 

@@ -8,6 +8,7 @@ from pycram.ros import logerr
 from .datastructures.events import *
 from .datastructures.object_tracker import ObjectTracker
 from .detectors.coarse_event_detectors import *
+from .detectors.spatial_relation_detector import SpatialRelationDetector
 from .episode_player import EpisodePlayer
 from .event_logger import EventLogger
 from .utils import check_if_object_is_supported, Imaginator
@@ -32,10 +33,12 @@ class EpisodeSegmenter(ABC):
         :param show_plots: A boolean value that indicates if the plots should be shown.
         :param plot_save_path: The path where the plots should be saved.
         """
+        self._detectors_to_start: List[Type[DetectorWithStarterEvent]] = []
+        self._initial_detectors: List[Type[AtomicEventDetector]] = []
         self.episode_player: EpisodePlayer = episode_player
+        self.logger = EventLogger(annotate_events)
         self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start if detectors_to_start else []
         self.initial_detectors: List[Type[AtomicEventDetector]] = initial_detectors if initial_detectors else []
-        self.logger = EventLogger(annotate_events, [detector.event_type() for detector in self.detectors_to_start + self.initial_detectors])
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']
         self.starter_event_to_detector_thread_map: Dict[Tuple[Event, Type[DetectorWithStarterEvent]], DetectorWithStarterEvent] = {}
         self.detector_threads_list: List[EventDetectorUnion] = []
@@ -45,35 +48,66 @@ class EpisodeSegmenter(ABC):
         self.plot_save_path = plot_save_path
         self.kill_event: threading.Event = threading.Event()
 
-    def reset(self):
-        for detector in self.starter_event_to_detector_thread_map.values():
-            detector_str = str(detector)
-            detector.reset()
-            detector.stop()
-            logerr(f"Detector {detector_str} stopped, joining it now...")
-            detector.join()
-            logerr(f"Joined {detector_str}")
-            self.detector_threads_list.remove(detector)
+    @property
+    def detectors_to_start(self) -> List[Type[DetectorWithStarterEvent]]:
+        """
+        :return: The list of event detectors that should be started.
+        """
+        return self._detectors_to_start
+
+    @detectors_to_start.setter
+    def detectors_to_start(self, detectors: List[Type[DetectorWithStarterEvent]]):
+        """
+        Set the list of event detectors that should be started.
+
+        :param detectors: The list of event detectors to set.
+        """
+        self._detectors_to_start = detectors
+        self.update_events_to_annotate()
+
+    @property
+    def initial_detectors(self) -> List[Type[AtomicEventDetector]]:
+        """
+        :return: The list of initial event detectors that should be started.
+        """
+        return self._initial_detectors
+
+    @initial_detectors.setter
+    def initial_detectors(self, detectors: List[Type[AtomicEventDetector]]):
+        """
+        Set the list of initial event detectors that should be started.
+
+        :param detectors: The list of initial event detectors to set.
+        """
+        self._initial_detectors = detectors
+        self.update_events_to_annotate()
+
+    def update_events_to_annotate(self):
+        event_types = {event_type
+         for detector in self.detectors_to_start + self.initial_detectors
+         for event_type in detector.event_types()}
+        self.logger.events_to_annotate = list(event_types)
+
+    def reset(self, reset_logger: bool = True) -> None:
+        # self.join_detectors()
         self.starter_event_to_detector_thread_map = {}
-        initial_detector_instances = [detector for detector in self.detector_threads_list
-                                      if type(detector) in self.initial_detectors]
-        for detector in initial_detector_instances:
-            detector_str = str(detector)
-            detector.stop()
-            logerr(f"Detector {detector_str} stopped, joining it now...")
-            detector.join()
-            logerr(f"Joined {detector_str}")
-            self.detector_threads_list.remove(detector)
-        for detector in self.detector_threads_list:
-            detector_str = str(detector)
-            detector.stop()
-            logerr(f"Detector {detector_str} stopped, joining it now...")
-            detector.join()
-            logerr(f"Joined {detector_str}")
         self.detector_threads_list = []
         time.sleep(0.5)
-        self.logger.reset()
-        self.run_initial_event_detectors()
+        if reset_logger:
+            self.logger.reset()
+
+    def join_detectors(self, atomic_only: bool = False) -> None:
+        atomic_detectors = [detector for detector in self.detector_threads_list
+                            if not isinstance(detector, (DetectorWithStarterEvent, SpatialRelationDetector))]
+        if atomic_only:
+            non_atomic_detectors = []
+        else:
+            non_atomic_detectors = [detector for detector in self.detector_threads_list
+                                    if isinstance(detector, DetectorWithStarterEvent)]
+        for detector_thread in atomic_detectors + non_atomic_detectors:
+            detector_thread.stop()
+            logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
+            detector_thread.join()
 
     def start(self) -> None:
         """
@@ -105,21 +139,8 @@ class EpisodeSegmenter(ABC):
 
         while (not closed_threads) or (self.logger.event_queue.unfinished_tasks > 0):
             if (not self.episode_player.is_alive() or self.kill_event.is_set()) and not closed_threads:
-                time.sleep(0.5)
-                # join all motion threads
-                joined = []
-                for detector_thread in self.detector_threads_list:
-                    if isinstance(detector_thread, MotionDetector):
-                        detector_thread.stop()
-                        logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
-                        detector_thread.join()
-                        joined.append(detector_thread)
-                for detector_thread in self.detector_threads_list:
-                    if detector_thread not in joined:
-                        detector_thread.stop()
-                        logdebug(f"Joining {detector_thread.thread_id}, {detector_thread.name}")
-                        detector_thread.join()
-                        joined.append(detector_thread)
+                time.sleep(5)
+                self.join_detectors(atomic_only=True)
                 closed_threads = True
 
             next_event = self.logger.get_next_event()
@@ -133,6 +154,7 @@ class EpisodeSegmenter(ABC):
         if self.plot_timeline:
             self.logger.plot_events(show=self.show_plots, save_path=self.plot_save_path)
 
+        self.join_detectors()
         self.join()
 
     def process_event(self, event: EventUnion) -> None:
@@ -421,14 +443,6 @@ class NoAgentEpisodeSegmenter(EpisodeSegmenter):
     The NoAgentEpisodeSegmenter class is used to segment episodes into activities (e.g. PickUp) by tracking the
      events that are relevant to the objects in the world with the lack of an agent in the episode.
     """
-
-    def __init__(self, episode_player: EpisodePlayer,
-                 detectors_to_start: Optional[List[Type[DetectorWithStarterEvent]]] = None,
-                 annotate_events: bool = False, **kwargs):
-        # if detectors_to_start is None:
-        #     detectors_to_start = [GeneralPickUpDetector, PlacingDetector]
-        super().__init__(episode_player, detectors_to_start=detectors_to_start, annotate_events=annotate_events,
-                         **kwargs)
 
     def start_tracking_threads_for_new_object_and_event(self, new_object: Object, event: EventUnion):
         pass

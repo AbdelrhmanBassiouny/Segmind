@@ -9,7 +9,7 @@ from pycram.datastructures.world import UseProspectionWorld, World
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.world_concepts.world_object import Object
 from pycram.description import ObjectDescription
-from segmind.datastructures.events import AbstractAgentContact, AbstractAgentObjectInteractionEvent, AbstractContactEvent, AgentContactEvent, AgentInterferenceEvent, AgentLossOfContactEvent, AgentLossOfInterferenceEvent, ContactEvent, ContainmentEvent, Event, EventWithOneTrackedObject, EventWithTrackedObjects, EventWithTwoTrackedObjects, InsertionEvent, InterferenceEvent, LossOfContactEvent, LossOfInterferenceEvent, LossOfSurfaceEvent, MotionEvent, NewObjectEvent, PickUpEvent, PlacingEvent, RotationEvent, StopMotionEvent, StopRotationEvent, StopTranslationEvent, TranslationEvent
+from segmind.datastructures.events import AbstractAgentContact, AbstractAgentObjectInteractionEvent, AbstractContactEvent, AgentContactEvent, AgentInterferenceEvent, AgentLossOfContactEvent, AgentLossOfInterferenceEvent, ContactEvent, ContainmentEvent, Event, EventWithOneTrackedObject, EventWithTrackedObjects, EventWithTwoTrackedObjects, InsertionEvent, InterferenceEvent, LossOfContactEvent, LossOfInterferenceEvent, MotionEvent, NewObjectEvent, PickUpEvent, PlacingEvent, RotationEvent, StopMotionEvent, StopRotationEvent, StopTranslationEvent, TranslationEvent
 from pycram.plan import Plan
 from pycram.designators.action_designator import PickUpAction, PlaceAction
 from pycrap.ontologies.crax.classes import Agent, Floor, Location, PhysicalObject, Supporter
@@ -21,13 +21,13 @@ from segmind.episode_player import EpisodePlayer
 from pycram.tf_transformations import euler_from_quaternion
 from segmind.event_logger import EventLogger
 from segmind.utils import Imaginator, PropagatingThread, calculate_quaternion_difference, calculate_translation, check_if_object_is_supported, get_angle_between_vectors, get_support
-from segmind.detectors.atomic_event_detectors import AbstractContactDetector, AtomicEventDetector, ContactDetector, DetectorWithTrackedObject, DetectorWithTwoTrackedObjects, LossOfContactDetector, LossOfSurfaceDetector, MotionDetector, NewObjectDetector, RotationDetector, TranslationDetector
+from segmind.detectors.atomic_event_detectors import AbstractContactDetector, AtomicEventDetector, ContactDetector, DetectorWithTrackedObject, DetectorWithTwoTrackedObjects, LossOfContactDetector, MotionDetector, NewObjectDetector, RotationDetector, TranslationDetector
 from segmind.detectors.coarse_event_detectors import AbstractInteractionDetector, AbstractPickUpDetector, DetectorWithStarterEvent, DetectorWithTrackedObjectAndStarterEvent, GeneralPickUpDetector, PlacingDetector, check_for_supporting_surface, select_transportable_objects, select_transportable_objects_from_contact_event, select_transportable_objects_from_loss_of_contact_event
 from segmind.episode_segmenter import AgentEpisodeSegmenter, EpisodeSegmenter, NoAgentEpisodeSegmenter
 from ripple_down_rules.datastructures.case import Case
 Link = ObjectDescription.Link
 
-def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:
+def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:
     """Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type ."""
     pick_up_detetectors = [detector for (_,_), detector in self_.starter_event_to_detector_thread_map.items()
      if isinstance(detector, GeneralPickUpDetector)]
