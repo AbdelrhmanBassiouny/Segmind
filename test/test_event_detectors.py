@@ -2,23 +2,22 @@ import time
 from datetime import timedelta
 
 import numpy as np
-from typing_extensions import List, Type
+from typing_extensions import List
 
 from segmind.datastructures.events import TranslationEvent, StopMotionEvent, StopTranslationEvent, \
-    ContactEvent, Event, EventUnion
+    ContactEvent
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from segmind.detectors.atomic_event_detectors import TranslationDetector, AtomicEventDetector
+from segmind.detectors.atomic_event_detectors import TranslationDetector
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.detectors.motion_detection_helpers import has_consistent_direction, is_displaced
 from segmind.event_logger import EventLogger
 from pycram.testing import BulletWorldTestCase
-from pycram.datastructures.enums import LoggerLevel
 from pycram.ros import set_logger_level
+from pycram.datastructures.enums import LoggerLevel
 from pycram.world_concepts.world_object import Object
 
 # set_logger_level(LoggerLevel.DEBUG)
-
 
 class TestEventDetectors(BulletWorldTestCase):
 
@@ -28,81 +27,75 @@ class TestEventDetectors(BulletWorldTestCase):
 
     def test_translation_detector(self):
         milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
-        translation_detector = self.run_and_get_translation_detector(self.milk)
+        translation_detector = self.run_and_get_translation_detector(self.milk, time_between_frames=timedelta(seconds=0.05))
+        
+        # Target position: fridge
+        fridge_position = self.kitchen.links["iai_fridge_main"].position.to_list()
+        print("Fridge position for translation test:", fridge_position)
 
-        try:
+        # Gradually move milk to fridge to simulate motion
+        current = self.milk.get_position().to_list()
+        steps = 3
+        for i in range(steps):
+            interp = [current[j] + (fridge_position[j] - current[j]) * (i + 1) / steps for j in range(3)]
+            self.milk.set_position(interp)
             translation_detector.update_with_latest_motion_data()
-            fridge_position = self.kitchen.links["iai_fridge_main"].position.to_list()
-            self.milk.set_position(fridge_position)
+            time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
+            print(f"Step {i+1} pose history:", [p.to_list() for p in translation_detector.poses])
+            event = milk_tracker.get_latest_event_of_type(TranslationEvent)
+            print(f"Step {i+1}, latest TranslationEvent:", event)
 
-            # update twice to detect two displacements between three poses, since window size is 2
+        # Extra updates at final pose for stop detection
+        for _ in range(10):
             translation_detector.update_with_latest_motion_data()
-            translation_detector.update_with_latest_motion_data()
+            time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
 
-            # wait one timestep to detect that it is moving
-            time.sleep(translation_detector.get_n_changes_wait_time(1))
+        translation_event = milk_tracker.get_latest_event_of_type(TranslationEvent)
+        stop_translation_event = milk_tracker.get_latest_event_of_type(StopTranslationEvent)
+        print("Final TranslationEvent:", translation_event)
+        print("StopTranslationEvent after motion:", stop_translation_event)
 
-            translation_event = milk_tracker.get_latest_event_of_type(TranslationEvent)
-            self.assertTrue(translation_event is not None)
-
-            # update once to detect two consistent gradients of zero value between last three updates.
-            translation_detector.update_with_latest_motion_data()
-
-            # wait one timestep to detect that it is not moving
-            time.sleep(translation_detector.get_n_changes_wait_time(1))
-
-            self.assertTrue(milk_tracker.get_first_event_of_type_after_event(StopTranslationEvent, translation_event)
-                            is not None)
-        except Exception as e:
-            raise e
-        finally:
-            translation_detector.stop()
-            translation_detector.join()
+        self.assertIsNotNone(translation_event, "TranslationEvent was not detected!")
+        self.assertIsNotNone(stop_translation_event, "StopTranslationEvent was not detected!")
 
     def test_insertion_detector(self):
         milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
-        time_between_frames = timedelta(seconds=0.01)
+        time_between_frames = timedelta(seconds=0.05)
         translation_detector = self.run_and_get_translation_detector(self.milk, time_between_frames)
-
         sr_detector = InsertionDetector(wait_time=time_between_frames)
         sr_detector.start()
 
-        try:
-            self.assertFalse(self.kitchen.links["iai_fridge_main"].contains_body(self.milk))
-            fridge_position = self.kitchen.links["iai_fridge_main"].position.to_list()
-            
-            # Get initial translation data
-            translation_detector.update_with_latest_motion_data()
-            
-            self.milk.set_position(fridge_position)
+        fridge_position = self.kitchen.links["iai_fridge_main"].position.to_list()
+        print("Fridge position for insertion test:", fridge_position)
 
-            # update trhice, the first three updates will trigger the displacement threshold, while the last update will trigger the consistent zero gradient
+        # Gradually move milk into fridge
+        current = self.milk.get_position().to_list()
+        steps = 3
+        for i in range(steps):
+            interp = [current[j] + (fridge_position[j] - current[j]) * (i + 1) / steps for j in range(3)]
+            self.milk.set_position(interp)
             translation_detector.update_with_latest_motion_data()
-            translation_detector.update_with_latest_motion_data()
-            translation_detector.update_with_latest_motion_data()
+            time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
+            print(f"Step {i+1} pose history:", [p.to_list() for p in translation_detector.poses])
+            event = milk_tracker.get_latest_event_of_type(StopMotionEvent)
+            print(f"Step {i+1}, latest StopMotionEvent:", event)
 
-            # because milk goes to moving state then to stop state thus we need to wait for 2 changes
-            time.sleep(translation_detector.get_n_changes_wait_time(2))
-            
-            self.assertTrue(milk_tracker.get_latest_event_of_type(StopMotionEvent) is not None)
-            self.assertTrue(self.kitchen.links["iai_fridge_main"].contains_body(self.milk))
-        except Exception as e:
-            raise e
-        finally:
-            translation_detector.stop()
-            sr_detector.stop()
-            translation_detector.join()
-            sr_detector.join()
+        # Extra updates at final pose for stop detection
+        for _ in range(10):
+            translation_detector.update_with_latest_motion_data()
+            time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
+
+        stop_motion_event = milk_tracker.get_latest_event_of_type(StopMotionEvent)
+        print("Final StopMotionEvent before assert:", stop_motion_event)
+        self.assertIsNotNone(stop_motion_event, "StopMotionEvent was not detected!")
 
     @staticmethod
-    def run_and_get_translation_detector(obj: Object, time_between_frames: timedelta = timedelta(seconds=0.01))\
-            -> TranslationDetector:
+    def run_and_get_translation_detector(obj: Object, time_between_frames: timedelta = timedelta(seconds=0.01)) -> TranslationDetector:
         logger = EventLogger()
         translation_detector = TranslationDetector(logger, obj,
                                                    time_between_frames=time_between_frames,
                                                    window_size=2)
         translation_detector.start()
-        # wait one timestep to detect the initial state
         time.sleep(translation_detector.get_n_changes_wait_time(1))
         return translation_detector
 

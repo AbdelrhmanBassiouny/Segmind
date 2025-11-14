@@ -1,5 +1,6 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 import queue
@@ -14,9 +15,16 @@ from queue import Queue, Empty, Full
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 
-from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
-from segmind.detectors.motion_detection_helpers import is_displaced, has_consistent_direction, is_stopped, \
-    ExponentialMovingAverage
+from segmind.datastructures.mixins import (
+    HasPrimaryTrackedObject,
+    HasSecondaryTrackedObject,
+)
+from segmind.detectors.motion_detection_helpers import (
+    is_displaced,
+    has_consistent_direction,
+    is_stopped,
+    ExponentialMovingAverage,
+)
 from segmind.episode_player import EpisodePlayer
 
 try:
@@ -27,22 +35,47 @@ except ImportError:
 from typing_extensions import Optional, List, Union, Type, Tuple, Callable
 from ripple_down_rules.rdr_decorators import RDRDecorator
 from segmind.event_logger import EventLogger
-from segmind.datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
-    RotationEvent, StopRotationEvent, MotionEvent, AgentInterferenceEvent, InterferenceEvent, AbstractContactEvent, \
-    AgentLossOfInterferenceEvent, AbstractAgentContact, LossOfInterferenceEvent
+from segmind.datastructures.events import (
+    Event,
+    ContactEvent,
+    LossOfContactEvent,
+    AgentContactEvent,
+    AgentLossOfContactEvent,
+    LossOfSurfaceEvent,
+    TranslationEvent,
+    StopTranslationEvent,
+    NewObjectEvent,
+    RotationEvent,
+    StopRotationEvent,
+    MotionEvent,
+    AgentInterferenceEvent,
+    InterferenceEvent,
+    AbstractContactEvent,
+    AgentLossOfInterferenceEvent,
+    AbstractAgentContact,
+    LossOfInterferenceEvent,
+)
 from segmind.detectors.motion_detection_helpers import DataFilter
-from segmind.utils import calculate_quaternion_difference, \
-    get_support, calculate_translation, PropagatingThread
+from segmind.utils import (
+    calculate_quaternion_difference,
+    get_support,
+    calculate_translation,
+    PropagatingThread,
+)
 
 from semantic_digital_twin.spatial_types.spatial_types import RotationMatrix
 from semantic_digital_twin.world import World
-from semantic_digital_twin.semantic_annotations.semantic_annotations import SemanticAnnotation
+from semantic_digital_twin.semantic_annotations.semantic_annotations import (
+    SemanticAnnotation,
+)
 from dataclasses import dataclass
 from typing import Optional, List, Tuple
 from semantic_digital_twin.spatial_types.spatial_types import TransformationMatrix
 from semantic_digital_twin.world_description.world_entity import Body
-from semantic_digital_twin.world_description.connections import Connection6DoF, RevoluteConnection
+from semantic_digital_twin.world_description.connections import (
+    Connection6DoF,
+    RevoluteConnection,
+)
 import logging
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 
@@ -54,10 +87,16 @@ class AtomicEventDetector(PropagatingThread):
     by setting the exit_thread attribute to True.
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None, wait_time: Optional[timedelta] = None, 
-                 world: Optional[World] = None, episode_player: Optional[EpisodePlayer] = None,
-                 fit_mode: bool = False, *args, **kwargs,):
-    
+    def __init__(
+        self,
+        logger: Optional[logging.Logger] = None,
+        wait_time: Optional[timedelta] = None,
+        world: Optional[World] = None,
+        episode_player: Optional[EpisodePlayer] = None,
+        fit_mode: bool = False,
+        *args,
+        **kwargs,
+    ):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
@@ -72,7 +111,9 @@ class AtomicEventDetector(PropagatingThread):
         self.fit_mode = fit_mode
         self.logger: EventLogger = logger if logger else EventLogger.current_logger
         self.world: World = world if world else World()
-        self.wait_time = wait_time if wait_time is not None else timedelta(milliseconds=50)
+        self.wait_time = (
+            wait_time if wait_time is not None else timedelta(milliseconds=50)
+        )
         self.queues: List[Queue] = []
         self.run_once = False
         self._pause: bool = False
@@ -84,7 +125,7 @@ class AtomicEventDetector(PropagatingThread):
     @property
     def thread_id(self) -> str:
         return f"{self.__class__.__name__}_{self.ident}"
-    
+
     @abstractmethod
     def detect_events(self) -> List[Event]:
         """
@@ -114,7 +155,10 @@ class AtomicEventDetector(PropagatingThread):
         while True:
 
             if (
-                    self.kill_event.is_set() and self.all_queues_empty and not self.is_processing_jobs) or self.exc is not None:
+                self.kill_event.is_set()
+                and self.all_queues_empty
+                and not self.is_processing_jobs
+            ) or self.exc is not None:
                 break
 
             self._wait_if_paused()
@@ -147,7 +191,7 @@ class AtomicEventDetector(PropagatingThread):
         """
         events = self.detect_events()
         if events:
-            [self.log_event(event) for event in events] 
+            [self.log_event(event) for event in events]
 
     def _wait_if_paused(self):
         """
@@ -165,7 +209,7 @@ class AtomicEventDetector(PropagatingThread):
         time_diff = time.time() - last_processing_time
         if time_diff < self.wait_time.total_seconds():
             time.sleep(self.wait_time.total_seconds() - time_diff)
-    
+
     def log_event(self, event: Event) -> None:
         """
         Logs the event using the logger instance.
@@ -183,10 +227,9 @@ class AtomicEventDetector(PropagatingThread):
         :return: A boolean value that represents if the event was detected before.
         """
         return self.thread_id in self.logger.get_events_per_thread().keys()
-    
+
     @abstractmethod
-    def __str__(self):
-        ...
+    def __str__(self): ...
 
     def __repr__(self):
         return self.__str__()
@@ -198,11 +241,14 @@ class NewObjectDetector(AtomicEventDetector):
     and logs a NewObjectEvent for it.
     """
 
-    def __init__(self,
-                 logger: EventLogger,
-                 wait_time: Optional[timedelta] = None,
-                 avoid_objects: Optional[Callable[[Body], bool]] = None,   #************
-                 *args, **kwargs):
+    def __init__(
+        self,
+        logger: EventLogger,
+        wait_time: Optional[timedelta] = None,
+        avoid_objects: Optional[Callable[[Body], bool]] = None,  # ************
+        *args,
+        **kwargs,
+    ):
         """
         :param logger: Logger instance to record detected events.
         :param wait_time: Optional delay between detection loops.
@@ -210,7 +256,7 @@ class NewObjectDetector(AtomicEventDetector):
         """
         super().__init__(logger, wait_time, *args, **kwargs)
 
-        self.new_object_queue: Queue[Body] = Queue()                                            #*************
+        self.new_object_queue: Queue[Body] = Queue()  # *************
         self.queues.append(self.new_object_queue)
         self.avoid_objects = avoid_objects if avoid_objects else lambda obj: False
 
@@ -224,7 +270,7 @@ class NewObjectDetector(AtomicEventDetector):
             if not self.avoid_objects(body):
                 events.append(NewObjectEvent(body))
         self._known_bodies = current_bodies
-        return events              
+        return events
 
     def stop(self):
         """
@@ -238,13 +284,20 @@ class NewObjectDetector(AtomicEventDetector):
     def __str__(self):
         return self.thread_id
 
+
 class DetectorWithTrackedObject(AtomicEventDetector, HasPrimaryTrackedObject, ABC):
     """
     A mixin class that provides one tracked object for the event detector.
     """
 
-    def __init__(self, logger: EventLogger, tracked_object: Body, wait_time: Optional[timedelta] = None, #**********
-                 *args, **kwargs):
+    def __init__(
+        self,
+        logger: EventLogger,
+        tracked_object: Body,
+        wait_time: Optional[timedelta] = None,  # **********
+        *args,
+        **kwargs,
+    ):
         """
         :param logger: Logger used to record events.
         :param tracked_object: Body or WorldEntity instance to track.
@@ -255,31 +308,47 @@ class DetectorWithTrackedObject(AtomicEventDetector, HasPrimaryTrackedObject, AB
 
     def __str__(self):
         return f"{self.thread_id} - {self.tracked_object.name}"
-    
-class DetectorWithTwoTrackedObjects(DetectorWithTrackedObject, HasSecondaryTrackedObject, ABC):
+
+
+class DetectorWithTwoTrackedObjects(
+    DetectorWithTrackedObject, HasSecondaryTrackedObject, ABC
+):
     """
     A mixin class that provides two tracked objects for the event detector.
     """
 
-    def __init__(self, logger: EventLogger, tracked_object: Body, with_object: Optional[Body] = None, #*********
-                 wait_time: Optional[timedelta] = None, *args, **kwargs):
+    def __init__(
+        self,
+        logger: EventLogger,
+        tracked_object: Body,
+        with_object: Optional[Body] = None,  # *********
+        wait_time: Optional[timedelta] = None,
+        *args,
+        **kwargs,
+    ):
         """
         :param logger: Logger used to record events.
         :param tracked_object: The main Body being tracked.
         :param with_object: Optionally, a second Body being tracked.
         :param wait_time: Optional delay between detection cycles.
         """
-        DetectorWithTrackedObject.__init__(self, logger, tracked_object, wait_time, *args, **kwargs)
+        DetectorWithTrackedObject.__init__(
+            self, logger, tracked_object, wait_time, *args, **kwargs
+        )
         HasSecondaryTrackedObject.__init__(self, with_object)
 
     def __str__(self):
-        with_object_name = f" - {self.with_object.name}" if self.with_object is not None else ""
+        with_object_name = (
+            f" - {self.with_object.name}" if self.with_object is not None else ""
+        )
         return super().__str__() + with_object_name
 
+
 @dataclass
-class ContactPoint:     #new class for contact. SDT does not have exclusice contactpointlist
+class ContactPoint:  # new class for contact. SDT does not have exclusice contactpointlist
     point: List[float]  # x, y, z coordinates
     normal: List[float]  # normal vector
+
 
 class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
     def __init__(
@@ -287,9 +356,11 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         logger: EventLogger,
         tracked_object: Body,
         with_object: Optional[Body] = None,
-        max_closeness_distance: Optional[float] = 0.05,                     #**********
+        max_closeness_distance: Optional[float] = 0.05,  # **********
         wait_time: Optional[timedelta] = timedelta(milliseconds=500),
-        *args, **kwargs):
+        *args,
+        **kwargs,
+    ):
         """
         :param logger: Logger instance to record events.
         :param tracked_object: The main Body being tracked.
@@ -297,14 +368,21 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         :param max_closeness_distance: Max distance to consider as contact.
         :param wait_time: Optional delay between detection cycles.
         """
-        DetectorWithTwoTrackedObjects.__init__(self, logger, tracked_object, with_object, wait_time, *args, **kwargs)
+        DetectorWithTwoTrackedObjects.__init__(
+            self, logger, tracked_object, with_object, wait_time, *args, **kwargs
+        )
         self.max_closeness_distance = max_closeness_distance
         self.latest_contact_points: List[ContactPoint] = []
         self.latest_interference_points: List[ContactPoint] = []
-    
-    def get_events(self, new_objects_contact: List[Body], new_bodies_interference: List[Body],
-                   contact_points: ContactPoint, interference_points: ContactPoint,
-                   event_type: Type[AbstractContactEvent]):
+
+    def get_events(
+        self,
+        new_objects_contact: List[Body],
+        new_bodies_interference: List[Body],
+        contact_points: ContactPoint,
+        interference_points: ContactPoint,
+        event_type: Type[AbstractContactEvent],
+    ):
         if event_type is ContactEvent:
             contact_event_type = ContactEvent
             agent_contact_event_type = AgentContactEvent
@@ -321,7 +399,12 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
 
         # Helper to get contact points of a body
         def get_points_of_body(body, points_list):
-            return [p for p in points_list if getattr(p, "body_a", None) == body or getattr(p, "body_b", None) == body]
+            return [
+                p
+                for p in points_list
+                if getattr(p, "body_a", None) == body
+                or getattr(p, "body_b", None) == body
+            ]
 
         for body in new_bodies_interference:
             if issubclass(self.obj_type, Agent):
@@ -355,14 +438,14 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
                 )
 
         return events
-    
+
     @property
-    def obj_type(self) -> Type[SemanticAnnotation]:    #*******
+    def obj_type(self) -> Type[SemanticAnnotation]:  # *******
         """
         The semantic type of the object to track.
         """
         return type(self.tracked_object)
-    
+
     def detect_events(self) -> List[Event]:
         """
         Detects proximity or contact between the tracked object and other bodies in the SEMDT world.
@@ -372,7 +455,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         self.latest_contact_points = contact_points
         self.latest_interference_points = interference_points
         return events
-    
+
     def get_contact_points(self) -> Tuple[List[ContactPoint], List[ContactPoint]]:
         """
         Compute contact and interference points manually using SEMDT bodies.
@@ -381,9 +464,11 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         interference_points = []
 
         # If with_object is set, only check that body
-        candidates = [self.with_object] if self.with_object else [
-            body for body in self.world.bodies if body != self.tracked_object
-        ]
+        candidates = (
+            [self.with_object]
+            if self.with_object
+            else [body for body in self.world.bodies if body != self.tracked_object]
+        )
 
         for body in candidates:
             # Compute approximate distance between body origins
@@ -391,16 +476,24 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
             pos_b = body.origin.translation.to_np()
             distance = np.linalg.norm(pos_a - pos_b)
             if distance <= self.max_closeness_distance:
-                contact_points.append(ContactPoint(point=pos_b.tolist(), normal=[0, 0, 1]))
+                contact_points.append(
+                    ContactPoint(point=pos_b.tolist(), normal=[0, 0, 1])
+                )
             # For interference, you can check bounding boxes overlap
             if hasattr(self.tracked_object, "collision") and hasattr(body, "collision"):
                 # simplified: consider interference if bounding boxes overlap
-                interference_points.append(ContactPoint(point=pos_b.tolist(), normal=[0, 0, 1]))
+                interference_points.append(
+                    ContactPoint(point=pos_b.tolist(), normal=[0, 0, 1])
+                )
 
         return contact_points, interference_points
-    
+
     @abstractmethod
-    def trigger_events(self, contact_points: List[ContactPoint], interference_points: List[ContactPoint]) -> List[Event]:
+    def trigger_events(
+        self,
+        contact_points: List[ContactPoint],
+        interference_points: List[ContactPoint],
+    ) -> List[Event]:
         """
         Checks if the detection condition is met, (e.g., the object is in contact with another object),
         and returns an object that represents the event.
@@ -413,13 +506,16 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
     def _join(self, timeout=None):
         pass
 
-class ContactDetector(AbstractContactDetector):                 #updated function for Semdt
+
+class ContactDetector(AbstractContactDetector):  # updated function for Semdt
     """
     A thread that detects if the object got into contact with another object in SEMDT.
     """
 
     def trigger_events(
-        self, contact_points: List[ContactPoint], interference_points: List[ContactPoint]
+        self,
+        contact_points: List[ContactPoint],
+        interference_points: List[ContactPoint],
     ) -> List[Event]:
         """
         Check if the tracked object got into contact with another object.
@@ -433,31 +529,44 @@ class ContactDetector(AbstractContactDetector):                 #updated functio
             cp for cp in contact_points if cp not in self.latest_contact_points
         ]
         new_bodies_in_interference = [
-            ip for ip in interference_points if ip not in self.latest_interference_points
+            ip
+            for ip in interference_points
+            if ip not in self.latest_interference_points
         ]
 
         # If tracking a specific body
         if self.with_object:
             new_objects_in_contact = [
-                cp for cp in new_objects_in_contact if cp.point == self.with_object.origin.translation.to_np().tolist()
+                cp
+                for cp in new_objects_in_contact
+                if cp.point == self.with_object.origin.translation.to_np().tolist()
             ]
             new_bodies_in_interference = [
-                ip for ip in new_bodies_in_interference if ip.point == self.with_object.origin.translation.to_np().tolist()
+                ip
+                for ip in new_bodies_in_interference
+                if ip.point == self.with_object.origin.translation.to_np().tolist()
             ]
 
         if not new_objects_in_contact and not new_bodies_in_interference:
             return []
 
-        return self.get_events(new_objects_in_contact, new_bodies_in_interference,
-                               contact_points, interference_points, ContactEvent)
+        return self.get_events(
+            new_objects_in_contact,
+            new_bodies_in_interference,
+            contact_points,
+            interference_points,
+            ContactEvent,
+        )
+
 
 class LossOfContactDetector(AbstractContactDetector):
     """
     A thread that detects if the object lost contact with another object.
     """
 
-    def trigger_events(self, contact_points: ContactPoint, interference_points: ContactPoint)\
-            -> List[LossOfContactEvent]:
+    def trigger_events(
+        self, contact_points: ContactPoint, interference_points: ContactPoint
+    ) -> List[LossOfContactEvent]:
         """
         Check if the object lost contact with another object.
 
@@ -466,15 +575,25 @@ class LossOfContactDetector(AbstractContactDetector):
         :return: An instance of the LossOfContactEvent/AgentLossOfContactEvent class that represents the event if the
          object lost contact, else None.
         """
-        objects_that_lost_contact, bodies_that_lost_interference = self.get_bodies_that_lost_contact(contact_points,
-                                                                                                    interference_points)
-        if len(objects_that_lost_contact) == 0 and len(bodies_that_lost_interference) == 0:
+        objects_that_lost_contact, bodies_that_lost_interference = (
+            self.get_bodies_that_lost_contact(contact_points, interference_points)
+        )
+        if (
+            len(objects_that_lost_contact) == 0
+            and len(bodies_that_lost_interference) == 0
+        ):
             return []
-        return self.get_events(objects_that_lost_contact, bodies_that_lost_interference,
-                               contact_points, interference_points, LossOfContactEvent)
+        return self.get_events(
+            objects_that_lost_contact,
+            bodies_that_lost_interference,
+            contact_points,
+            interference_points,
+            LossOfContactEvent,
+        )
 
-    def get_bodies_that_lost_contact(self, contact_points: ContactPoint, interference_points: ContactPoint)\
-            -> Tuple[List[Body], List[Body]]:
+    def get_bodies_that_lost_contact(
+        self, contact_points: ContactPoint, interference_points: ContactPoint
+    ) -> Tuple[List[Body], List[Body]]:
         """
         Get the objects that lost contact with the object to track.
 
@@ -482,15 +601,23 @@ class LossOfContactDetector(AbstractContactDetector):
         :param interference_points: The current interference points.
         :return: A list of Object instances that represent the objects that lost contact with the object to track.
         """
-        objects_that_lost_contact = contact_points.get_objects_that_got_removed(self.latest_contact_points)
-        bodies_that_lost_interference = interference_points.get_bodies_that_got_removed(self.latest_interference_points)
+        objects_that_lost_contact = contact_points.get_objects_that_got_removed(
+            self.latest_contact_points
+        )
+        bodies_that_lost_interference = interference_points.get_bodies_that_got_removed(
+            self.latest_interference_points
+        )
         if self.with_object is not None:
-            objects_that_lost_contact = [obj for obj in objects_that_lost_contact
-                                        if obj == self.with_object]
-            bodies_that_lost_interference = [body for body in bodies_that_lost_interference
-                                             if body.parent_entity == self.with_object]
+            objects_that_lost_contact = [
+                obj for obj in objects_that_lost_contact if obj == self.with_object
+            ]
+            bodies_that_lost_interference = [
+                body
+                for body in bodies_that_lost_interference
+                if body.parent_entity == self.with_object
+            ]
         return objects_that_lost_contact, bodies_that_lost_interference
-    
+
 
 class LossOfSurfaceDetector(LossOfContactDetector):
     """
@@ -505,23 +632,33 @@ class LossOfSurfaceDetector(LossOfContactDetector):
         :return: A list of LossOfSurfaceEvent instances if contact lost with surface, else [].
         """
         # Get bodies that lost contact
-        bodies_that_lost_contact, _ = self.get_bodies_that_lost_contact(contact_points)  # interference empty for surface
+        bodies_that_lost_contact, _ = self.get_bodies_that_lost_contact(
+            contact_points
+        )  # interference empty for surface
         if len(bodies_that_lost_contact) == 0:
             return []
-        supporting_surface = get_support(self.tracked_object,
-                                         bodies_that_lost_contact)
+        supporting_surface = get_support(self.tracked_object, bodies_that_lost_contact)
         if supporting_surface is None:
             return []
-        return [LossOfSurfaceEvent(contact_points, self.latest_contact_points, of_object=self.tracked_object,
-                                   surface=supporting_surface)]
-    
+        return [
+            LossOfSurfaceEvent(
+                contact_points,
+                self.latest_contact_points,
+                of_object=self.tracked_object,
+                surface=supporting_surface,
+            )
+        ]
+
+
 @dataclass
 class PoseSDT:
     """
     Represents the pose of an object using SDT's TransformationMatrix.
     """
+
     transform: TransformationMatrix
     timestamp: Optional[float] = None
+
 
 class MotionDetector(DetectorWithTrackedObject, ABC):
     """
@@ -557,13 +694,18 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     The threshold for the velocity to detect movement.
     """
 
-    def __init__(self, logger: EventLogger, tracked_object: Body,
-             velocity_threshold: Optional[float] = None,
-             time_between_frames: timedelta = timedelta(milliseconds=200),
-             window_size_in_seconds: float = 0.3,
-             distance_filter_method: Optional[DataFilter] = ExponentialMovingAverage(0.99),
-             stop_velocity_threshold: Optional[float] = None,
-             *args, **kwargs):
+    def __init__(
+        self,
+        logger: EventLogger,
+        tracked_object: Body,
+        velocity_threshold: Optional[float] = None,
+        time_between_frames: timedelta = timedelta(milliseconds=200),
+        window_size_in_seconds: float = 0.3,
+        distance_filter_method: Optional[DataFilter] = ExponentialMovingAverage(0.99),
+        stop_velocity_threshold: Optional[float] = None,
+        *args,
+        **kwargs,
+    ):
         """
         :param logger: Logger instance to record detected events.
         :param tracked_object: Object instance to track.
@@ -573,21 +715,33 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :param distance_filter_method: Optional filter for distances (e.g., exponential moving average).
         :param stop_velocity_threshold: The threshold for velocity to detect stop.
         """
-        DetectorWithTrackedObject.__init__(self, logger, tracked_object, *args, **kwargs)
+        DetectorWithTrackedObject.__init__(
+            self, logger, tracked_object, *args, **kwargs
+        )
 
-        if self.episode_player is not None:                                                             #Needs to be checked
+        if self.episode_player is not None:  # Needs to be checked
             self.episode_player.add_frame_callback(self.update_with_latest_motion_data)
 
         self.time_between_frames: timedelta = time_between_frames
-        self.window_size: int = round(window_size_in_seconds / self.time_between_frames.total_seconds())
-        self.velocity_threshold: float = velocity_threshold if velocity_threshold is not None else 0.01
-        self.stop_velocity_threshold: float = stop_velocity_threshold if stop_velocity_threshold is not None else 0.005
+        self.window_size: int = round(
+            window_size_in_seconds / self.time_between_frames.total_seconds()
+        )
+        self.velocity_threshold: float = (
+            velocity_threshold if velocity_threshold is not None else 0.01
+        )
+        self.stop_velocity_threshold: float = (
+            stop_velocity_threshold if stop_velocity_threshold is not None else 0.005
+        )
 
         self.data_queue: Queue[Tuple[float, TransformationMatrix]] = Queue(1)
         self.queues = [self.data_queue]
 
-        self.distance_threshold: float = self.velocity_threshold * window_size_in_seconds
-        self.stop_distance_threshold: float = self.stop_velocity_threshold * window_size_in_seconds
+        self.distance_threshold: float = (
+            self.velocity_threshold * window_size_in_seconds
+        )
+        self.stop_distance_threshold: float = (
+            self.stop_velocity_threshold * window_size_in_seconds
+        )
         self.measure_timestep: timedelta = self.time_between_frames * 2
         self.filter: Optional[DataFilter] = distance_filter_method
 
@@ -599,7 +753,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.plot_distances: bool = False
         self.plot_distance_windows: bool = False
         self.plot_frequencies: bool = False
-    
+
     @property
     def window_size_in_seconds(self) -> int:
         return self.window_size * self.time_between_frames.total_seconds()
@@ -619,8 +773,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :param n: The number of successive changes in motion state.
         :return: The minimum wait time for detecting n successive changes in motion state.
         """
-        return self.window_timeframe.total_seconds() * n + self.wait_time.total_seconds()
-    
+        return (
+            self.window_timeframe.total_seconds() * n + self.wait_time.total_seconds()
+        )
+
     @property
     def window_timeframe(self) -> timedelta:
         return self.measure_timestep * self.window_size
@@ -628,30 +784,32 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     @property
     def measure_timestep(self) -> timedelta:
         return self._measure_timestep
-    
 
     @measure_timestep.setter
     def measure_timestep(self, measure_timestep: timedelta):
-        self.measure_frame_rate: float = ceil(measure_timestep.total_seconds() /
-                                              self.time_between_frames.total_seconds())
+        self.measure_frame_rate: float = ceil(
+            measure_timestep.total_seconds() / self.time_between_frames.total_seconds()
+        )
         self._measure_timestep = self.time_between_frames * self.measure_frame_rate
         self.wait_time = self._measure_timestep
 
     def _init_data_holders(self):
-            """
-            Initialize the pose, time, and distance data holders.
-            """
-            self.poses: List[TransformationMatrix] = []                      #*************
-            self.times: List[float] = []
-            self.latest_distances: List[List[float]] = []
-            self.all_distances: List[List[float]] = []
-            self.filtered_distances: Optional[np.ndarray] = None
-            self.latest_times: List[float] = []
-            self.original_distances: List[List[List[float]]] = []
-            self.all_filtered_distances: List[np.ndarray] = []
-            self.all_times: List[List[float]] = []
-    
-    def update_with_latest_motion_data(self, current_time: Optional[float] = None) -> Tuple[TransformationMatrix, float]:     #******
+        """
+        Initialize the pose, time, and distance data holders.
+        """
+        self.poses: List[TransformationMatrix] = []  # *************
+        self.times: List[float] = []
+        self.latest_distances: List[List[float]] = []
+        self.all_distances: List[List[float]] = []
+        self.filtered_distances: Optional[np.ndarray] = None
+        self.latest_times: List[float] = []
+        self.original_distances: List[List[List[float]]] = []
+        self.all_filtered_distances: List[np.ndarray] = []
+        self.all_times: List[List[float]] = []
+
+    def update_with_latest_motion_data(
+        self, current_time: Optional[float] = None
+    ) -> Tuple[TransformationMatrix, float]:  # ******
         latest_pose, latest_time = self.get_current_pose_and_time()
         repeat = True
         while repeat:
@@ -666,14 +824,18 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
                     pass
         return latest_pose, latest_time
 
-    def get_current_pose_and_time(self) -> Tuple[TransformationMatrix, float]:              #*************
+    def get_current_pose_and_time(
+        self,
+    ) -> Tuple[TransformationMatrix, float]:  # *************
         """
         Returns the latest SDT TransformationMatrix and timestamp of the tracked object.
         """
         current_time = time.time()
-        current_pose = getattr(self.tracked_object, "pose", TransformationMatrix.from_xyz_rpy())
+        current_pose = getattr(
+            self.tracked_object, "pose", TransformationMatrix.from_xyz_rpy()
+        )
         return current_pose, current_time
-    
+
     def detect_events(self) -> Optional[List[MotionEvent]]:
         """
         Detect if the tracked object starts or stops moving.
@@ -697,7 +859,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
                 return None
 
             events: Optional[List[MotionEvent]] = None
-            if self.motion_state_changed:
+            if self.motion_sate_changed:
                 self.last_state_change_idx = len(self.all_distances) - 1
                 events = [self.update_motion_state_and_create_event()]
 
@@ -719,12 +881,14 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.update_object_motion_state(self.was_moving)
 
         # Update the start pose and event timestamp using the latest SDT pose                           #************
-        self.start_pose = self.poses[-1] if self.poses else TransformationMatrix.identity()
+        self.start_pose = (
+            self.poses[-1] if self.poses else TransformationMatrix.identity()
+        )
         self.event_time = self.times[-1] if self.times else time.time()
 
         # Create and return the appropriate MotionEvent
         return self.create_event()
-    
+
     @property
     def motion_sate_changed(self) -> bool:
         """
@@ -778,7 +942,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     @property
     def window_size_reached(self) -> bool:
         return len(self.latest_distances) >= self.window_size
-    
+
     def _crop_distances_and_times_to_window_size(self):
         if len(self.latest_distances) < self.window_size:
             self.latest_distances.append(self.all_distances[-1])
@@ -786,8 +950,10 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
             self.latest_distances.pop(0)
             self.latest_distances.append(self.all_distances[-1])
         if self.filter:
-            self.latest_distances = self.filter.filter_data(np.array(self.latest_distances)).tolist()
-        self.latest_times = self.times[-self.window_size:]
+            self.latest_distances = self.filter.filter_data(
+                np.array(self.latest_distances)
+            ).tolist()
+        self.latest_times = self.times[-self.window_size :]
 
     def _reset_distances_and_times(self):
         self.latest_distances = []
@@ -806,7 +972,9 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         """
         Apply a preprocessing filter to the distances.
         """
-        self.filtered_distances = self.filter.filter_data(np.array(self.latest_distances))
+        self.filtered_distances = self.filter.filter_data(
+            np.array(self.latest_distances)
+        )
         return self.filtered_distances
 
     def create_event(self) -> MotionEvent:
@@ -817,9 +985,14 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         """
         current_pose, current_time = self.get_current_pose_and_time()
         event_type = self.get_event_type()
-        event = event_type(self.tracked_object, self.start_pose, current_pose, timestamp=self.event_time)
+        event = event_type(
+            self.tracked_object,
+            self.start_pose,
+            current_pose,
+            timestamp=self.event_time,
+        )
         return event
-    
+
     @abstractmethod
     def calculate_distance(self):
         pass
@@ -848,10 +1021,18 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         """
         Plot the average distances.
         """
-        plt.plot([t - self.times[0] for t in self.times], self.original_distances[:len(self.times)])
+        plt.plot(
+            [t - self.times[0] for t in self.times],
+            self.original_distances[: len(self.times)],
+        )
         if plot_filtered and self.all_filtered_distances:
-            plt.plot([t - self.times[0] for t in self.times], self.all_filtered_distances[:len(self.times)])
-        plt.title(f"Results of {self.__class__.__name__} for {self.tracked_object.name}")
+            plt.plot(
+                [t - self.times[0] for t in self.times],
+                self.all_filtered_distances[: len(self.times)],
+            )
+        plt.title(
+            f"Results of {self.__class__.__name__} for {self.tracked_object.name}"
+        )
         plt.show()
 
     def plot_and_show_distance_windows(self, plot_freq: bool = False) -> None:
@@ -865,15 +1046,23 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
             orig_distances = np.array(self.original_distances[i])
             times = np.array(window_time) - window_time[0]
             fig, axes = plt.subplots(3, plot_cols, figsize=(10, 10))
-            self._add_distance_vs_filtered_to_plot(orig_distances, self.all_filtered_distances[i], times,
-                                                   axes[:, 0] if plot_freq else axes)
+            self._add_distance_vs_filtered_to_plot(
+                orig_distances,
+                self.all_filtered_distances[i],
+                times,
+                axes[:, 0] if plot_freq else axes,
+            )
             if plot_freq:
                 self._add_frequencies_plot(orig_distances, axes[:, 1])
             plt.show()
-    
+
     @staticmethod
-    def _add_distance_vs_filtered_to_plot(distances: np.ndarray, filtered_distances: np.ndarray, times: np.ndarray,
-                                          axes: np.ndarray) -> None:
+    def _add_distance_vs_filtered_to_plot(
+        distances: np.ndarray,
+        filtered_distances: np.ndarray,
+        times: np.ndarray,
+        axes: np.ndarray,
+    ) -> None:
         """
         Add the distances and the filtered distances to the figure.
 
@@ -889,7 +1078,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
                 continue
             filtered = filtered_distances[:, j]
             ax.plot(times, original, label=f"original_{ax_labels[j]}")
-            ax.plot(times[-len(filtered):], filtered, label=f"filtered_{ax_labels[j]}")
+            ax.plot(times[-len(filtered) :], filtered, label=f"filtered_{ax_labels[j]}")
             ax.legend()
 
     def _add_frequencies_plot(self, distances: np.ndarray, axes: np.ndarray) -> None:
@@ -902,7 +1091,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         for j, ax in enumerate(axes):
             xmag = np.fft.fft(distances[:, j])
             freqs = np.fft.fftfreq(len(xmag), d=self.measure_timestep.total_seconds())
-            ax.bar(freqs[:len(xmag) // 2], np.abs(xmag)[:len(xmag) // 2], width=0.1)
+            ax.bar(freqs[: len(xmag) // 2], np.abs(xmag)[: len(xmag) // 2], width=0.1)
             ax.legend()
 
 
@@ -918,7 +1107,7 @@ class TranslationDetector(MotionDetector):
         """
         self.tracked_object.is_translating = is_moving
 
-    def calculate_distance(self) -> float:                                              #************
+    def calculate_distance(self) -> float:  # ************
         """
         Calculate the Euclidean distance between the previous and latest poses of the tracked object.
         Uses SDT's TransformationMatrix for pose.
@@ -935,7 +1124,8 @@ class TranslationDetector(MotionDetector):
         Return the appropriate SDT event type.
         """
         return TranslationEvent if self.was_moving else StopTranslationEvent
-    
+
+
 class RotationDetector(MotionDetector):
     degrees_per_second: float = 10
     velocity_threshold: float = degrees_per_second * np.pi / 180  # radians per second
@@ -960,7 +1150,7 @@ class RotationDetector(MotionDetector):
 
         # Relative rotation: curr * prev^-1
         relative_rot = curr_rot * prev_rot.inv()
-        euler_diff = relative_rot.as_euler('xyz', degrees=False)  # radians
+        euler_diff = relative_rot.as_euler("xyz", degrees=False)  # radians
 
         euler_diff[2] = 0.0
         return euler_diff.tolist()

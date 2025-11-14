@@ -48,7 +48,7 @@ class SpatialRelationDetector(AtomicEventDetector):
         self.event_queue = Queue()
     
     def update_initial_state(self):
-        for body in self.world.objects:
+        for body in self.world.bodies:
             self.update_body_state(body)
 
     @abstractmethod
