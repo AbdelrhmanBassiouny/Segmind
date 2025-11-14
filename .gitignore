@@ -2,3 +2,5 @@ rgb/
 __pycache__/
 *.stl
 *.dae
+misc
+*iml
