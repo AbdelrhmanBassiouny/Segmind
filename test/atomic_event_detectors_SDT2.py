@@ -65,8 +65,8 @@ from dataclasses import dataclass
 import logging
 from typing import Optional, List, Tuple
 
-from pycram.datastructures.world import World
 from pycram.tf_transformations import euler_from_quaternion
+from pycram.datastructures.world import World
 from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
 from pycram.datastructures.world_entity import PhysicalBody
