@@ -41,7 +41,6 @@ from segmind.datastructures.events import (
     LossOfContactEvent,
     AgentContactEvent,
     AgentLossOfContactEvent,
-    LossOfSurfaceEvent,
     TranslationEvent,
     StopTranslationEvent,
     NewObjectEvent,
@@ -440,7 +439,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         return events
 
     @property
-    def obj_type(self) -> Type[SemanticAnnotation]:  # *******
+    def obj_type(self) -> type[SemanticAnnotation]:  # *******
         """
         The semantic type of the object to track.
         """
@@ -755,7 +754,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         self.plot_frequencies: bool = False
 
     @property
-    def window_size_in_seconds(self) -> int:
+    def window_size_in_seconds(self) -> float:
         return self.window_size * self.time_between_frames.total_seconds()
 
     @property
@@ -1107,14 +1106,11 @@ class TranslationDetector(MotionDetector):
         """
         self.tracked_object.is_translating = is_moving
 
-    def calculate_distance(self) -> float:  # ************
+    def calculate_distance(self) -> np.ndarray:  # ************
         """
         Calculate the Euclidean distance between the previous and latest poses of the tracked object.
         Uses SDT's TransformationMatrix for pose.
         """
-        if len(self.poses) < 2:
-            return 0.0
-
         prev_pos = self.poses[-2].translation.to_np()
         curr_pos = self.poses[-1].translation.to_np()
         return calculate_translation(prev_pos, curr_pos)

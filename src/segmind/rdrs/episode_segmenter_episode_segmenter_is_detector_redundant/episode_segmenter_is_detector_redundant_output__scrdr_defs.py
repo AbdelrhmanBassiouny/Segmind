@@ -1,17 +1,18 @@
 from pycram.description import Link
-from segmind.detectors.coarse_event_detectors import AbstractInteractionDetector, GeneralPickUpDetector, PlacingDetector, select_transportable_objects
+from segmind.detectors.coarse_event_detectors_SDT import AbstractInteractionDetector, GeneralPickUpDetector, PlacingDetector, select_transportable_objects
 from types import NoneType
-from segmind.datastructures.events import AbstractContactEvent, AgentContactEvent, AgentLossOfContactEvent, \
+from segmind.datastructures.events_SDT import AbstractContactEvent, AgentContactEvent, AgentLossOfContactEvent, \
     ContactEvent, InsertionEvent, LossOfContactEvent, MotionEvent, NewObjectEvent, PickUpEvent, \
     PlacingEvent, StopMotionEvent, EventWithTrackedObjects, EventWithOneTrackedObject
-from segmind.detectors.atomic_event_detectors import ContactDetector, LossOfContactDetector, MotionDetector, NewObjectDetector, RotationDetector, TranslationDetector
-from pycrap.ontologies.crax.classes import Agent
+from segmind.detectors.atomic_event_detectors_SDT import ContactDetector, LossOfContactDetector, MotionDetector, NewObjectDetector, RotationDetector, TranslationDetector
+#from pycrap.ontologies.crax.classes import Agent
 from pycram.world_concepts.world_object import Object
 from datetime import timedelta
 from typing_extensions import Dict, Optional, Type, Union
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from segmind.episode_segmenter import NoAgentEpisodeSegmenter
+from segmind.episode_segmenter_SDT import NoAgentEpisodeSegmenter
 
+from semantic_digital_twin.world_description.world_entity import Body, Agent
 
 def conditions_318535409151373315477142163500790537263(case) -> bool:
     def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:
@@ -46,8 +47,8 @@ def conditions_217503528191875472672592688900935027547(case) -> bool:
             contacted_bodies = starter_event.tracked_object.contact_points.get_all_bodies()
             if len(contacted_bodies) == 0:
                 return True
-            agents = [body for body in contacted_bodies if (isinstance(body, Link) and issubclass(body.parent_entity.obj_type, Agent)) or
-             (isinstance(body, Object) and issubclass(body.obj_type, Agent))]
+            agents = [body for body in contacted_bodies if (isinstance(body, Body) and issubclass(body.parent_entity.obj_type, Agent)) or
+             (isinstance(body, Body) and issubclass(body.obj_type, Agent))]
             if len(agents) == len(contacted_bodies):
                 return True
         return False

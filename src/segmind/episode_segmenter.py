@@ -40,7 +40,8 @@ class EpisodeSegmenter(ABC):
         self.detectors_to_start: List[Type[DetectorWithStarterEvent]] = detectors_to_start if detectors_to_start else []
         self.initial_detectors: List[Type[AtomicEventDetector]] = initial_detectors if initial_detectors else []
         self.objects_to_avoid = ['particle', 'floor', 'kitchen']
-        self.starter_event_to_detector_thread_map: Dict[Tuple[Event, Type[DetectorWithStarterEvent]], DetectorWithStarterEvent] = {}
+        self.starter_event_to_detector_thread_map: Dict[
+            Tuple[Event, Type[DetectorWithStarterEvent]], DetectorWithStarterEvent] = {}
         self.detector_threads_list: List[EventDetectorUnion] = []
         self.object_trackers: Dict[Object, ObjectTracker] = {}
         self.plot_timeline = plot_timeline
@@ -84,8 +85,8 @@ class EpisodeSegmenter(ABC):
 
     def update_events_to_annotate(self):
         event_types = {event_type
-         for detector in self.detectors_to_start + self.initial_detectors
-         for event_type in detector.event_types()}
+                       for detector in self.detectors_to_start + self.initial_detectors
+                       for event_type in detector.event_types()}
         self.logger.events_to_annotate = list(event_types)
 
     def reset(self, reset_logger: bool = True) -> None:
@@ -192,7 +193,7 @@ class EpisodeSegmenter(ABC):
         for detector in self.initial_detectors:
             self.create_detector_and_start_it(detector)
         self._run_initial_event_detectors()
-    
+
     @abstractmethod
     def _run_initial_event_detectors(self) -> None:
         """
@@ -280,7 +281,7 @@ class EpisodeSegmenter(ABC):
         :param obj: The Object instance for which the motion detection threads are started.
         :param event: The NewObjectEvent instance that represents the creation of the object.
         """
-        for detector in (TranslationDetector,): #RotationDetector):
+        for detector in (TranslationDetector,):  # RotationDetector):
             self.create_detector_and_start_it(detector, tracked_object=obj, starter_event=event,
                                               time_between_frames=self.time_between_frames)
 
@@ -321,8 +322,10 @@ class EpisodeSegmenter(ABC):
                 if len(pick_up_detectors) > 0 and not output_:
                     return True
         return False
+
     redundant_detector_rdr = RDRDecorator(f"{dirname(__file__)}/rdrs", (bool,), True,
                                           fit=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
+
     @redundant_detector_rdr.decorator
     def is_detector_redundant(self, detector_type: TypeEventDetectorUnion, starter_event: EventUnion) -> bool:
         """
@@ -352,7 +355,7 @@ class EpisodeSegmenter(ABC):
         :param detector_kwargs: The keyword arguments to be passed to the detector constructor.
         """
         detector_kwargs = self.get_detector_args(detector_type, tracked_object=tracked_object,
-                                               starter_event=starter_event, **detector_kwargs)
+                                                 starter_event=starter_event, **detector_kwargs)
         detector_kwargs['episode_player'] = self.episode_player
         detector_kwargs['logger'] = self.logger
         detector = detector_type(**detector_kwargs)

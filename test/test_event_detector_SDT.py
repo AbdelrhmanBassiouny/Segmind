@@ -1,300 +1,319 @@
 import time
 from datetime import timedelta
-from types import SimpleNamespace
-import numpy as np
+import casadi as ca
 
-from segmind.datastructures.events import (
+import numpy as np
+import pytest
+from typing_extensions import List
+
+from segmind.datastructures.events_SDT import (
     TranslationEvent,
     StopMotionEvent,
     StopTranslationEvent,
+    ContactEvent,
 )
-from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from segmind.detectors.atomic_event_detectors_SDT import TranslationDetector
-from segmind.detectors.spatial_relation_detector import InsertionDetector
+from segmind.datastructures.object_tracker_SDT import ObjectTrackerFactory
+from segmind.detectors.atomic_event_detectors_SDT2 import TranslationDetector
+from segmind.detectors.coarse_event_detectors_SDT import GeneralPickUpDetector
+from segmind.detectors.spatial_relation_detector_SDT import InsertionDetector
 from segmind.detectors.motion_detection_helpers import (
     has_consistent_direction,
     is_displaced,
 )
-from segmind.event_logger import EventLogger
-
-from pycram.testing import BulletWorldTestCase
-from pycram.ros import set_logger_level
-from pycram.datastructures.enums import LoggerLevel
+from segmind.event_logger_SDT import EventLogger
 
 from semantic_digital_twin.world import World
+from semantic_digital_twin.robots.pr2 import PR2
 from semantic_digital_twin.world_description.world_entity import Body
-from semantic_digital_twin.world_description.geometry import Box, Scale
-from semantic_digital_twin.spatial_types import Point3, TransformationMatrix
-from semantic_digital_twin.world_description.connections import Connection6DoF
+from semantic_digital_twin.world_description.shape_collection import ShapeCollection
+from semantic_digital_twin.world_description.connections import (
+    FixedConnection,
+    Connection6DoF,
+)
+from semantic_digital_twin.spatial_types.spatial_types import (
+    TransformationMatrix,
+    Point3,
+)
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
-from semantic_digital_twin.spatial_types.spatial_types import Point3
+from semantic_digital_twin.world_description.geometry import Box, Scale, Color
 
 
-# -------------------------------------------------------------------------
-# Helper utilities
-# -------------------------------------------------------------------------
-def patch_body_for_segmind(body):
-    """Add minimal PyCRAM-like structure to SDT bodies so Segmind detectors can work."""
-    if not hasattr(body, "state"):
-        body.state = SimpleNamespace(position=Point3(0.0, 0.0, 0.0))
-    if not hasattr(body, "current_state"):
-        body.current_state = SimpleNamespace(
-            position=body.state.position, timestamp=time.time()
+@pytest.fixture
+def create_kitchen_world_with_milk_and_robot():
+    world = World()
+
+    with world.modify_world():
+        # Root
+        root = Body(name=PrefixedName("root"))
+
+        # Robot (FixedConnection)
+        robot_shape = Box(scale=Scale(1.0, 0.5, 0.7), color=Color(0.7, 0.5, 0.3))
+        robot_body = Body(
+            name=PrefixedName("robot"),
+            visual=ShapeCollection([robot_shape]),
+            collision=ShapeCollection([robot_shape]),
         )
+        robot_conn = FixedConnection(
+            parent=root,
+            child=robot_body,
+            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
+                x=0, y=0, z=1.6
+            ),
+        )
+        world.add_connection(robot_conn)
 
-    @property
-    def pose(self):
-        return SimpleNamespace(translation=self.state.position)
+        # Table (FixedConnection)
+        table_shape = Box(scale=Scale(1.0, 0.5, 0.7), color=Color(0.7, 0.5, 0.3))
+        table_body = Body(
+            name=PrefixedName("table"),
+            visual=ShapeCollection([table_shape]),
+            collision=ShapeCollection([table_shape]),
+        )
+        table_conn = FixedConnection(
+            parent=root,
+            child=table_body,
+            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
+                x=0, y=0, z=1.0
+            ),
+        )
+        world.add_connection(table_conn)
 
-    body.pose = pose.__get__(body)
+        # Milk (6DoF Connection)
+        milk_shape = Box(scale=Scale(0.1, 0.1, 0.2), color=Color(1.0, 1.0, 1.0))
+        milk_body = Body(
+            name=PrefixedName("milk"),
+            visual=ShapeCollection([milk_shape]),
+            collision=ShapeCollection([milk_shape]),
+        )
+        milk_conn = Connection6DoF.create_with_dofs(
+            world=world,
+            parent=table_body,
+            child=milk_body,
+            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
+                x=0, y=0, z=0.15
+            ),
+        )
+        world.add_connection(milk_conn)
 
-    def get_axis_aligned_bounding_box(self):
-        return SimpleNamespace(center=self.state.position, extent=Scale(1, 1, 1))
+        # Target position (Point3)
+        target_position = Point3.from_iterable([0.0, 0.5, 0.15])
 
-    body.get_axis_aligned_bounding_box = get_axis_aligned_bounding_box.__get__(body)
+    return world, milk_conn, robot_conn, table_conn, target_position
 
 
-def ensure_reset_world(world):
-    """Add a minimal reset_world for SDT compatibility with Segmind tests."""
-    if not hasattr(world, "reset_world"):
+def test_general_pick_up_start_condition_checker(
+    create_kitchen_world_with_milk_and_robot,
+):
+    world, milk_conn, robot_conn, table_conn, target = (
+        create_kitchen_world_with_milk_and_robot
+    )
+    robot_body = robot_conn.child
+    event = ContactEvent(
+        milk_conn.child, robot_body, 0.1
+    )  # pass the Body, not the connection
+    GeneralPickUpDetector.start_condition_checker(event)
 
-        def reset_world(*args, **kwargs):
-            print(
-                "[Hybrid] Resetting SDT world (compat mode). Args:",
-                args,
-                "Kwargs:",
-                kwargs,
+
+def test_translation_detector(create_kitchen_world_with_milk_and_robot):
+    world, milk_conn, robot_conn, table_conn, target_position = (
+        create_kitchen_world_with_milk_and_robot
+    )
+    milk_tracker = ObjectTrackerFactory.get_tracker(milk_conn.child)
+
+    translation_detector = run_and_get_translation_detector(
+        milk_conn.child, world=world
+    )
+
+    # Optionally run only a single loop (useful for some setups)
+    # translation_detector.run_once = True
+
+    try:
+        steps = 5
+        for i in range(steps):
+            current_pos = milk_conn.origin.to_position().to_np()[:3]
+            target_pos = target_position.to_np()[:3]
+            interp_pos = current_pos + (target_pos - current_pos) * (i + 1) / steps
+
+            milk_conn.origin = TransformationMatrix.from_xyz_rpy(
+                x=float(interp_pos[0]),
+                y=float(interp_pos[1]),
+                z=float(interp_pos[2]),
+                reference_frame=table_conn.child,
             )
-            world.bodies.clear()
+            world.notify_state_change()
+            translation_detector.update_with_latest_motion_data()
 
-        world.reset_world = reset_world
-    return world
-
-
-# -------------------------------------------------------------------------
-# Hybrid Test Class
-# -------------------------------------------------------------------------
-class TestEventDetectorsHybrid(BulletWorldTestCase):
-    """Hybrid SDT–PyCRAM test for TranslationDetector and InsertionDetector."""
-
-    def setup_method(self, method):
-        set_logger_level(LoggerLevel.INFO)
-
-        # Create SDT World and Bodies
-        self.world = ensure_reset_world(World())
-        with self.world.modify_world():
-            self.root = Body(name=PrefixedName("root"))
-            self.milk = Body(name=PrefixedName("milk"))
-            self.container = Body(name=PrefixedName("container"))
-
-            # Define geometry
-            self.milk.collision = [
-                Box(
-                    scale=Scale(0.1, 0.1, 0.1),
-                    origin=TransformationMatrix(reference_frame=self.milk),
-                )
-            ]
-            self.container.collision = [
-                Box(
-                    scale=Scale(0.5, 0.5, 0.5),
-                    origin=TransformationMatrix(reference_frame=self.container),
-                )
-            ]
-
-            # Add bodies to world
-            for body in [self.root, self.milk, self.container]:
-                self.world.add_body(body)
-
-            # Connect via 6DoF joints
-            for child in [self.milk, self.container]:
-                conn = Connection6DoF.create_with_dofs(
-                    parent=self.root, child=child, world=self.world
-                )
-                self.world.add_connection(conn)
-
-        # Patch bodies for Segmind detectors
-        for body in [self.root, self.milk, self.container]:
-            patch_body_for_segmind(body)
-
-    # ---------------------------------------------------------------------
-    # Helper
-    # ---------------------------------------------------------------------
-    def run_translation_detector(
-        self, obj, time_between_frames=timedelta(seconds=0.05), window_size=3
-    ):
-        tracker = ObjectTrackerFactory.get_tracker(obj)
-        return TranslationDetector(
-            tracked_object=obj,
-            logger=tracker,
-            time_between_frames=time_between_frames,
-            window_size=window_size,
-        )
-
-    # ---------------------------------------------------------------------
-    # Tests
-    # ---------------------------------------------------------------------
-    def test_translation_detector_hybrid(self):
-        print("\n--- Running Hybrid Translation Detector ---")
-
-        milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
-
-        # Create the translation detector for hybrid model
-        detector = TranslationDetector(
-            logger=None,
-            tracked_object=self.milk,
-            time_between_frames=timedelta(seconds=0.01),
-            window_size=3,
-        )
-        detector.start()
-        time.sleep(detector.get_n_changes_wait_time(1))  # allow detector to initialize
-
-        n_steps = 10
-        step_size = 0.8  # larger step to ensure event triggers
-
-        from semantic_digital_twin.spatial_types.spatial_types import Point3
-
-        for step in range(n_steps):
-            with self.world.modify_world():
-                print(f"\n=== STEP {step+1} ===")
-
-                # Raw CasADi SX / SDT object
-                print("milk.state.position (raw):", self.milk.state.position)
-
-                # Numeric extraction
-                pos_numeric = self.milk.state.position.to_np().flatten()[:3]
-                current_pos = np.array(pos_numeric, dtype=float)
-                print("milk.state.position (numeric):", current_pos)
-
-                # Incremental motion
-                delta = np.array([step_size, step_size, step_size], dtype=float)
-                new_pos = current_pos + delta
-                print("Applying delta:", delta, "New position:", new_pos)
-
-                # In-place update of milk's position
-                self.milk.state.position.x = new_pos[0]
-                self.milk.state.position.y = new_pos[1]
-                self.milk.state.position.z = new_pos[2]
-
-            # Feed detector
-            detector.update_with_latest_motion_data()
-            time.sleep(
-                detector.get_n_changes_wait_time(1)
-            )  # give detector time to process
-
-            # --- Debug internal detector state ---
-            print("Internal detector state:")
-            print("  Window size:", detector.window_size)
+            print(f"Step {i+1}/{steps} - Milk position: {interp_pos}")
             print(
-                "  Min translation threshold:",
-                getattr(detector, "min_translation_threshold", None),
+                f"  Latest TranslationEvent: {milk_tracker.get_latest_event_of_type(TranslationEvent)}"
             )
-            print("  Current poses buffer:")
-            for i, p in enumerate(detector.poses):
-                try:
-                    if hasattr(p, "position"):
-                        arr = np.array(p.position.to_np().flatten()[:3])
-                    elif hasattr(p, "translation"):
-                        arr = np.array(p.translation.to_np().flatten()[:3])
-                    elif all(hasattr(p, attr) for attr in ["x", "y", "z"]):
-                        arr = np.array([float(p.x), float(p.y), float(p.z)])
-                    else:
-                        arr = np.array(p).flatten()[:3]
-                except Exception:
-                    arr = str(p)
-                print(f"    Pose {i}: {arr}")
+            print(
+                f"  Latest StopTranslationEvent: {milk_tracker.get_latest_event_of_type(StopTranslationEvent)}"
+            )
 
-            # Check events in tracker
-            translation_event = milk_tracker.get_latest_event_of_type(TranslationEvent)
-            stop_translation_event = milk_tracker.get_latest_event_of_type(
+            time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
+
+        # Simulate no movement to trigger StopTranslationEvent
+        for j in range(5):
+            translation_detector.update_with_latest_motion_data()
+            world.notify_state_change()
+            print(
+                f"Wait {j+1}/5 - Latest StopTranslationEvent: {milk_tracker.get_latest_event_of_type(StopTranslationEvent)}"
+            )
+            time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
+
+        assert milk_tracker.get_latest_event_of_type(TranslationEvent) is not None
+        assert milk_tracker.get_latest_event_of_type(StopTranslationEvent) is not None
+
+    finally:
+        # Always stop and join the detector thread
+        try:
+            translation_detector.stop()
+        except Exception:
+            pass
+        try:
+            translation_detector.join(timeout=2.0)
+        except Exception:
+            pass
+
+
+def test_insertion_detector(create_kitchen_world_with_milk_and_robot):
+    world, milk_conn, robot_conn, table_conn, target_position = (
+        create_kitchen_world_with_milk_and_robot
+    )
+    milk_tracker = ObjectTrackerFactory.get_tracker(milk_conn.child)
+
+    # Start translation detector with small thresholds for testing
+    translation_detector = run_and_get_translation_detector(
+        milk_conn.child, time_between_frames=timedelta(seconds=0.01), world=world
+    )
+
+    # Start spatial relation detector (InsertionDetector)
+    sr_detector = InsertionDetector(wait_time=timedelta(seconds=0.01), world=world)
+
+    # Optionally run only a single loop for SR detector as well:
+    # sr_detector.run_once = True
+
+    sr_detector.start()
+
+    try:
+        steps = 5
+        for i in range(steps):
+            # Linear interpolation between start and target positions
+            current_pos = milk_conn.origin.to_position().to_np()[:3].flatten()
+            target_pos_np = target_position.to_np()[:3].flatten()
+            interp_pos = current_pos + (target_pos_np - current_pos) * (i + 1) / steps
+
+            # Update the origin (mutable) instead of global_pose
+            milk_conn.origin = TransformationMatrix.from_xyz_rpy(
+                x=float(interp_pos[0]),
+                y=float(interp_pos[1]),
+                z=float(interp_pos[2]),
+                reference_frame=table_conn.child,
+            )
+            world.notify_state_change()
+
+            # Let translation detector process current frame
+            translation_detector.update_with_latest_motion_data()
+
+            # Debug prints
+            print(f"Step {i+1}/{steps}")
+            print(f"  Milk position: {interp_pos}")
+            latest_translation_event = milk_tracker.get_latest_event_of_type(
+                TranslationEvent
+            )
+            print(f"  Latest TranslationEvent: {latest_translation_event}")
+
+            # Wait enough time for detector to register motion
+            time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
+
+        # Simulate multiple frames with NO movement to trigger StopTranslationEvent
+        for j in range(10):
+            # Keep object still
+            translation_detector.update_with_latest_motion_data()
+            world.notify_state_change()
+
+            latest_translation_event = milk_tracker.get_latest_event_of_type(
+                TranslationEvent
+            )
+            latest_stop_event = milk_tracker.get_latest_event_of_type(
                 StopTranslationEvent
             )
-            print("Latest TranslationEvent:", translation_event)
-            print("Latest StopTranslationEvent:", stop_translation_event)
 
-        # Extra updates to detect stop motion
-        for i in range(5):
-            detector.update_with_latest_motion_data()
-            time.sleep(detector.get_n_changes_wait_time(1) * 2)
+            print(f"Wait {j+1}/10: Latest TranslationEvent: {latest_translation_event}")
+            print(f"Wait {j+1}/10: Latest StopTranslationEvent: {latest_stop_event}")
 
-        # Final check
-        translation_event = milk_tracker.get_latest_event_of_type(TranslationEvent)
-        stop_translation_event = milk_tracker.get_latest_event_of_type(
-            StopTranslationEvent
-        )
-        print("\nFinal TranslationEvent:", translation_event)
-        print("Final StopTranslationEvent:", stop_translation_event)
+            # Wait for detector to process
+            time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
 
-        # Ensure motion was detected
-        self.assertIsNotNone(translation_event, "TranslationEvent was not detected!")
+        stop_motion_event = milk_tracker.get_latest_event_of_type(StopTranslationEvent)
+        print(f"Final StopTranslationEvent: {stop_motion_event}")
+        assert stop_motion_event is not None, "StopTranslationEvent was not detected!"
 
-    def test_insertion_detector(self):
-        print("\n--- Running Insertion Detector (Hybrid) ---")
-        milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
-        translation_detector = self.run_translation_detector(
-            self.milk, time_between_frames=timedelta(seconds=0.01)
-        )
-
-        class LoggerBridge:
-            def __init__(self, tracker):
-                self.tracker = tracker
-
-            def add_callback(self, event_type, callback, cond=None):
+    finally:
+        # Always stop/join both detectors
+        for d in (translation_detector, sr_detector):
+            try:
+                d.stop()
+            except Exception:
+                pass
+            try:
+                d.join(timeout=2.0)
+            except Exception:
                 pass
 
-            def add_event(self, event):
-                self.tracker.add_event(event)
 
-        logger_bridge = LoggerBridge(milk_tracker)
-        sr_detector = InsertionDetector(
-            world=self.world, logger=logger_bridge, wait_time=timedelta(seconds=0.01)
-        )
+def run_and_get_translation_detector(
+    obj: Body,
+    time_between_frames: timedelta = timedelta(seconds=0.01),
+    world: World = None,
+) -> TranslationDetector:
+    """
+    Create and start a TranslationDetector for the given object, with lowered
+    thresholds for testing so even small movements trigger events.
+    """
+    logger = EventLogger()
+    translation_detector = TranslationDetector(
+        logger,
+        obj,
+        time_between_frames=time_between_frames,
+        window_size_in_seconds=0.05,  # smaller window for faster detection in tests
+        world=world,
+    )
 
-        # Hardcoded container position to avoid CasADi Expression issues
-        target_pos = np.array([0.5, 0.5, 0.5])
-        start_pos = np.array([0.0, 0.0, 0.0])
-        steps = 5
+    # Lower thresholds for test purposes
+    translation_detector.min_translation_threshold = 1e-3  # 1 mm
+    translation_detector.min_velocity_threshold = 1e-3  # 1 mm/s
 
-        for i in range(steps):
-            interp = start_pos + (target_pos - start_pos) * (i + 1) / steps
-            with self.world.modify_world():
-                self.milk.state.position = Point3(*interp)
+    translation_detector.start()
+    # Wait a bit to let the detector initialize
+    time.sleep(translation_detector.get_n_changes_wait_time(1))
+    return translation_detector
 
-            # Simulate passage of time
-            time.sleep(0.02)
-            self.milk.current_state.position = Point3(*interp)
-            self.milk.current_state.timestamp = time.time()
-            translation_detector.update_with_latest_motion_data()
-            sr_detector.detect_events()
-            print(
-                f"Step {i+1}: milk at {interp.tolist()} | StopMotionEvent={milk_tracker.get_latest_event_of_type(StopMotionEvent)}"
-            )
 
-        stop_event = milk_tracker.get_latest_event_of_type(StopMotionEvent)
-        print("Final StopMotionEvent:", stop_event)
-        assert stop_event is not None or True
+def test_consistent_gradient_motion_detection_method():
+    for i in range(3):
+        a = np.zeros((3, 3))
+        a[:, i] = 1
+        assert has_consistent_direction(a.tolist())
+        a = np.zeros((3, 3))
+        a[:, i] = -1
+        assert has_consistent_direction(a.tolist())
+        a = np.zeros((3, 3))
+        a[:, i] = -1
+        a[1, i] = 1
+        assert not has_consistent_direction(a.tolist())
 
-    def test_consistent_gradient_motion_detection_method(self):
-        consistent = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
-        inconsistent = [[1, -1, 1], [-1, 1, -1], [1, -1, 1]]
-        print(
-            "Testing consistent:",
-            consistent,
-            "->",
-            has_consistent_direction(consistent),
-        )
-        print(
-            "Testing inconsistent:",
-            inconsistent,
-            "->",
-            has_consistent_direction(inconsistent),
-        )
-        assert has_consistent_direction(consistent)
-        assert not has_consistent_direction(inconsistent)
 
-    def test_displacement_motion_detection_method(self):
-        motions = [[0, 2, 0], [0, 0, 0], [0, 0, 0]]
-        no_disp = [[0, 1, 0], [0, 0, 0], [0, 0, 0]]
-        print("Testing displacement:", motions, "->", is_displaced(motions, 1.5))
-        print("Testing no displacement:", no_disp, "->", is_displaced(no_disp, 1.5))
-        assert is_displaced(motions, 1.5)
-        assert not is_displaced(no_disp, 1.5)
+def test_displacement_motion_detection_method():
+    for i in range(3):
+        a = np.zeros((3, 3))
+        a[:, i] = 1
+        assert is_displaced(a.tolist(), 1.5)
+        a = np.zeros((3, 3))
+        a[:, i] = -1
+        assert is_displaced(a.tolist(), 1.5)
+        a = np.zeros((3, 3))
+        a[:, i] = -1
+        a[1, i] = 1
+        assert is_displaced(a.tolist(), 1.5)

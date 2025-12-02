@@ -8,8 +8,7 @@ from queue import Queue, Empty, Full
 import numpy as np
 from typing import Dict
 
-from ..datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject, \
-    HasPrimaryAndSecondaryTrackedObjects
+from ..datastructures.mixins import HasPrimaryTrackedObject, HasPrimaryAndSecondaryTrackedObjects
 from ..detectors.motion_detection_helpers import is_displaced, is_stopped, \
     ExponentialMovingAverage
 from ..episode_player import EpisodePlayer
@@ -22,7 +21,7 @@ from typing_extensions import Optional, List, Union, Type, Tuple, Callable
 from ripple_down_rules.rdr_decorators import RDRDecorator
 from segmind.event_logger import EventLogger
 from segmind.datastructures.events import Event, ContactEvent, LossOfContactEvent, AgentContactEvent, \
-    AgentLossOfContactEvent, LossOfSurfaceEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
+    AgentLossOfContactEvent, TranslationEvent, StopTranslationEvent, NewObjectEvent, \
     RotationEvent, StopRotationEvent, MotionEvent, AgentInterferenceEvent, InterferenceEvent, AbstractContactEvent, \
     AgentLossOfInterferenceEvent, AbstractAgentContact, LossOfInterferenceEvent
 from segmind.detectors.motion_detection_helpers import DataFilter

@@ -395,38 +395,38 @@ t_AgentLossOfInterferenceEvent = Table(
 
 mapper_registry = registry(metadata=metadata)
 
-m_ContactPoint = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.ContactPoint, t_ContactPoint, properties = dict(position_on_body_a=relationship('Vector3',foreign_keys=[t_ContactPoint.c.position_on_body_a_id]), 
-position_on_body_b=relationship('Vector3',foreign_keys=[t_ContactPoint.c.position_on_body_b_id]), 
-normal_on_body_b=relationship('Vector3',foreign_keys=[t_ContactPoint.c.normal_on_body_b_id]), 
-lateral_friction_1=relationship('LateralFriction',foreign_keys=[t_ContactPoint.c.lateral_friction_1_id]), 
-lateral_friction_2=relationship('LateralFriction',foreign_keys=[t_ContactPoint.c.lateral_friction_2_id]), 
-body_a_frozen_cp=relationship('FrozenBody',foreign_keys=[t_ContactPoint.c.body_a_frozen_cp_id]), 
+m_ContactPoint = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.ContactPoint, t_ContactPoint, properties = dict(position_on_body_a=relationship('Vector3',foreign_keys=[t_ContactPoint.c.position_on_body_a_id]),
+position_on_body_b=relationship('Vector3',foreign_keys=[t_ContactPoint.c.position_on_body_b_id]),
+normal_on_body_b=relationship('Vector3',foreign_keys=[t_ContactPoint.c.normal_on_body_b_id]),
+lateral_friction_1=relationship('LateralFriction',foreign_keys=[t_ContactPoint.c.lateral_friction_1_id]),
+lateral_friction_2=relationship('LateralFriction',foreign_keys=[t_ContactPoint.c.lateral_friction_2_id]),
+body_a_frozen_cp=relationship('FrozenBody',foreign_keys=[t_ContactPoint.c.body_a_frozen_cp_id]),
 body_b_frozen_cp=relationship('FrozenBody',foreign_keys=[t_ContactPoint.c.body_b_frozen_cp_id])), polymorphic_on = "polymorphic_type", polymorphic_identity = "ContactPoint")
 
 m_ContactPointsList = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.ContactPointsList, t_ContactPointsList, properties = dict(points=relationship('ContactPoint',foreign_keys=[t_ContactPoint.c.contactpointslist_points_id])), polymorphic_on = "polymorphic_type", polymorphic_identity = "ContactPointsList")
 
-m_VisualShape = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.VisualShape, t_VisualShape, properties = dict(rgba_color=relationship('Color',foreign_keys=[t_VisualShape.c.rgba_color_id]), 
+m_VisualShape = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.VisualShape, t_VisualShape, properties = dict(rgba_color=relationship('Color',foreign_keys=[t_VisualShape.c.rgba_color_id]),
 visual_frame_position=relationship('Vector3',foreign_keys=[t_VisualShape.c.visual_frame_position_id])), polymorphic_on = "polymorphic_type", polymorphic_identity = "VisualShape")
 
 m_Event = mapper_registry.map_imperatively(segmind.datastructures.events.Event, t_Event, polymorphic_on = "polymorphic_type", polymorphic_identity = "Event")
 
-m_FrozenBody = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.FrozenBody, t_FrozenBody, properties = dict(pose=relationship('PoseStamped',foreign_keys=[t_FrozenBody.c.pose_id]), 
-velocity=relationship('Vector3',foreign_keys=[t_FrozenBody.c.velocity_id]), 
-bounding_box=relationship('AxisAlignedBoundingBox',foreign_keys=[t_FrozenBody.c.bounding_box_id]), 
+m_FrozenBody = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.FrozenBody, t_FrozenBody, properties = dict(pose=relationship('PoseStamped',foreign_keys=[t_FrozenBody.c.pose_id]),
+velocity=relationship('Vector3',foreign_keys=[t_FrozenBody.c.velocity_id]),
+bounding_box=relationship('AxisAlignedBoundingBox',foreign_keys=[t_FrozenBody.c.bounding_box_id]),
 concept=t_FrozenBody.c.concept), polymorphic_on = "polymorphic_type", polymorphic_identity = "FrozenBody")
 
 m_BoundingBox = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.BoundingBox, t_BoundingBox, polymorphic_on = "polymorphic_type", polymorphic_identity = "BoundingBox")
 
 m_Vector3 = mapper_registry.map_imperatively(pycram.datastructures.pose.Vector3, t_Vector3, polymorphic_on = "polymorphic_type", polymorphic_identity = "Vector3")
 
-m_Pose = mapper_registry.map_imperatively(pycram.datastructures.pose.Pose, t_Pose, properties = dict(position=relationship('Vector3',foreign_keys=[t_Pose.c.position_id]), 
+m_Pose = mapper_registry.map_imperatively(pycram.datastructures.pose.Pose, t_Pose, properties = dict(position=relationship('Vector3',foreign_keys=[t_Pose.c.position_id]),
 orientation=relationship('Quaternion',foreign_keys=[t_Pose.c.orientation_id])), polymorphic_on = "polymorphic_type", polymorphic_identity = "Pose")
 
 m_LateralFriction = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.LateralFriction, t_LateralFriction, properties = dict(lateral_friction_direction=relationship('Vector3',foreign_keys=[t_LateralFriction.c.lateral_friction_direction_id])))
 
 m_Color = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.Color, t_Color, )
 
-m_PoseStamped = mapper_registry.map_imperatively(pycram.datastructures.pose.PoseStamped, t_PoseStamped, properties = dict(pose=relationship('Pose',foreign_keys=[t_PoseStamped.c.pose_id]), 
+m_PoseStamped = mapper_registry.map_imperatively(pycram.datastructures.pose.PoseStamped, t_PoseStamped, properties = dict(pose=relationship('Pose',foreign_keys=[t_PoseStamped.c.pose_id]),
 header=relationship('Header',foreign_keys=[t_PoseStamped.c.header_id])), polymorphic_on = "polymorphic_type", polymorphic_identity = "PoseStamped")
 
 m_FrozenJoint = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.FrozenJoint, t_FrozenJoint, )
@@ -455,7 +455,7 @@ m_EventWithTrackedObjects = mapper_registry.map_imperatively(segmind.datastructu
 
 m_FrozenLink = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.FrozenLink, t_FrozenLink, properties = dict(geometry=relationship('VisualShape',foreign_keys=[t_VisualShape.c.frozenlink_geometry_id])), polymorphic_identity = "FrozenLink", inherits = m_FrozenBody)
 
-m_FrozenObject = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.FrozenObject, t_FrozenObject, properties = dict(links=relationship('FrozenLink',foreign_keys=[t_FrozenLink.c.frozenobject_links_id]), 
+m_FrozenObject = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.FrozenObject, t_FrozenObject, properties = dict(links=relationship('FrozenLink',foreign_keys=[t_FrozenLink.c.frozenobject_links_id]),
 joints=relationship('FrozenJoint',foreign_keys=[t_FrozenJoint.c.frozenobject_joints_id])), polymorphic_identity = "FrozenObject", inherits = m_FrozenBody)
 
 m_AxisAlignedBoundingBox = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.AxisAlignedBoundingBox, t_AxisAlignedBoundingBox, polymorphic_identity = "AxisAlignedBoundingBox", inherits = m_BoundingBox)
@@ -472,18 +472,18 @@ m_GraspPose = mapper_registry.map_imperatively(pycram.datastructures.pose.GraspP
 
 m_CylinderVisualShape = mapper_registry.map_imperatively(pycram.datastructures.dataclasses.CylinderVisualShape, t_CylinderVisualShape, polymorphic_identity = "CylinderVisualShape", inherits = m_CapsuleVisualShape)
 
-m_EventWithTwoTrackedObjects = mapper_registry.map_imperatively(segmind.datastructures.events.EventWithTwoTrackedObjects, t_EventWithTwoTrackedObjects, properties = dict(with_object_frozen_cp=relationship('FrozenObject',foreign_keys=[t_EventWithTwoTrackedObjects.c.with_object_frozen_cp_id]), 
-tracked_object_frozen_cp=relationship('FrozenObject',foreign_keys=[t_EventWithTwoTrackedObjects.c.tracked_object_frozen_cp_id]), 
+m_EventWithTwoTrackedObjects = mapper_registry.map_imperatively(segmind.datastructures.events.EventWithTwoTrackedObjects, t_EventWithTwoTrackedObjects, properties = dict(with_object_frozen_cp=relationship('FrozenObject',foreign_keys=[t_EventWithTwoTrackedObjects.c.with_object_frozen_cp_id]),
+tracked_object_frozen_cp=relationship('FrozenObject',foreign_keys=[t_EventWithTwoTrackedObjects.c.tracked_object_frozen_cp_id]),
 world_frozen_cp=relationship('FrozenWorldState',foreign_keys=[t_EventWithTwoTrackedObjects.c.world_frozen_cp_id])), polymorphic_identity = "EventWithTwoTrackedObjects", inherits = m_EventWithTrackedObjects)
 
-m_EventWithOneTrackedObject = mapper_registry.map_imperatively(segmind.datastructures.events.EventWithOneTrackedObject, t_EventWithOneTrackedObject, properties = dict(tracked_object_frozen_cp=relationship('FrozenObject',foreign_keys=[t_EventWithOneTrackedObject.c.tracked_object_frozen_cp_id]), 
+m_EventWithOneTrackedObject = mapper_registry.map_imperatively(segmind.datastructures.events.EventWithOneTrackedObject, t_EventWithOneTrackedObject, properties = dict(tracked_object_frozen_cp=relationship('FrozenObject',foreign_keys=[t_EventWithOneTrackedObject.c.tracked_object_frozen_cp_id]),
 world_frozen_cp=relationship('FrozenWorldState',foreign_keys=[t_EventWithOneTrackedObject.c.world_frozen_cp_id])), polymorphic_identity = "EventWithOneTrackedObject", inherits = m_EventWithTrackedObjects)
 
-m_AbstractContactEvent = mapper_registry.map_imperatively(segmind.datastructures.events.AbstractContactEvent, t_AbstractContactEvent, properties = dict(contact_points=relationship('ContactPointsList',foreign_keys=[t_AbstractContactEvent.c.contact_points_id]), 
-latest_contact_points=relationship('ContactPointsList',foreign_keys=[t_AbstractContactEvent.c.latest_contact_points_id]), 
-bounding_box=relationship('AxisAlignedBoundingBox',foreign_keys=[t_AbstractContactEvent.c.bounding_box_id]), 
-pose=relationship('PoseStamped',foreign_keys=[t_AbstractContactEvent.c.pose_id]), 
-with_object_bounding_box=relationship('AxisAlignedBoundingBox',foreign_keys=[t_AbstractContactEvent.c.with_object_bounding_box_id]), 
+m_AbstractContactEvent = mapper_registry.map_imperatively(segmind.datastructures.events.AbstractContactEvent, t_AbstractContactEvent, properties = dict(contact_points=relationship('ContactPointsList',foreign_keys=[t_AbstractContactEvent.c.contact_points_id]),
+latest_contact_points=relationship('ContactPointsList',foreign_keys=[t_AbstractContactEvent.c.latest_contact_points_id]),
+bounding_box=relationship('AxisAlignedBoundingBox',foreign_keys=[t_AbstractContactEvent.c.bounding_box_id]),
+pose=relationship('PoseStamped',foreign_keys=[t_AbstractContactEvent.c.pose_id]),
+with_object_bounding_box=relationship('AxisAlignedBoundingBox',foreign_keys=[t_AbstractContactEvent.c.with_object_bounding_box_id]),
 with_object_pose=relationship('PoseStamped',foreign_keys=[t_AbstractContactEvent.c.with_object_pose_id])), polymorphic_identity = "AbstractContactEvent", inherits = m_EventWithTwoTrackedObjects)
 
 m_DefaultEventWithTwoTrackedObjects = mapper_registry.map_imperatively(segmind.datastructures.events.DefaultEventWithTwoTrackedObjects, t_DefaultEventWithTwoTrackedObjects, polymorphic_identity = "DefaultEventWithTwoTrackedObjects", inherits = m_EventWithTwoTrackedObjects)
@@ -492,7 +492,7 @@ m_AbstractAgentObjectInteractionEvent = mapper_registry.map_imperatively(segmind
 
 m_NewObjectEvent = mapper_registry.map_imperatively(segmind.datastructures.events.NewObjectEvent, t_NewObjectEvent, polymorphic_identity = "NewObjectEvent", inherits = m_EventWithOneTrackedObject)
 
-m_MotionEvent = mapper_registry.map_imperatively(segmind.datastructures.events.MotionEvent, t_MotionEvent, properties = dict(start_pose=relationship('PoseStamped',foreign_keys=[t_MotionEvent.c.start_pose_id]), 
+m_MotionEvent = mapper_registry.map_imperatively(segmind.datastructures.events.MotionEvent, t_MotionEvent, properties = dict(start_pose=relationship('PoseStamped',foreign_keys=[t_MotionEvent.c.start_pose_id]),
 current_pose=relationship('PoseStamped',foreign_keys=[t_MotionEvent.c.current_pose_id])), polymorphic_identity = "MotionEvent", inherits = m_EventWithOneTrackedObject)
 
 m_ContactEvent = mapper_registry.map_imperatively(segmind.datastructures.events.ContactEvent, t_ContactEvent, polymorphic_identity = "ContactEvent", inherits = m_AbstractContactEvent)

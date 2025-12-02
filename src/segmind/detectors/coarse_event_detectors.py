@@ -1,29 +1,25 @@
 from __future__ import annotations
 
 import os.path
-
-from pycram.plan import Plan
-#from pycram.designators.action_designator import PickUpAction, PlaceAction
-from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
-from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
-    PlaceAction, MoveTorsoActionDescription
-from pycrap.ontologies import Location, Supporter, Floor, Agent
-from ripple_down_rules.rdr_decorators import RDRDecorator
-
-
 try:
     from matplotlib import pyplot as plt
 except ImportError:
     plt = None
-
 from typing_extensions import Optional, List, Union, Dict
 from typing import Dict
-from pycram.datastructures.world import UseProspectionWorld
-from pycram.ros import logdebug, loginfo
 from .atomic_event_detectors import *
 from ..datastructures.events import *
 from ..utils import get_angle_between_vectors, get_support, is_object_supported_by_container_body
 from ..episode_player import EpisodePlayer
+from ripple_down_rules.rdr_decorators import RDRDecorator
+
+from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
+    PlaceAction, MoveTorsoActionDescription
+from pycrap.ontologies import Location, Supporter, Floor, Agent
+from pycram.datastructures.world import UseProspectionWorld
+from pycram.ros import logdebug, loginfo
+
 
 
 class DetectorWithStarterEvent(AtomicEventDetector, ABC):

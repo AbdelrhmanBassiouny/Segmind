@@ -4,24 +4,33 @@ import math
 import threading
 import time
 from abc import ABC, abstractmethod
-
+import logging
+logging.basicConfig(level=logging.INFO)
+logdebug = logging.debug
+loginfo = logging.info
 import numpy as np
 from typing_extensions import List, Optional, Tuple
 
-from pycram.datastructures.dataclasses import Color
-from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
-from pycram.datastructures.enums import Arms, Grasp, AxisIdentifier
-from pycram.datastructures.grasp import GraspDescription
-from pycram.datastructures.pose import Transform, Vector3
-from pycram.datastructures.world import World, UseProspectionWorld
+#from pycram.datastructures.dataclasses import Color
+#from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
+#from pycram.datastructures.enums import Arms, Grasp, AxisIdentifier
+#from pycram.datastructures.grasp import GraspDescription
+#from pycram.datastructures.pose import Transform, Vector3
+#from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
-from pycram.ros import logdebug, logwarn
+#from pycram.ros import logdebug, logwarn
 from pycram.tf_transformations import quaternion_inverse, quaternion_multiply
 from pycram.world_concepts.world_object import Object
-from pycrap.ontologies import Supporter, Floor
+#from pycrap.ontologies import Supporter, Floor
 
-from semantic_digital_twin.semantic_annotations.semantic_annotations import Container
+from semantic_digital_twin.semantic_annotations.semantic_annotations import Table, Floor
+from semantic_digital_twin.world_description.geometry import Color
+from semantic_digital_twin.world import World
+from semantic_digital_twin.robots.abstract_robot import ArmSelector, Grasp, GraspDescription, AxisIdentifier
+from semantic_digital_twin.world_description.world_entity import Body, ContactPointsList
+from semantic_digital_twin.world_description.geometry import BoundingBox, Box
+from semantic_digital_twin.spatial_types.spatial_types import TransformationMatrix, Vector3, Quaternion
 
 from gtts import gTTS
 import pygame
@@ -61,15 +70,15 @@ def text_to_speech(text: str):
                 time.sleep(0.1)
                 continue
         except pygame.error:
-            logwarn("Audio not available, running in silent mode.")
+            loginfo("Audio not available, running in silent mode.")
 
 
-def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07,
-                                          bodies_to_check: Optional[List[PhysicalBody]] = None) -> bool:
+def is_object_supported_by_container_body(obj: Body, distance: float = 0.07,
+                                          bodies_to_check: Optional[List[Body]] = None) -> bool:
     if bodies_to_check is None:
         bodies_to_check = obj.contact_points.get_all_bodies()
     if hasattr(obj.world, "views") and obj.world.views is not None:
-        containers = [v for v in obj.world.views['views'] if isinstance(v, Container)]
+        containers = [v for v in obj.world.views['views'] if isinstance(v, Box)]
         container_bodies = [c.body for c in containers]
         container_body_names = [c.name.name for c in container_bodies]
         return any(body.name in container_body_names for body in bodies_to_check)
@@ -86,17 +95,17 @@ def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0
             return False
 
 
-def get_arm_and_grasp_description_for_object(obj: Object) -> Tuple[Arms, GraspDescription]:
+def get_arm_and_grasp_description_for_object(obj: Body) -> Tuple[ArmSelector, GraspDescription]:
     obj_pose = obj.pose
     left_arm_pose = World.current_world.robot.get_link_pose("l_gripper_tool_frame")
     right_arm_pose = World.current_world.robot.get_link_pose("r_gripper_tool_frame")
     obj_distance_from_left_arm = left_arm_pose.position.euclidean_distance(obj_pose.position)
     obj_distance_from_right_arm = right_arm_pose.position.euclidean_distance(obj_pose.position)
     if obj_distance_from_left_arm < obj_distance_from_right_arm:
-        arm = Arms.LEFT
+        arm = ArmSelector.LEFT
         grasp = GraspDescription(Grasp.LEFT, Grasp.TOP)
     else:
-        arm = Arms.RIGHT
+        arm = ArmSelector.RIGHT
         grasp = GraspDescription(Grasp.RIGHT, Grasp.TOP)
     return arm, grasp
 
@@ -135,7 +144,7 @@ class PropagatingThread(threading.Thread, ABC):
         pass
 
 
-def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) -> bool:
+def check_if_object_is_supported(obj: Body, distance: Optional[float] = 0.03) -> bool:
     """
     Check if the object is supported by any other object.
 
@@ -144,7 +153,7 @@ def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) 
     :return: True if the object is supported, False otherwise.
     """
     supported = True
-    with UseProspectionWorld():
+    with World():
         prospection_obj = World.current_world.get_prospection_object_for_object(obj)
         dt = math.sqrt(2 * distance / 9.81) + 0.01  # time to fall distance
         World.current_world.simulate(dt)
@@ -154,7 +163,7 @@ def check_if_object_is_supported(obj: Object, distance: Optional[float] = 0.03) 
     return supported
 
 
-def check_if_object_is_supported_using_contact_points(obj: Object, contact_points: ContactPointsList) -> bool:
+def check_if_object_is_supported_using_contact_points(obj: Body, contact_points: ContactPointsList) -> bool:
     """
     Check if the object is supported by any other object using the contact points.
 
@@ -167,7 +176,7 @@ def check_if_object_is_supported_using_contact_points(obj: Object, contact_point
             return True
 
 
-def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None) -> Optional[PhysicalBody]:
+def get_support(obj: Body, contact_bodies: Optional[List[Body]] = None) -> Optional[Body]:
     """
     Check if the object is in contact with a supporting surface and returns it.
 
@@ -178,7 +187,7 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
     if not contact_bodies:
         contact_bodies = obj.contact_points.get_all_bodies()
     excluded_bodies = [obj]
-    if isinstance(obj, Object):
+    if isinstance(obj, Body):
         excluded_bodies.extend(list(obj.links.values()))
     for body in contact_bodies:
         if body in excluded_bodies:
@@ -187,7 +196,7 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
         #     parent_obj = body.parent_entity
         # else:
         #     parent_obj = body
-        # if issubclass(obj.obj_type, (Supporter, Location)):
+        # if issubclass(obj.obj_type, (SupportingSurface, Location)):
         if is_object_supported_by_container_body(obj, bodies_to_check=[body]):
             return body
         body_aabb = body.get_axis_aligned_bounding_box()
@@ -202,7 +211,7 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
     logdebug(f"Object {obj.name} IS NOT supported")
 
 
-def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Object,
+def check_if_object_is_supported_by_another_object(obj: Body, support_obj: Body,
                                                    contact_points: Optional[ContactPointsList] = None) -> bool:
     """
     Check if the object is supported by another object.
@@ -237,11 +246,11 @@ class Imaginator:
     """
     A class that provides methods for imagining objects.
     """
-    surfaces_created: List[Object] = []
+    surfaces_created: List[Body] = []
     latest_surface_idx: int = 0
 
     @classmethod
-    def imagine_support_from_aabb(cls, aabb: AABB) -> Object:
+    def imagine_support_from_aabb(cls, aabb: ContactPointsList) -> Body:
         """
         Imagine a support with the size of the axis-aligned bounding box.
 
@@ -251,7 +260,7 @@ class Imaginator:
         return cls._imagine_support(aabb=aabb)
 
     @classmethod
-    def imagine_support_for_object(cls, obj: Object, support_thickness: Optional[float] = 0.005) -> Object:
+    def imagine_support_for_object(cls, obj: Body, support_thickness: Optional[float] = 0.005) -> Body:
         """
         Imagine a support that supports the object and has a specified thickness.
 
@@ -262,9 +271,9 @@ class Imaginator:
         return cls._imagine_support(obj=obj, support_thickness=support_thickness)
 
     @classmethod
-    def _imagine_support(cls, obj: Optional[Object] = None,
-                         aabb: Optional[AABB] = None,
-                         support_thickness: Optional[float] = None) -> Object:
+    def _imagine_support(cls, obj: Optional[Body] = None,
+                         aabb: Optional[ContactPointsList] = None,
+                         support_thickness: Optional[float] = None) -> Body:
         """
         Imagine a support for the object or with the size of the axis-aligned bounding box.
 
@@ -282,10 +291,10 @@ class Imaginator:
         print(f"support index: {cls.latest_surface_idx}")
         support_name = f"imagined_support_{cls.latest_surface_idx}"
         support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
-        box_vis_shape = BoxVisualShape(Color(1, 1, 0, 1), Vector3(0, 0, 0),
+        box_vis_shape = BoundingBox(Color(1, 1, 0, 1), Vector3(0, 0, 0),
                                        Vector3(obj_aabb.width, obj_aabb.depth, support_thickness * 0.5))
         support = GenericObjectDescription(support_name, box_vis_shape)
-        support_obj = Object(support_name, Supporter, None, support, color=support.color)
+        support_obj = Body(support_name, Table, None, support, color=support.color)
         support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
         cp = support_obj.closest_points(0.05)
@@ -314,7 +323,7 @@ def get_angle_between_vectors(vector_1: List[float], vector_2: List[float]) -> f
     return angle
 
 
-def calculate_transform_difference_and_check_if_small(transform_1: Transform, transform_2: Transform,
+def calculate_transform_difference_and_check_if_small(transform_1: TransformationMatrix, transform_2: TransformationMatrix,
                                                       translation_threshold: float, angle_threshold: float) -> bool:
     """
     Calculate the translation and rotation of the object with respect to the hand to check if it was picked up,
@@ -440,5 +449,9 @@ def calculate_quaternion_difference(quat_1: List[float], quat_2: List[float]) ->
     :param quat_2: The quaternion of the object at the second time step.
     :return: A list of float values that represent the quaternion difference.
     """
-    quat_diff = quaternion_multiply(quaternion_inverse(quat_1), quat_2)
-    return quat_diff
+    q1 = Quaternion(*quat_1)
+    q2 = Quaternion(*quat_2)
+
+    # q_diff = inverse(q1) * q2
+    q_diff = q1.inverse() * q2
+    return [q_diff.x, q_diff.y, q_diff.z, q_diff.w]

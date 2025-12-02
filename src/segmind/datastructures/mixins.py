@@ -8,7 +8,7 @@ from typing_extensions import List, Optional, TYPE_CHECKING
 
 from .object_tracker import ObjectTrackerFactory, ObjectTracker
 
-from pycram.datastructures.dataclasses import ObjectState, FrozenObject, FrozenWorldState
+from pycram.datastructures.dataclasses import ObjectState, FrozenObject
 
 
 @dataclass
@@ -16,6 +16,7 @@ class HasTrackedObjects:
     """
     A mixin class that provides the tracked object for the event.
     """
+
     _involved_objects: List[Object]
 
     @property
@@ -31,9 +32,14 @@ class HasPrimaryTrackedObject:
     """
     A mixin class that provides the tracked object for the event.
     """
+
     tracked_object: Object
-    tracked_object_frozen_cp: Optional[FrozenObject] = field(init=False, default=None, repr=False, hash=False)
-    world_frozen_cp: Optional[FrozenWorldState] = field(init=False, default=None, repr=False, hash=False)
+    tracked_object_frozen_cp: Optional[FrozenObject] = field(
+        init=False, default=None, repr=False, hash=False
+    )
+    world_frozen_cp: Optional[FrozenWorldState] = field(
+        init=False, default=None, repr=False, hash=False
+    )
 
     def __post_init__(self):
         self.tracked_object_frozen_cp = self.tracked_object.frozen_copy()
@@ -53,8 +59,11 @@ class HasSecondaryTrackedObject:
     """
     A mixin class that provides the tracked objects for the event.
     """
+
     with_object: Optional[Object] = None
-    with_object_frozen_cp: Optional[FrozenObject] = field(init=False, default=None, repr=False, hash=False)
+    with_object_frozen_cp: Optional[FrozenObject] = field(
+        init=False, default=None, repr=False, hash=False
+    )
 
     def __post_init__(self):
         if self.with_object is not None:
@@ -66,11 +75,17 @@ class HasSecondaryTrackedObject:
 
     @cached_property
     def with_object_tracker(self) -> Optional[ObjectTracker]:
-        return ObjectTrackerFactory.get_tracker(self.with_object) if self.with_object is not None else None
+        return (
+            ObjectTrackerFactory.get_tracker(self.with_object)
+            if self.with_object is not None
+            else None
+        )
 
 
 @dataclass(kw_only=True, unsafe_hash=True)
-class HasPrimaryAndSecondaryTrackedObjects(HasPrimaryTrackedObject, HasSecondaryTrackedObject):
+class HasPrimaryAndSecondaryTrackedObjects(
+    HasPrimaryTrackedObject, HasSecondaryTrackedObject
+):
     """
     A mixin class that provides the tracked objects for the event.
     """

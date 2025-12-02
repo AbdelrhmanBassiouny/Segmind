@@ -3,6 +3,8 @@ import time
 from datetime import timedelta
 
 from typing_extensions import Optional
+from enum import Enum
+from ..episode_player import EpisodePlayer
 
 from pycram.datastructures.enums import Arms, Grasp, TorsoState, TaskStatus
 from pycram.datastructures.grasp import GraspDescription
@@ -19,9 +21,7 @@ from pycram.ros import logdebug
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Kitchen
 from pycram.world_concepts.world_object import Object
-from ..episode_player import EpisodePlayer
 
-from enum import Enum
 
 
 class ExecutionStatus(Enum):

@@ -17,6 +17,7 @@ from pycram.ros import set_logger_level
 from pycram.datastructures.enums import LoggerLevel
 from pycram.world_concepts.world_object import Object
 
+
 # set_logger_level(LoggerLevel.DEBUG)
 
 class TestEventDetectors(BulletWorldTestCase):
@@ -27,8 +28,9 @@ class TestEventDetectors(BulletWorldTestCase):
 
     def test_translation_detector(self):
         milk_tracker = ObjectTrackerFactory.get_tracker(self.milk)
-        translation_detector = self.run_and_get_translation_detector(self.milk, time_between_frames=timedelta(seconds=0.05))
-        
+        translation_detector = self.run_and_get_translation_detector(self.milk,
+                                                                     time_between_frames=timedelta(seconds=0.05))
+
         # Target position: fridge
         fridge_position = self.kitchen.links["iai_fridge_main"].position.to_list()
         print("Fridge position for translation test:", fridge_position)
@@ -41,9 +43,9 @@ class TestEventDetectors(BulletWorldTestCase):
             self.milk.set_position(interp)
             translation_detector.update_with_latest_motion_data()
             time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
-            print(f"Step {i+1} pose history:", [p.to_list() for p in translation_detector.poses])
+            print(f"Step {i + 1} pose history:", [p.to_list() for p in translation_detector.poses])
             event = milk_tracker.get_latest_event_of_type(TranslationEvent)
-            print(f"Step {i+1}, latest TranslationEvent:", event)
+            print(f"Step {i + 1}, latest TranslationEvent:", event)
 
         # Extra updates at final pose for stop detection
         for _ in range(10):
@@ -76,9 +78,9 @@ class TestEventDetectors(BulletWorldTestCase):
             self.milk.set_position(interp)
             translation_detector.update_with_latest_motion_data()
             time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
-            print(f"Step {i+1} pose history:", [p.to_list() for p in translation_detector.poses])
+            print(f"Step {i + 1} pose history:", [p.to_list() for p in translation_detector.poses])
             event = milk_tracker.get_latest_event_of_type(StopMotionEvent)
-            print(f"Step {i+1}, latest StopMotionEvent:", event)
+            print(f"Step {i + 1}, latest StopMotionEvent:", event)
 
         # Extra updates at final pose for stop detection
         for _ in range(10):
@@ -90,7 +92,8 @@ class TestEventDetectors(BulletWorldTestCase):
         self.assertIsNotNone(stop_motion_event, "StopMotionEvent was not detected!")
 
     @staticmethod
-    def run_and_get_translation_detector(obj: Object, time_between_frames: timedelta = timedelta(seconds=0.01)) -> TranslationDetector:
+    def run_and_get_translation_detector(obj: Object, time_between_frames: timedelta = timedelta(
+        seconds=0.01)) -> TranslationDetector:
         logger = EventLogger()
         translation_detector = TranslationDetector(logger, obj,
                                                    time_between_frames=time_between_frames,

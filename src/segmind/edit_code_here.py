@@ -27,6 +27,7 @@ from segmind.episode_segmenter import AgentEpisodeSegmenter, EpisodeSegmenter, N
 from ripple_down_rules.datastructures.case import Case
 Link = ObjectDescription.Link
 
+
 def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:
     """Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type ."""
     pick_up_detetectors = [detector for (_,_), detector in self_.starter_event_to_detector_thread_map.items()

@@ -3,27 +3,51 @@ from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
 
 from pycram.datastructures.dataclasses import Color, ContactPoint
-from pycram.datastructures.dataclasses import ContactPointsList, ObjectState, AxisAlignedBoundingBox, \
-    FrozenObject, FrozenBody
+from pycram.datastructures.dataclasses import (
+    ContactPointsList,
+    ObjectState,
+    AxisAlignedBoundingBox,
+    FrozenObject,
+)
 from pycram.datastructures.partial_designator import PartialDesignator
 from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
-from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
-    PlaceAction
+from pycram.robot_plans import (
+    PickUpActionDescription,
+    PlaceActionDescription,
+    PickUpAction,
+    PlaceAction,
+)
 from pycram.ros import logwarn
-from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasSecondaryTrackedObject
+from segmind.datastructures.mixins import (
+    HasPrimaryTrackedObject,
+    HasSecondaryTrackedObject,
+)
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from pycram.datastructures.dataclasses import ContactPointsList, TextAnnotation, ObjectState, AxisAlignedBoundingBox
+from pycram.datastructures.dataclasses import (
+    ContactPointsList,
+    TextAnnotation,
+    ObjectState,
+    AxisAlignedBoundingBox,
+)
 from pycram.datastructures.dataclasses import Color
 from pycram.datastructures.pose import Pose, PoseStamped
 from pycram.datastructures.world_entity import PhysicalBody
-from pycram.designator import ActionDescription
-from pycram.designators.action_designator import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
-    PlaceAction
+
+# from pycram.designator import ActionDescription
+#from pycram.designators.action_designator import (
+    PickUpActionDescription,
+    PlaceActionDescription,
+    PickUpAction,
+    PlaceAction,
+)
 from pycram.ros import logwarn, logdebug
 from pycram.world_concepts.world_object import Object, Link
 from typing_extensions import Optional, List, Union, Type, Dict
 
-from segmind.datastructures.mixins import HasPrimaryTrackedObject, HasPrimaryAndSecondaryTrackedObjects
+from segmind.datastructures.mixins import (
+    HasPrimaryTrackedObject,
+    HasPrimaryAndSecondaryTrackedObjects,
+)
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
 
 
@@ -117,26 +141,36 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject
         ObjectTrackerFactory.get_tracker(self.tracked_object).add_event(self)
 
     def __str__(self):
-        return f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
+        return (
+            f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
+        )
 
     def __eq__(self, other):
-        return (other.__class__ == self.__class__
-                and self.tracked_object == other
-                and round(self.timestamp, 1) == round(other.timestamp, 1))
+        return (
+            other.__class__ == self.__class__
+            and self.tracked_object == other
+            and round(self.timestamp, 1) == round(other.timestamp, 1)
+        )
 
     def __hash__(self):
         return hash((self.__class__, self.tracked_object, round(self.timestamp, 1)))
 
 
 @dataclass(kw_only=True)
-class EventWithTwoTrackedObjects(EventWithTrackedObjects, HasPrimaryAndSecondaryTrackedObjects, ABC):
+class EventWithTwoTrackedObjects(
+    EventWithTrackedObjects, HasPrimaryAndSecondaryTrackedObjects, ABC
+):
     """
     An abstract class that represents an event that involves two tracked objects.
     """
 
     @property
     def tracked_objects(self) -> List[Object]:
-        return [self.tracked_object, self.with_object] if self.with_object is not None else [self.tracked_object]
+        return (
+            [self.tracked_object, self.with_object]
+            if self.with_object is not None
+            else [self.tracked_object]
+        )
 
     def update_object_trackers_with_event(self) -> None:
         ObjectTrackerFactory.get_tracker(self.tracked_object).add_event(self)
@@ -144,14 +178,18 @@ class EventWithTwoTrackedObjects(EventWithTrackedObjects, HasPrimaryAndSecondary
             ObjectTrackerFactory.get_tracker(self.with_object).add_event(self)
 
     def __str__(self):
-        with_object_name = f" - {self.with_object.name}" if self.with_object is not None else ""
+        with_object_name = (
+            f" - {self.with_object.name}" if self.with_object is not None else ""
+        )
         return f"{self.__class__.__name__}: {self.tracked_object.name}{with_object_name} - {self.timestamp}"
 
     def __eq__(self, other):
-        return (other.__class__ == self.__class__
-                and self.tracked_object == other.tracked_object
-                and self.with_object == other.with_object
-                and round(self.timestamp, 1) == round(other.timestamp, 1))
+        return (
+            other.__class__ == self.__class__
+            and self.tracked_object == other.tracked_object
+            and self.with_object == other.with_object
+            and round(self.timestamp, 1) == round(other.timestamp, 1)
+        )
 
     def __hash__(self):
         hash_tuple = (self.__class__, self.tracked_object, round(self.timestamp, 1))
@@ -171,8 +209,7 @@ class DefaultEventWithTwoTrackedObjects(EventWithTwoTrackedObjects):
     def involved_bodies(self) -> List[PhysicalBody]:
         return self.tracked_objects
 
-    def set_color(self, color: Color):
-        ...
+    def set_color(self, color: Color): ...
 
     @property
     def color(self) -> Color:
@@ -189,8 +226,7 @@ class NewObjectEvent(EventWithOneTrackedObject):
     def involved_bodies(self) -> List[Object]:
         return self.tracked_objects
 
-    def set_color(self, color: Color):
-        ...
+    def set_color(self, color: Color): ...
 
     @property
     def color(self) -> Color:
@@ -202,6 +238,7 @@ class SupportEvent(DefaultEventWithTwoTrackedObjects):
     """
     The SupportEvent class is used to represent an event that involves an object that is supported by another object.
     """
+
     ...
 
 
@@ -211,6 +248,7 @@ class LossOfSupportEvent(DefaultEventWithTwoTrackedObjects):
     The LossOfSupportEvent class is used to represent an event that involves an object that was supported by another
     object and then lost support.
     """
+
     ...
 
 
@@ -220,13 +258,22 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
     vice versa.
     """
+
     start_pose: PoseStamped = field(init=False)
     current_pose: PoseStamped = field(init=False)
 
-    def __init__(self, tracked_object: Object, start_pose: PoseStamped, current_pose: PoseStamped,
-                 timestamp: Optional[float] = None):
-        EventWithOneTrackedObject.__init__(self, tracked_object=tracked_object,
-                                           timestamp=timestamp if timestamp is not None else time.time())
+    def __init__(
+        self,
+        tracked_object: Object,
+        start_pose: PoseStamped,
+        current_pose: PoseStamped,
+        timestamp: Optional[float] = None,
+    ):
+        EventWithOneTrackedObject.__init__(
+            self,
+            tracked_object=tracked_object,
+            timestamp=timestamp if timestamp is not None else time.time(),
+        )
         self.start_pose: PoseStamped = start_pose
         self.current_pose: PoseStamped = current_pose
 
@@ -260,41 +307,56 @@ class StopMotionEvent(MotionEvent):
 
 
 @dataclass(init=False, unsafe_hash=True)
-class StopTranslationEvent(StopMotionEvent):
-    ...
+class StopTranslationEvent(StopMotionEvent): ...
 
 
 @dataclass(init=False, unsafe_hash=True)
-class StopRotationEvent(StopMotionEvent):
-    ...
+class StopRotationEvent(StopMotionEvent): ...
 
 
 @dataclass(init=False, unsafe_hash=True)
 class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
-    contact_points: ContactPointsList = field(init=False, default_factory=ContactPointsList)
-    latest_contact_points: ContactPointsList = field(init=False, default_factory=ContactPointsList)
+    contact_points: ContactPointsList = field(
+        init=False, default_factory=ContactPointsList
+    )
+    latest_contact_points: ContactPointsList = field(
+        init=False, default_factory=ContactPointsList
+    )
     bounding_box: AxisAlignedBoundingBox = field(init=False)
     pose: PoseStamped = field(init=False)
-    with_object_bounding_box: Optional[AxisAlignedBoundingBox] = field(init=False, default=None)
+    with_object_bounding_box: Optional[AxisAlignedBoundingBox] = field(
+        init=False, default=None
+    )
     with_object_pose: Optional[PoseStamped] = field(init=False, default=None)
 
-    def __init__(self,
-                 contact_points: ContactPointsList,
-                 of_object: Object,
-                 latest_contact_points: Optional[ContactPointsList] = None,
-                 with_object: Optional[Object] = None,
-                 timestamp: Optional[float] = None):
-        EventWithTwoTrackedObjects.__init__(self,
-                                            tracked_object=of_object,
-                                            with_object=with_object,
-                                            timestamp=timestamp if timestamp is not None else time.time())
+    def __init__(
+        self,
+        contact_points: ContactPointsList,
+        of_object: Object,
+        latest_contact_points: Optional[ContactPointsList] = None,
+        with_object: Optional[Object] = None,
+        timestamp: Optional[float] = None,
+    ):
+        EventWithTwoTrackedObjects.__init__(
+            self,
+            tracked_object=of_object,
+            with_object=with_object,
+            timestamp=timestamp if timestamp is not None else time.time(),
+        )
         self.contact_points: ContactPointsList = contact_points
         self.latest_contact_points: ContactPointsList = latest_contact_points
-        self.bounding_box: AxisAlignedBoundingBox = of_object.get_axis_aligned_bounding_box()
+        self.bounding_box: AxisAlignedBoundingBox = (
+            of_object.get_axis_aligned_bounding_box()
+        )
         self.pose: PoseStamped = of_object.pose
-        self.with_object_bounding_box: Optional[AxisAlignedBoundingBox] = with_object.get_axis_aligned_bounding_box() \
-            if with_object is not None else None
-        self.with_object_pose: Optional[PoseStamped] = with_object.pose if with_object is not None else None
+        self.with_object_bounding_box: Optional[AxisAlignedBoundingBox] = (
+            with_object.get_axis_aligned_bounding_box()
+            if with_object is not None
+            else None
+        )
+        self.with_object_pose: Optional[PoseStamped] = (
+            with_object.pose if with_object is not None else None
+        )
 
     @property
     def involved_bodies(self) -> List[PhysicalBody]:
@@ -344,7 +406,9 @@ class ContactEvent(AbstractContactEvent):
         if len(self.contact_points) > 0:
             return self.contact_points[0].link_a
         else:
-            logwarn(f"No contact points found for {self.tracked_object.name} in {self.__class__.__name__}")
+            logwarn(
+                f"No contact points found for {self.tracked_object.name} in {self.__class__.__name__}"
+            )
 
     @property
     def links(self):
@@ -352,8 +416,7 @@ class ContactEvent(AbstractContactEvent):
 
 
 @dataclass(init=False, unsafe_hash=True)
-class InterferenceEvent(ContactEvent):
-    ...
+class InterferenceEvent(ContactEvent): ...
 
 
 @dataclass(init=False, unsafe_hash=True)
@@ -376,16 +439,19 @@ class LossOfContactEvent(AbstractContactEvent):
 
     @property
     def links(self) -> List[PhysicalBody]:
-        return self.contact_points.get_bodies_that_got_removed(self.latest_contact_points)
+        return self.contact_points.get_bodies_that_got_removed(
+            self.latest_contact_points
+        )
 
     @property
     def objects(self):
-        return self.contact_points.get_objects_that_got_removed(self.latest_contact_points)
+        return self.contact_points.get_objects_that_got_removed(
+            self.latest_contact_points
+        )
 
 
 @dataclass(init=False, unsafe_hash=True)
-class LossOfInterferenceEvent(LossOfContactEvent):
-    ...
+class LossOfInterferenceEvent(LossOfContactEvent): ...
 
 
 @dataclass(init=False, unsafe_hash=True)
@@ -400,7 +466,9 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
 
     def with_object_contact_link(self) -> Optional[PhysicalBody]:
         if self.with_object is not None:
-            return [link for link in self.links if link.parent_entity == self.with_object][0]
+            return [
+                link for link in self.links if link.parent_entity == self.with_object
+            ][0]
         else:
             return None
 
@@ -422,8 +490,7 @@ class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
 
 @dataclass(init=False, unsafe_hash=True)
-class AgentInterferenceEvent(InterferenceEvent, AgentContactEvent):
-    ...
+class AgentInterferenceEvent(InterferenceEvent, AgentContactEvent): ...
 
 
 @dataclass(init=False, unsafe_hash=True)
@@ -438,8 +505,9 @@ class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
 
 @dataclass(init=False, unsafe_hash=True)
-class AgentLossOfInterferenceEvent(LossOfInterferenceEvent, AgentLossOfContactEvent):
-    ...
+class AgentLossOfInterferenceEvent(
+    LossOfInterferenceEvent, AgentLossOfContactEvent
+): ...
 
 
 @dataclass(kw_only=True)
@@ -447,7 +515,9 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
     agent: Optional[Object] = None
     timestamp: Optional[float] = None
     end_timestamp: Optional[float] = None
-    agent_frozen_cp: Optional[FrozenObject] = field(init=False, default=None, repr=False, hash=False)
+    agent_frozen_cp: Optional[FrozenObject] = field(
+        init=False, default=None, repr=False, hash=False
+    )
 
     def __post_init__(self):
         EventWithTwoTrackedObjects.__post_init__(self)
@@ -467,12 +537,18 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
     def __eq__(self, other):
         if self.end_timestamp is None:
             return super().__eq__(other)
-        return (super().__eq__(other)
-                and round(self.end_timestamp, 1) == round(other.end_timestamp, 1))
+        return super().__eq__(other) and round(self.end_timestamp, 1) == round(
+            other.end_timestamp, 1
+        )
 
     @property
     def hash_tuple(self):
-        hash_tuple = (self.__class__, self.agent, self.tracked_object, round(self.timestamp, 1))
+        hash_tuple = (
+            self.__class__,
+            self.agent,
+            self.tracked_object,
+            round(self.timestamp, 1),
+        )
         if self.end_timestamp is not None:
             hash_tuple += (round(self.end_timestamp, 1),)
         return hash_tuple
@@ -524,7 +600,9 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
     def color(self) -> Color:
         return Color(1, 0, 1, 1)
 
-    def action_description(self, pose: Optional[PoseStamped] = None) -> PlaceActionDescription:
+    def action_description(
+        self, pose: Optional[PoseStamped] = None
+    ) -> PlaceActionDescription:
         if pose is None:
             pose = self.tracked_object.pose
         return PlaceActionDescription(self.tracked_object, pose)
@@ -536,19 +614,33 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
 
 @dataclass(init=False, unsafe_hash=True)
 class InsertionEvent(AbstractAgentObjectInteractionEvent):
-    inserted_into_objects: List[Object] = field(init=False, default_factory=list, repr=False, hash=False)
-    inserted_into_objects_frozen_cp: List[FrozenObject] = field(init=False, default_factory=list, repr=False, hash=False)
+    inserted_into_objects: List[Object] = field(
+        init=False, default_factory=list, repr=False, hash=False
+    )
+    inserted_into_objects_frozen_cp: List[FrozenObject] = field(
+        init=False, default_factory=list, repr=False, hash=False
+    )
 
-    def __init__(self, inserted_object: Object,
-                 inserted_into_objects: List[Object],
-                 through_hole: PhysicalBody,
-                 agent: Optional[Object] = None,
-                 timestamp: Optional[float] = None,
-                 end_timestamp: Optional[float] = None):
-        super().__init__(tracked_object=inserted_object, agent=agent,
-                         timestamp=timestamp, end_timestamp=end_timestamp, with_object=through_hole)
+    def __init__(
+        self,
+        inserted_object: Object,
+        inserted_into_objects: List[Object],
+        through_hole: PhysicalBody,
+        agent: Optional[Object] = None,
+        timestamp: Optional[float] = None,
+        end_timestamp: Optional[float] = None,
+    ):
+        super().__init__(
+            tracked_object=inserted_object,
+            agent=agent,
+            timestamp=timestamp,
+            end_timestamp=end_timestamp,
+            with_object=through_hole,
+        )
         self.inserted_into_objects: List[Object] = inserted_into_objects
-        self.inserted_into_objects_frozen_cp: List[FrozenObject] = [obj.frozen_copy() for obj in inserted_into_objects]
+        self.inserted_into_objects_frozen_cp: List[FrozenObject] = [
+            obj.frozen_copy() for obj in inserted_into_objects
+        ]
 
     @property
     def through_hole(self) -> PhysicalBody:
@@ -559,14 +651,21 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         return PlaceAction
 
     def action_description(self) -> PlaceActionDescription:
-        return PlaceActionDescription(self.tracked_object, self.through_hole.pose, insert=True)
+        return PlaceActionDescription(
+            self.tracked_object, self.through_hole.pose, insert=True
+        )
 
     def hash_tuple(self):
-        hash_tuple = (*super().hash_tuple, *(obj.name for obj in self.inserted_into_objects))
+        hash_tuple = (
+            *super().hash_tuple,
+            *(obj.name for obj in self.inserted_into_objects),
+        )
         return hash_tuple
 
     def __str__(self):
-        with_object_name = " - " + f" - ".join([obj.name for obj in self.inserted_into_objects])
+        with_object_name = " - " + f" - ".join(
+            [obj.name for obj in self.inserted_into_objects]
+        )
         return f"{self.__class__.__name__}: {self.tracked_object.name}{with_object_name} - {self.timestamp}"
 
     @property
@@ -575,19 +674,20 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
 
 
 @dataclass(unsafe_hash=True)
-class ContainmentEvent(DefaultEventWithTwoTrackedObjects):
-    ...
+class ContainmentEvent(DefaultEventWithTwoTrackedObjects): ...
 
 
 # Create a type that is the union of all event types
-EventUnion = Union[NewObjectEvent,
-MotionEvent,
-StopMotionEvent,
-ContactEvent,
-LossOfContactEvent,
-AgentContactEvent,
-AgentLossOfContactEvent,
-PickUpEvent,
-PlacingEvent,
-ContainmentEvent,
-InsertionEvent]
+EventUnion = Union[
+    NewObjectEvent,
+    MotionEvent,
+    StopMotionEvent,
+    ContactEvent,
+    LossOfContactEvent,
+    AgentContactEvent,
+    AgentLossOfContactEvent,
+    PickUpEvent,
+    PlacingEvent,
+    ContainmentEvent,
+    InsertionEvent,
+]

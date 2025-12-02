@@ -232,4 +232,3 @@ class ObjectTrackerFactory:
                 cls._trackers[obj] = ObjectTracker(obj)
             return cls._trackers[obj]
 
-
