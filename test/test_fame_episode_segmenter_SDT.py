@@ -4,17 +4,19 @@ from unittest import TestCase
 from os.path import dirname
 
 import pycram.ros
-#from pycram.datastructures.world import World
-#from pycram.datastructures.enums import WorldMode
-from segmind.players.json_player import JSONPlayer
+
+# from pycram.datastructures.world import World
+# from pycram.datastructures.enums import WorldMode
+from segmind.players.json_player_SDT import JSONPlayer
 from segmind.episode_segmenter_SDT import NoAgentEpisodeSegmenter
 from segmind.players.json_player_SDT import JSONPlayer
 from segmind.detectors.coarse_event_detectors_SDT import GeneralPickUpDetector
-#from pycram.datastructures.enums import WorldMode
-#from pycram.datastructures.world import World
-#from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
-#from pycram.worlds.bullet_world import BulletWorld
-#from pycrap.ontologies import Container, Bowl, Cup
+
+# from pycram.datastructures.enums import WorldMode
+# from pycram.datastructures.world import World
+# from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
+# from pycram.worlds.bullet_world import BulletWorld
+# from pycrap.ontologies import Container, Bowl, Cup
 
 Multiverse = None
 try:
@@ -27,6 +29,8 @@ from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
 from semantic_digital_twin.robots.abstract_robot import WorldMode
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Container
 from semantic_digital_twin.world_description.geometry import Box, Sphere
+
+
 class TestFileEpisodeSegmenter(TestCase):
     world: World
     file_player: JSONPlayer
@@ -45,15 +49,21 @@ class TestFileEpisodeSegmenter(TestCase):
         cls.viz_marker_publisher = VizMarkerPublisher()
         obj_id_to_name = {1: "chips", 3: "Sphere", 4: "cup", 6: "bueno"}
         obj_id_to_type = {1: Container, 3: Sphere, 4: Cup, 6: Container}
-        cls.file_player = JSONPlayer(json_file, world=cls.world,
-                                            time_between_frames=datetime.timedelta(milliseconds=50),
-                                            objects_to_ignore=[5],
-                                            obj_id_to_name=obj_id_to_name,
-                                            obj_id_to_type=obj_id_to_type)
-        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.file_player, annotate_events=annotate_events,
-                                                        plot_timeline=True,
-                                                        plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(json_file)).stem}',
-                                                        detectors_to_start=[GeneralPickUpDetector])
+        cls.file_player = JSONPlayer(
+            json_file,
+            world=cls.world,
+            time_between_frames=datetime.timedelta(milliseconds=50),
+            objects_to_ignore=[5],
+            obj_id_to_name=obj_id_to_name,
+            obj_id_to_type=obj_id_to_type,
+        )
+        cls.episode_segmenter = NoAgentEpisodeSegmenter(
+            cls.file_player,
+            annotate_events=annotate_events,
+            plot_timeline=True,
+            plot_save_path=f"{dirname(__file__)}/test_results/{Path(dirname(json_file)).stem}",
+            detectors_to_start=[GeneralPickUpDetector],
+        )
 
     @classmethod
     def tearDownClass(cls):

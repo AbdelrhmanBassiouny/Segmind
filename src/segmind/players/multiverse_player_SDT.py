@@ -4,27 +4,60 @@ from typing import Dict
 from typing_extensions import Optional, List
 
 from pycram.datastructures.enums import JointType
-#from pycram.datastructures.pose import Pose, Quaternion, Vector3, PoseStamped, Header
+
+# from pycram.datastructures.pose import Pose, Quaternion, Vector3, PoseStamped, Header
 from pycram.failures import ObjectNotFound
 from pycram.ros import logwarn, logdebug
-from pycram.world_concepts.world_object import Object
-#from pycrap.ontologies import Floor, Supporter
-from .data_player_SDT import DataPlayer, FrameData, FrameDataGenerator
-from .utils_SDT.multiverse_client import MultiverseMetaData, MultiverseConnector
 
-from semantic_digital_twin.spatial_types.spatial_types import TransformationMatrix, Vector3, Quaternion
+# from pycram.world_concepts.world_object import Object
 from semantic_digital_twin.world_description.world_entity import Body
-from semantic_digital_twin.semantic_annotations.semantic_annotations import Floor, SupportingSurface
+
+# from pycrap.ontologies import Floor, Supporter
+from .data_player_SDT import DataPlayer, FrameData, FrameDataGenerator
+
+# from .utils_SDT.multiverse_client import MultiverseMetaData, MultiverseConnector
+
+from semantic_digital_twin.spatial_types.spatial_types import (
+    TransformationMatrix,
+    Vector3,
+    Quaternion,
+)
+from semantic_digital_twin.world_description.world_entity import Body
+from semantic_digital_twin.semantic_annotations.semantic_annotations import (
+    Floor,
+    HasSupportingSurface,
+)
 import semantic_digital_twin.world_description.connections
+
 
 class MultiversePlayer(DataPlayer):
 
-    def __init__(self, simulation_name: str = "replay", world_name: str = "world", objects_names: Optional[List[str]] = None, **kwargs) -> None:
+    def __init__(
+        self,
+        simulation_name: str = "replay",
+        world_name: str = "world",
+        objects_names: Optional[List[str]] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(**kwargs)
-        self.objects_names: Optional[List[str]] = objects_names if objects_names is not None else\
-            [obj.root_link.name for obj in self.world.objects if not issubclass(obj.obj_type, (Floor, SupportingSurface))]
-        self.joints_names: List[str] = [joint.name for joint in self.world.robot.joints.values()
-                                        if joint.type in [semantic_digital_twin.world_description.connections.RevoluteConnection, semantic_digital_twin.world_description.connections.FixedConnection]]
+        self.objects_names: Optional[List[str]] = (
+            objects_names
+            if objects_names is not None
+            else [
+                obj.root_link.name
+                for obj in self.world.objects
+                if not issubclass(obj.obj_type, (Floor, HasSupportingSurface))
+            ]
+        )
+        self.joints_names: List[str] = [
+            joint.name
+            for joint in self.world.robot.joints.values()
+            if joint.type
+            in [
+                semantic_digital_twin.world_description.connections.RevoluteConnection,
+                semantic_digital_twin.world_description.connections.FixedConnection,
+            ]
+        ]
         self.multiverse_meta_data = MultiverseMetaData(
             world_name=world_name,
             simulation_name=simulation_name,
@@ -34,7 +67,9 @@ class MultiversePlayer(DataPlayer):
             time_unit="s",
             handedness="rhs",
         )
-        self.multiverse_connector = MultiverseConnector(port="1996",  multiverse_meta_data=self.multiverse_meta_data)
+        self.multiverse_connector = MultiverseConnector(
+            port="1996", multiverse_meta_data=self.multiverse_meta_data
+        )
 
         self.multiverse_connector.run()
 
@@ -47,14 +82,21 @@ class MultiversePlayer(DataPlayer):
             self.multiverse_connector.request_meta_data["receive"][""] = [""]
         else:
             for object_name in self.objects_names:
-                self.multiverse_connector.request_meta_data["receive"][object_name] = ["position", "quaternion"]
+                self.multiverse_connector.request_meta_data["receive"][object_name] = [
+                    "position",
+                    "quaternion",
+                ]
             for joint_name in self.joints_names:
-                self.multiverse_connector.request_meta_data["receive"][joint_name] = ["joint_rvalue"]
+                self.multiverse_connector.request_meta_data["receive"][joint_name] = [
+                    "joint_rvalue"
+                ]
 
         self.object_data_dict = {}
         self.multiverse_connector.send_and_receive_meta_data()
         self.response_meta_data = self.multiverse_connector.response_meta_data
-        for object_name, object_attributes in self.response_meta_data["receive"].items():
+        for object_name, object_attributes in self.response_meta_data[
+            "receive"
+        ].items():
             self.object_data_dict[object_name] = {}
             for attribute_name, attribute_values in object_attributes.items():
                 self.object_data_dict[object_name][attribute_name] = attribute_values
@@ -68,10 +110,14 @@ class MultiversePlayer(DataPlayer):
             self.multiverse_connector.send_and_receive_data()
             receive_data = self.multiverse_connector.receive_data[1:]
             idx = 0
-            for object_name, object_attributes in self.response_meta_data["receive"].items():
+            for object_name, object_attributes in self.response_meta_data[
+                "receive"
+            ].items():
                 self.object_data_dict[object_name] = {}
                 for attribute_name, attribute_value in object_attributes.items():
-                    self.object_data_dict[object_name][attribute_name] = receive_data[idx:idx + len(attribute_value)]
+                    self.object_data_dict[object_name][attribute_name] = receive_data[
+                        idx : idx + len(attribute_value)
+                    ]
                     idx += len(attribute_value)
             world_time = self.multiverse_connector.world_time
             yield FrameData(world_time, self.object_data_dict, i)
@@ -84,7 +130,9 @@ class MultiversePlayer(DataPlayer):
                     joint_state[joint_name] = attribute_values[0]
         return joint_state
 
-    def get_objects_poses(self, frame_data: FrameData) -> Dict[Body, TransformationMatrix]:
+    def get_objects_poses(
+        self, frame_data: FrameData
+    ) -> Dict[Body, TransformationMatrix]:
         objects_poses: Dict[Body, TransformationMatrix] = {}
         for object_name, object_attributes in frame_data.objects_data.items():
             try:
@@ -97,12 +145,9 @@ class MultiversePlayer(DataPlayer):
             tm = TransformationMatrix.from_xyz_quaternion(
                 pos=Vector3(position[0], position[1], position[2]),
                 quat=Quaternion(
-                    quaternion[0],
-                    quaternion[1],
-                    quaternion[2],
-                    quaternion[3]
+                    quaternion[0], quaternion[1], quaternion[2], quaternion[3]
                 ),
-                child_frame=object_name
+                child_frame=object_name,
             )
 
             objects_poses[obj] = tm

@@ -2,16 +2,16 @@ import datetime
 import threading
 from os.path import dirname
 
-from pycram.world_concepts.world_object import Object
-from typing_extensions import List, Optional, Dict
+# from pycram.world_concepts.world_object import Object
+# from typing_extensions import List, Optional, Dict
 
-from pycram.ros import logerr
+# from pycram.ros import logerr
 from semantic_digital_twin.world import World
 from semantic_digital_twin.semantic_annotations.semantic_annotations import (
     HasSupportingSurface,
 )
 from semantic_digital_twin.world_description.world_entity import Region
-from .datastructures.events import *
+from .datastructures.events_SDT import *
 from .datastructures.object_tracker_SDT import ObjectTracker
 from .detectors.coarse_event_detectors_SDT import *
 from .detectors.spatial_relation_detector_SDT import SpatialRelationDetector

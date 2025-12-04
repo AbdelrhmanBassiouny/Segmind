@@ -18,10 +18,11 @@ from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callabl
 
 from pycram.datastructures.dataclasses import TextAnnotation
 from pycram.datastructures.enums import WorldMode
-from pycram.datastructures.world import World
+
+# from pycram.datastructures.world import World
 
 # from pycram.ros import loginfo, logdebug, logerr
-from pycram.world_concepts.world_object import Object, Link
+# from pycram.world_concepts.world_object import Object, Link
 from .datastructures.events_SDT import (
     Event,
     EventUnion,

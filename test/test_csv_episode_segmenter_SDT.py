@@ -6,28 +6,39 @@ from os.path import dirname
 from pathlib import Path
 from unittest import TestCase
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 loginfo = logging.info
 
 import pycram.ros
-#from pycram.datastructures.enums import WorldMode
-#from pycram.datastructures.pose import PoseStamped, Pose, Vector3
-#from pycram.datastructures.world import World
+
+# from pycram.datastructures.enums import WorldMode
+# from pycram.datastructures.pose import PoseStamped, Pose, Vector3
+# from pycram.datastructures.world import World
 from pycram.robot_description import RobotDescriptionManager
-#from pycram.ros import logdebug
-#from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
-from pycram.world_concepts.world_object import Object
-from pycram.worlds.bullet_world import BulletWorld
-from pycrap.ontologies import Location, Robot, PhysicalObject
+
+# from pycram.ros import logdebug
+# from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
+# from pycram.world_concepts.world_object import Object
+# from pycram.worlds.bullet_world import BulletWorld
+# from pycrap.ontologies import Location, Robot, PhysicalObject
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
 
 from segmind.datastructures.events_SDT import ContainmentEvent
-from segmind.detectors.coarse_event_detectors_SDT import GeneralPickUpDetector, PlacingDetector
-from segmind.detectors.spatial_relation_detector_SDT import InsertionDetector, SupportDetector, ContainmentDetector
+from segmind.detectors.coarse_event_detectors_SDT import (
+    GeneralPickUpDetector,
+    PlacingDetector,
+)
+from segmind.detectors.spatial_relation_detector_SDT import (
+    InsertionDetector,
+    SupportDetector,
+    ContainmentDetector,
+)
 from segmind.episode_segmenter_SDT import NoAgentEpisodeSegmenter
 from segmind.players.csv_player_SDT import CSVEpisodePlayer
+
 # from segmind.orm.ormatic_interface import *
 try:
     from pycram.worlds.multiverse2 import Multiverse
@@ -35,11 +46,16 @@ except ImportError:
     Multiverse = None
 
 from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
-from semantic_digital_twin.world_description.world_entity import Body, Region, SemanticAnnotation
+from semantic_digital_twin.world_description.world_entity import (
+    Body,
+    Region,
+    SemanticAnnotation,
+)
 from semantic_digital_twin.spatial_types import TransformationMatrix, Vector3
 from semantic_digital_twin.world import World
 from semantic_digital_twin.robots.abstract_robot import WorldMode
 from semantic_digital_twin.robots.pr2 import PR2
+
 
 class TestMultiverseEpisodeSegmenter(TestCase):
     world: World
@@ -49,7 +65,9 @@ class TestMultiverseEpisodeSegmenter(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        multiverse_episodes_dir = f"{dirname(__file__)}/../resources/multiverse_episodes"
+        multiverse_episodes_dir = (
+            f"{dirname(__file__)}/../resources/multiverse_episodes"
+        )
         selected_episode = "icub_montessori_no_hands"
         episode_dir = os.path.join(multiverse_episodes_dir, selected_episode)
         csv_file = os.path.join(episode_dir, f"data.csv")
@@ -70,16 +88,16 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             csv_file,
             world=cls.world,
             time_between_frames=datetime.timedelta(milliseconds=4),
-            position_shift=Vector3(0, 0, -0.05)   # stays identical
+            position_shift=Vector3(0, 0, -0.05),  # stays identical
         )
 
         cls.episode_segmenter = NoAgentEpisodeSegmenter(
             cls.file_player,
             annotate_events=True,
             plot_timeline=True,
-            plot_save_path=f'{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}',
+            plot_save_path=f"{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}",
             detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
-            initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector]
+            initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector],
         )
 
     @classmethod
@@ -87,7 +105,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         cls.copy_model_files_to_world_data_dir(models_dir)
 
         directory = Path(models_dir)
-        urdf_files = [f.name for f in directory.glob('*.urdf')]
+        urdf_files = [f.name for f in directory.glob("*.urdf")]
 
         for file in urdf_files:
             obj_name = Path(file).stem
@@ -100,7 +118,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
                 obj_type = PR2
                 pose = TransformationMatrix.from_translation_rotation(
                     translation=Vector3(-0.8, 0, 0.55),
-                    quaternion=[0, 0, 0, 1]   # same as default Pose orientation
+                    quaternion=[0, 0, 0, 1],  # same as default Pose orientation
                 )
             elif obj_name == "scene":
                 obj_type = Region
@@ -110,13 +128,17 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             try:
                 obj = Body(obj_name, obj_type, path=file, pose=pose)
             except Exception as e:
-                import pdb; pdb.set_trace()
+                import pdb
+
+                pdb.set_trace()
                 print(e)
                 continue
 
     @classmethod
     def copy_model_files_to_world_data_dir(cls, models_dir):
-        shutil.copytree(models_dir, cls.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
+        shutil.copytree(
+            models_dir, cls.world.conf.cache_dir + "/objects", dirs_exist_ok=True
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -132,9 +154,19 @@ class TestMultiverseEpisodeSegmenter(TestCase):
     def test_containment_detector(self):
         self.episode_segmenter.reset()
         self.episode_segmenter.detectors_to_start = [PlacingDetector]
-        self.episode_segmenter.initial_detectors = [ContainmentDetector, SupportDetector]
+        self.episode_segmenter.initial_detectors = [
+            ContainmentDetector,
+            SupportDetector,
+        ]
         self.episode_segmenter.start()
-        self.assertTrue(any([isinstance(e, ContainmentEvent) for e in self.episode_segmenter.logger.get_events()]))
+        self.assertTrue(
+            any(
+                [
+                    isinstance(e, ContainmentEvent)
+                    for e in self.episode_segmenter.logger.get_events()
+                ]
+            )
+        )
 
     def test_csv_replay(self):
         self.episode_segmenter.start()

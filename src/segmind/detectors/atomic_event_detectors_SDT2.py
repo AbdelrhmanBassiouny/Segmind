@@ -70,8 +70,9 @@ from pycram.tf_transformations import euler_from_quaternion
 # from pycram.datastructures.world import World
 # from pycram.datastructures.dataclasses import ContactPointsList
 from pycram.datastructures.pose import Pose
-from pycram.datastructures.world_entity import PhysicalBody
-from pycram.world_concepts.world_object import Object
+
+# from pycram.datastructures.world_entity import PhysicalBody
+# from pycram.world_concepts.world_object import Object
 
 # from pycrap.ontologies import PhysicalObject, Agent
 

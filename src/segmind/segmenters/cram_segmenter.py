@@ -1,12 +1,17 @@
 from typing_extensions import Type, List, Optional
 from queue import Queue
 
-from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
-from pycram.robot_plans import PickUpActionDescription, PlaceActionDescription, PickUpAction, \
-    PlaceAction, MoveTorsoActionDescription
+# from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import (
+    PickUpActionDescription,
+    PlaceActionDescription,
+    PickUpAction,
+    PlaceAction,
+    MoveTorsoActionDescription,
+)
 from pycram.plan import Plan, ResolvedActionNode
-from ..episode_segmenter import AgentEpisodeSegmenter
-from ..players.cram_player import CRAMPlayer
+from ..episode_segmenter_SDT import AgentEpisodeSegmenter
+from ..players.cram_player_SDT import CRAMPlayer
 
 
 class CRAMSegmenter(AgentEpisodeSegmenter):
@@ -24,18 +29,22 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
         :param annotate_events: A boolean value that indicates whether the events should be annotated.
         """
         self.cram_player_thread = CRAMPlayer(world)
-        super().__init__(self.cram_player_thread,
-                         detectors_to_start=detectors_to_start,
-                         annotate_events=annotate_events, **kwargs)
-        self.action_types: List[Optional[Type[ActionDescription]]] = [detector.action_type()
-                                                                      for detector in self.detectors_to_start]
+        super().__init__(
+            self.cram_player_thread,
+            detectors_to_start=detectors_to_start,
+            annotate_events=annotate_events,
+            **kwargs,
+        )
+        self.action_types: List[Optional[Type[ActionDescription]]] = [
+            detector.action_type() for detector in self.detectors_to_start
+        ]
         self.action_types.append(None)
         self.start_action_queue: Queue = Queue()
         self.end_action_queue: Queue = Queue()
         for action_type in self.action_types:
             self.add_callback(action_type)
 
-    def add_callback(self, action_type: Optional[Type[ActionDescription]] = None):
+        # def add_callback(self, action_type: Optional[Type[ActionDescription]] = None):
         """
         Add a callback for the given action type.
 
