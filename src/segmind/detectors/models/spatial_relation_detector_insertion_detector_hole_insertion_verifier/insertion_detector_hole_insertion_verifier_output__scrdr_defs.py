@@ -4,12 +4,14 @@ import time
 from random_events.product_algebra import SimpleEvent
 from ripple_down_rules.datastructures.case import Case
 
-from pycram.datastructures.dataclasses import AxisAlignedBoundingBox
+# from pycram.datastructures.dataclasses import AxisAlignedBoundingBox
 from ....datastructures.events import InsertionEvent, InterferenceEvent, PickUpEvent
 from typing_extensions import Dict, Optional, Union
 from types import NoneType
 from ....detectors.spatial_relation_detector import InsertionDetector
-from pycram.datastructures.world_entity import PhysicalBody
+
+# from pycram.datastructures.world_entity import PhysicalBody
+from semantic_digital_twin.world_description.world_entity import Body
 
 from ....utils import is_object_supported_by_container_body
 
@@ -17,7 +19,7 @@ from ....utils import is_object_supported_by_container_body
 def conditions_38355037295796650033371896063976531277(case) -> bool:
     def conditions_for_insertion_detector_hole_insertion_verifier(
         self_: InsertionDetector,
-        hole: PhysicalBody,
+        hole: Body,
         event: InterferenceEvent,
         output_: bool,
     ) -> bool:
@@ -37,7 +39,7 @@ def conditions_38355037295796650033371896063976531277(case) -> bool:
 def conditions_21738774625860220488991060484462427733(case) -> bool:
     def conditions_for_insertion_detector_hole_insertion_verifier(
         self_: InsertionDetector,
-        hole: PhysicalBody,
+        hole: Body,
         event: InterferenceEvent,
         output_: bool,
     ) -> bool:
@@ -50,7 +52,7 @@ def conditions_21738774625860220488991060484462427733(case) -> bool:
 def conditions_313966059252436144481394373657043070884(case) -> bool:
     def conditions_for_insertion_detector_hole_insertion_verifier(
         self_: InsertionDetector,
-        hole: PhysicalBody,
+        hole: Body,
         event: InterferenceEvent,
         output_: bool,
     ) -> bool:
@@ -86,7 +88,7 @@ def conditions_313966059252436144481394373657043070884(case) -> bool:
 def conclusion_313966059252436144481394373657043070884(case) -> bool:
     def insertion_detector_hole_insertion_verifier(
         self_: InsertionDetector,
-        hole: PhysicalBody,
+        hole: Body,
         event: InterferenceEvent,
         output_: bool,
     ) -> bool:
@@ -99,7 +101,7 @@ def conclusion_313966059252436144481394373657043070884(case) -> bool:
 def conclusion_21738774625860220488991060484462427733(case) -> bool:
     def insertion_detector_hole_insertion_verifier(
         self_: InsertionDetector,
-        hole: PhysicalBody,
+        hole: Body,
         event: InterferenceEvent,
         output_: bool,
     ) -> bool:
@@ -112,7 +114,7 @@ def conclusion_21738774625860220488991060484462427733(case) -> bool:
 def conclusion_38355037295796650033371896063976531277(case) -> bool:
     def insertion_detector_hole_insertion_verifier(
         self_: InsertionDetector,
-        hole: PhysicalBody,
+        hole: Body,
         event: InterferenceEvent,
         output_: bool,
     ) -> bool:
