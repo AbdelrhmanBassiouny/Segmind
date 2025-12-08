@@ -8,14 +8,14 @@ except ImportError:
     plt = None
 from typing_extensions import Optional, List, Union, Dict
 from typing import Dict
-from .atomic_event_detectors_SDT2 import *
-from ..datastructures.events_SDT import *
-from ..utils_SDT import (
+from .atomic_event_detectors import *
+from ..datastructures.events import *
+from ..utils import (
     get_angle_between_vectors,
     get_support,
     is_object_supported_by_container_body,
 )
-from ..episode_player_SDT import EpisodePlayer
+from ..episode_player import EpisodePlayer
 from ripple_down_rules.rdr_decorators import RDRDecorator
 
 import logging
@@ -39,11 +39,11 @@ from pycram.robot_plans import (
 
 from semantic_digital_twin.world_description.world_entity import (
     Body,
-    ContactPointsList,
     Agent,
     Region,
 )
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Floor, Table
+from semantic_digital_twin.collision_checking.collision_detector import Collision
 
 
 class DetectorWithStarterEvent(AtomicEventDetector, ABC):
@@ -472,7 +472,7 @@ class PlacingDetector(AbstractInteractionDetector):
 
 def check_for_supporting_surface(
     tracked_object: Body,
-    contact_points: ContactPointsList,
+    contact_points: Collision,
     possible_surfaces: Optional[List[Body]] = None,
 ) -> Optional[Body]:
     """

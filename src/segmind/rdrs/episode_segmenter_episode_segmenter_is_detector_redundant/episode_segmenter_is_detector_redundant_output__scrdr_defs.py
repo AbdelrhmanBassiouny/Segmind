@@ -1,12 +1,12 @@
 # from pycram.description import Link
-from segmind.detectors.coarse_event_detectors_SDT import (
+from segmind.detectors.coarse_event_detectors import (
     AbstractInteractionDetector,
     GeneralPickUpDetector,
     PlacingDetector,
     select_transportable_objects,
 )
 from types import NoneType
-from segmind.datastructures.events_SDT import (
+from segmind.datastructures.events import (
     AbstractContactEvent,
     AgentContactEvent,
     AgentLossOfContactEvent,
@@ -21,7 +21,7 @@ from segmind.datastructures.events_SDT import (
     EventWithTrackedObjects,
     EventWithOneTrackedObject,
 )
-from segmind.detectors.atomic_event_detectors_SDT2 import (
+from segmind.detectors.atomic_event_detectors import (
     ContactDetector,
     LossOfContactDetector,
     MotionDetector,
@@ -34,8 +34,8 @@ from segmind.detectors.atomic_event_detectors_SDT2 import (
 # from pycram.world_concepts.world_object import Object
 from datetime import timedelta
 from typing_extensions import Dict, Optional, Type, Union
-from segmind.datastructures.object_tracker_SDT import ObjectTrackerFactory
-from segmind.episode_segmenter_SDT import NoAgentEpisodeSegmenter
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
+from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 
 from semantic_digital_twin.world_description.world_entity import Body, Agent
 

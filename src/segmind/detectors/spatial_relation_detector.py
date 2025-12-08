@@ -10,10 +10,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 
-from segmind.datastructures.events_SDT import PlacingEvent
-from segmind.episode_player_SDT import EpisodePlayer
-from .atomic_event_detectors_SDT2 import AtomicEventDetector
-from ..datastructures.events_SDT import (
+from segmind.datastructures.events import PlacingEvent
+from segmind.episode_player import EpisodePlayer
+from .atomic_event_detectors import AtomicEventDetector
+from ..datastructures.events import (
     MotionEvent,
     EventUnion,
     StopMotionEvent,
@@ -27,13 +27,9 @@ from ..datastructures.events_SDT import (
     LossOfSupportEvent,
     SupportEvent,
 )
-from ..datastructures.object_tracker_SDT import ObjectTrackerFactory
-from ..utils_SDT import get_support
+from ..datastructures.object_tracker import ObjectTrackerFactory
+from ..utils import get_support
 from abc import abstractmethod
-
-# from pycram.datastructures.world_entity import abstractmethod, PhysicalBody
-# from pycram.ros import logdebug
-# from pycram.world_concepts.world_object import Object
 
 from semantic_digital_twin.world_description.world_entity import Body
 

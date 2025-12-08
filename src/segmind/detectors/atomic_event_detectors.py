@@ -15,7 +15,7 @@ from queue import Queue, Empty, Full
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 
-from segmind.datastructures.mixins_SDT import (
+from segmind.datastructures.mixins import (
     HasPrimaryTrackedObject,
     HasPrimaryAndSecondaryTrackedObjects,
 )
@@ -25,7 +25,7 @@ from segmind.detectors.motion_detection_helpers import (
     is_stopped,
     ExponentialMovingAverage,
 )
-from segmind.episode_player_SDT import EpisodePlayer
+from segmind.episode_player import EpisodePlayer
 
 try:
     from matplotlib import pyplot as plt
@@ -34,8 +34,8 @@ except ImportError:
 
 from typing_extensions import Optional, List, Union, Type, Tuple, Callable
 from ripple_down_rules.rdr_decorators import RDRDecorator
-from segmind.event_logger_SDT import EventLogger
-from segmind.datastructures.events_SDT import (
+from segmind.event_logger import EventLogger
+from segmind.datastructures.events import (
     Event,
     ContactEvent,
     LossOfContactEvent,
@@ -55,7 +55,7 @@ from segmind.datastructures.events_SDT import (
     LossOfInterferenceEvent,
 )
 from segmind.detectors.motion_detection_helpers import DataFilter
-from segmind.utils_SDT import (
+from segmind.utils import (
     calculate_quaternion_difference,
     get_support,
     calculate_translation,
@@ -79,13 +79,13 @@ from pycram.datastructures.pose import Pose
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.world_entity import (
     Body,
-    ContactPointsList,
     Agent,
 )
 from semantic_digital_twin.spatial_types.spatial_types import (
     TransformationMatrix,
     Quaternion,
 )
+from semantic_digital_twin.collision_checking.collision_detector import Collision
 
 
 class AtomicEventDetector(PropagatingThread):
@@ -386,17 +386,15 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
             self, logger, tracked_object, with_object, wait_time, *args, **kwargs
         )
         self.max_closeness_distance = max_closeness_distance
-        self.latest_contact_points: Optional[ContactPointsList] = ContactPointsList([])
-        self.latest_interference_points: Optional[ContactPointsList] = (
-            ContactPointsList([])
-        )
+        self.latest_contact_points: Optional[Collision] = Collision([])
+        self.latest_interference_points: Optional[Collision] = Collision([])
 
     def get_events(
         self,
         new_objects_contact: List[Body],
         new_bodies_interference: List[Body],
-        contact_points: ContactPointsList,
-        interference_points: ContactPointsList,
+        contact_points: Collision,
+        interference_points: Collision,
         event_type: Type[AbstractContactEvent],
     ):
         if event_type is ContactEvent:
@@ -466,7 +464,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
 
         return events
 
-    def get_contact_points(self) -> Tuple[ContactPointsList, ContactPointsList]:
+    def get_contact_points(self) -> Tuple[Collision, Collision]:
         if self.with_object is not None:
             contact_points = self.tracked_object.closest_points_with_obj(
                 self.with_object, self.max_closeness_distance
@@ -483,7 +481,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
 
     @abstractmethod
     def trigger_events(
-        self, contact_points: ContactPointsList, interference_points: ContactPointsList
+        self, contact_points: Collision, interference_points: Collision
     ) -> List[Event]:
         """
         Checks if the detection condition is met, (e.g., the object is in contact with another object),
@@ -504,7 +502,7 @@ class ContactDetector(AbstractContactDetector):
     """
 
     def trigger_events(
-        self, contact_points: ContactPointsList, interference_points: ContactPointsList
+        self, contact_points: Collision, interference_points: Collision
     ) -> Union[List[ContactEvent], List[AgentContactEvent]]:
         """
         Check if the object got into contact with another object.
@@ -546,7 +544,7 @@ class LossOfContactDetector(AbstractContactDetector):
     """
 
     def trigger_events(
-        self, contact_points: ContactPointsList, interference_points: ContactPointsList
+        self, contact_points: Collision, interference_points: Collision
     ) -> List[LossOfContactEvent]:
         """
         Check if the object lost contact with another object.
@@ -573,7 +571,7 @@ class LossOfContactDetector(AbstractContactDetector):
         )
 
     def get_bodies_that_lost_contact(
-        self, contact_points: ContactPointsList, interference_points: ContactPointsList
+        self, contact_points: Collision, interference_points: Collision
     ) -> Tuple[List[Body], List[Body]]:
         """
         Get the objects that lost contact with the object to track.

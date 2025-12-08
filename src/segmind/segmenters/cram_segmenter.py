@@ -10,8 +10,8 @@ from pycram.robot_plans import (
     MoveTorsoActionDescription,
 )
 from pycram.plan import Plan, ResolvedActionNode
-from ..episode_segmenter_SDT import AgentEpisodeSegmenter
-from ..players.cram_player_SDT import CRAMPlayer
+from ..episode_segmenter import AgentEpisodeSegmenter
+from ..players.cram_player import CRAMPlayer
 
 
 class CRAMSegmenter(AgentEpisodeSegmenter):

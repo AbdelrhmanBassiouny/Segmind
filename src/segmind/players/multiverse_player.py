@@ -13,7 +13,7 @@ from pycram.ros import logwarn, logdebug
 from semantic_digital_twin.world_description.world_entity import Body
 
 # from pycrap.ontologies import Floor, Supporter
-from .data_player_SDT import DataPlayer, FrameData, FrameDataGenerator
+from .data_player import DataPlayer, FrameData, FrameDataGenerator
 
 # from .utils_SDT.multiverse_client import MultiverseMetaData, MultiverseConnector
 

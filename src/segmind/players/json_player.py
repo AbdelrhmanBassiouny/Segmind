@@ -30,9 +30,9 @@ from semantic_digital_twin.spatial_types.spatial_types import (
     Quaternion,
 )
 
-from ..episode_player_SDT import EpisodePlayer
-from .data_player_SDT import FilePlayer, FrameData
-from ..utils_SDT import calculate_quaternion_difference
+from ..episode_player import EpisodePlayer
+from .data_player import FilePlayer, FrameData
+from ..utils import calculate_quaternion_difference
 
 
 class JSONPlayer(FilePlayer):

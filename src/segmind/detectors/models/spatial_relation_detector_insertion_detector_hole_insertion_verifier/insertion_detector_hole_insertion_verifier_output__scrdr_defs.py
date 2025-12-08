@@ -5,10 +5,10 @@ from random_events.product_algebra import SimpleEvent
 from ripple_down_rules.datastructures.case import Case
 
 from pycram.datastructures.dataclasses import AxisAlignedBoundingBox
-from ....datastructures.events_SDT import InsertionEvent, InterferenceEvent, PickUpEvent
+from ....datastructures.events import InsertionEvent, InterferenceEvent, PickUpEvent
 from typing_extensions import Dict, Optional, Union
 from types import NoneType
-from ....detectors.spatial_relation_detector_SDT import InsertionDetector
+from ....detectors.spatial_relation_detector import InsertionDetector
 from pycram.datastructures.world_entity import PhysicalBody
 
 from ....utils import is_object_supported_by_container_body

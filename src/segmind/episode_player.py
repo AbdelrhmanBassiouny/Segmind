@@ -7,8 +7,9 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing_extensions import Callable, Any, Optional, Dict, Generator
-#from pycram.ros import logdebug
-#from pycram.datastructures.world import World
+
+# from pycram.ros import logdebug
+# from pycram.datastructures.world import World
 
 try:
     from pycram.worlds.multiverse import Multiverse
@@ -20,10 +21,11 @@ try:
 except ImportError:
     RDRCaseViewer = None
 
-from .utils_SDT import PropagatingThread
+from .utils import PropagatingThread
 from .datastructures.enums import PlayerStatus
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 from semantic_digital_twin.world import World
@@ -45,9 +47,14 @@ class EpisodePlayer(PropagatingThread, ABC):
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, time_between_frames: Optional[datetime.timedelta] = None, use_realtime: bool = False,
-                 stop_after_ready: bool = False, world: Optional[World] = None,
-                 rdr_viewer: Optional[RDRCaseViewer] = None):
+    def __init__(
+        self,
+        time_between_frames: Optional[datetime.timedelta] = None,
+        use_realtime: bool = False,
+        stop_after_ready: bool = False,
+        world: Optional[World] = None,
+        rdr_viewer: Optional[RDRCaseViewer] = None,
+    ):
         if not self._initialized:
             super().__init__()
             self.rdr_viewer: Optional[RDRCaseViewer] = rdr_viewer
@@ -55,8 +62,11 @@ class EpisodePlayer(PropagatingThread, ABC):
             self.world: World = world if world is not None else World()
             self._ready: bool = False
             self._status = PlayerStatus.CREATED
-            self.time_between_frames: datetime.timedelta = time_between_frames if time_between_frames is not None else datetime.timedelta(
-                seconds=0.01)
+            self.time_between_frames: datetime.timedelta = (
+                time_between_frames
+                if time_between_frames is not None
+                else datetime.timedelta(seconds=0.01)
+            )
             self.use_realtime: bool = use_realtime
             self._initialized = True
 
@@ -117,8 +127,11 @@ class EpisodePlayer(PropagatingThread, ABC):
         while self.status == PlayerStatus.PAUSED and not self.kill_event.is_set():
             time.sleep(0.1)
 
-    def _wait_to_maintain_frame_rate(self, last_processing_time: float,
-                                     delta_time: Optional[datetime.timedelta] = None):
+    def _wait_to_maintain_frame_rate(
+        self,
+        last_processing_time: float,
+        delta_time: Optional[datetime.timedelta] = None,
+    ):
         """
         Wait to maintain the frame rate of the episode player.
 

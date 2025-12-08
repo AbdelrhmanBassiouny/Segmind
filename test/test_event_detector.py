@@ -6,21 +6,21 @@ import numpy as np
 import pytest
 from typing_extensions import List
 
-from segmind.datastructures.events_SDT import (
+from segmind.datastructures.events import (
     TranslationEvent,
     StopMotionEvent,
     StopTranslationEvent,
     ContactEvent,
 )
-from segmind.datastructures.object_tracker_SDT import ObjectTrackerFactory
-from segmind.detectors.atomic_event_detectors_SDT2 import TranslationDetector
-from segmind.detectors.coarse_event_detectors_SDT import GeneralPickUpDetector
-from segmind.detectors.spatial_relation_detector_SDT import InsertionDetector
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
+from segmind.detectors.atomic_event_detectors import TranslationDetector
+from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
+from segmind.detectors.spatial_relation_detector import InsertionDetector
 from segmind.detectors.motion_detection_helpers import (
     has_consistent_direction,
     is_displaced,
 )
-from segmind.event_logger_SDT import EventLogger
+from segmind.event_logger import EventLogger
 
 from semantic_digital_twin.world import World
 from semantic_digital_twin.robots.pr2 import PR2

@@ -6,6 +6,7 @@ import logging
 
 from entity_query_language import entity
 
+from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from semantic_digital_twin.spatial_types import TransformationMatrix
 
 logger = logging.getLogger(__name__)
@@ -19,23 +20,22 @@ from pycram.robot_plans import (
     PlaceAction,
 )
 
-# from pycram.datastructures.dataclasses import ContactPointsList, ObjectState, AxisAlignedBoundingBox
-from pycram.datastructures.pose import PoseStamped
-
 from semantic_digital_twin.world_description.world_entity import (
     Body,
     KinematicStructureEntity,
-    ContactPointsList,
+    Agent,
 )
 from semantic_digital_twin.world_description.geometry import Color
 
 from typing_extensions import Optional, List, Union, Type
-from segmind.datastructures.mixins_SDT import (
+from segmind.datastructures.mixins import (
     HasPrimaryTrackedObject,
     HasPrimaryAndSecondaryTrackedObjects,
 )
-from segmind.datastructures.object_tracker_SDT import ObjectTrackerFactory
+from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from semantic_digital_twin.world_description.geometry import BoundingBox
+from semantic_digital_twin.collision_checking.collision_detector import Collision
+from semantic_digital_twin.orm.ormatic_interface import BodyDAO
 
 
 @dataclass
@@ -122,10 +122,7 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject
 
     @property
     def tracked_objects(self) -> List[Body]:
-        # Ensure the tracked object is a Body
-        if isinstance(self.tracked_object, Body):
-            return [self.tracked_object]
-        return []
+        return [self.tracked_object]
 
     def update_object_trackers_with_event(self) -> None:
         ObjectTrackerFactory.get_tracker(self.tracked_object).add_event(self)
@@ -153,9 +150,6 @@ class EventWithTwoTrackedObjects(
     """
     An abstract class that represents an event that involves two tracked objects.
     """
-
-    tracked_object: Body
-    with_object: Optional[Body] = None
 
     @property
     def tracked_objects(self) -> List[Body]:
@@ -266,8 +260,8 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
             tracked_object=tracked_object,
             timestamp=timestamp if timestamp is not None else time.time(),
         )
-        self.start_transform = start_pose
-        self.current_transform = current_pose
+        self.start_pose = start_pose
+        self.current_pose = current_pose
 
     @property
     def involved_bodies(self) -> List[Body]:
@@ -308,12 +302,8 @@ class StopRotationEvent(StopMotionEvent): ...
 
 @dataclass(init=False, unsafe_hash=True)
 class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
-    contact_points: ContactPointsList = field(
-        init=False, default_factory=ContactPointsList
-    )
-    latest_contact_points: ContactPointsList = field(
-        init=False, default_factory=ContactPointsList
-    )
+    contact_points: Collision = field(init=False, default_factory=Collision)
+    latest_contact_points: Collision = field(init=False, default_factory=Collision)
     bounding_box: BoundingBox = field(init=False)
     pose: TransformationMatrix = field(init=False)
     with_object_bounding_box: Optional[BoundingBox] = field(init=False, default=None)
@@ -321,9 +311,9 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
 
     def __init__(
         self,
-        contact_points: ContactPointsList,
+        contact_points: Collision,
         of_object: Body,
-        latest_contact_points: Optional[ContactPointsList] = None,
+        latest_contact_points: Optional[Collision] = None,
         with_object: Optional[Body] = None,
         timestamp: Optional[float] = None,
     ):
@@ -333,8 +323,8 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
             with_object=with_object,
             timestamp=timestamp if timestamp is not None else time.time(),
         )
-        self.contact_points: ContactPointsList = contact_points
-        self.latest_contact_points: ContactPointsList = latest_contact_points
+        self.contact_points: Collision = contact_points
+        self.latest_contact_points: Collision = latest_contact_points
         self.bounding_box: BoundingBox = BoundingBox.from_mesh(
             of_object.collision.combined_mesh,
             origin=of_object.global_pose.to_translation(),
@@ -343,7 +333,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         self.pose: TransformationMatrix = of_object.global_pose
         self.with_object_bounding_box: Optional[BoundingBox] = (
             BoundingBox.from_mesh(
-                with_object.collision.combined_mesh,
+                with_object.Collision.combined_mesh,
                 origin=with_object.global_pose.to_translation(),
             )
             if with_object is not None
@@ -421,7 +411,7 @@ class LossOfContactEvent(AbstractContactEvent):
     def latest_objects_that_got_removed(self):
         return self.get_objects_that_got_removed(self.latest_contact_points)
 
-    def get_objects_that_got_removed(self, contact_points: ContactPointsList):
+    def get_objects_that_got_removed(self, contact_points: Collision):
         return self.contact_points.get_objects_that_got_removed(contact_points)
 
     @property
@@ -508,10 +498,10 @@ class AgentLossOfInterferenceEvent(
 
 @dataclass(kw_only=True)
 class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
-    agent: Optional[Body] = None
+    agent: Optional[AbstractRobot] = None
     timestamp: Optional[float] = None
     end_timestamp: Optional[float] = None
-    agent_snapshot: Optional[Body] = field(
+    agent_snapshot: Optional[BodyDAO] = field(
         init=False, default=None, repr=False, hash=False
     )
 
@@ -622,7 +612,7 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         inserted_object: Body,
         inserted_into_objects: List[Body],
         through_hole: Body,
-        agent: Optional[Body] = None,
+        agent: Optional[Agent] = None,
         timestamp: Optional[float] = None,
         end_timestamp: Optional[float] = None,
     ):

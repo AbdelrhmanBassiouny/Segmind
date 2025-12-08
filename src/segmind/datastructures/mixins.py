@@ -5,11 +5,13 @@ from functools import cached_property
 
 from typing_extensions import List, Optional, TYPE_CHECKING
 
-from .object_tracker_SDT import ObjectTrackerFactory, ObjectTracker
+from .object_tracker import ObjectTrackerFactory, ObjectTracker
 
-from semantic_digital_twin.world_description.world_entity import Body, SemanticAnnotation
+from semantic_digital_twin.world_description.world_entity import (
+    Body,
+    SemanticAnnotation,
+)
 from semantic_digital_twin.world_description.world_state import WorldState
-
 
 
 @dataclass
@@ -17,6 +19,7 @@ class HasTrackedObjects:
     """
     A mixin class that provides the tracked object for the event.
     """
+
     _involved_objects: List[Body]
 
     @property
@@ -32,9 +35,14 @@ class HasPrimaryTrackedObject:
     """
     A mixin class that provides the tracked object for the event.
     """
+
     tracked_object: Body
-    tracked_object_frozen_cp: Optional[SemanticAnnotation] = field(init=False, default=None, repr=False, hash=False)
-    world_frozen_cp: Optional[WorldState] = field(init=False, default=None, repr=False, hash=False)
+    tracked_object_frozen_cp: Optional[SemanticAnnotation] = field(
+        init=False, default=None, repr=False, hash=False
+    )
+    world_frozen_cp: Optional[WorldState] = field(
+        init=False, default=None, repr=False, hash=False
+    )
 
     def __post_init__(self):
         # Create a snapshot of the tracked object using SemanticAnnotation
@@ -49,7 +57,9 @@ class HasPrimaryTrackedObject:
             self.world_frozen_cp = WorldState()
             self.world_frozen_cp.data = frozen_data
             self.world_frozen_cp.version = world_state.version
-            self.world_frozen_cp.state_change_callbacks = list(world_state.state_change_callbacks)
+            self.world_frozen_cp.state_change_callbacks = list(
+                world_state.state_change_callbacks
+            )
         else:
             self.world_frozen_cp = None
 
@@ -67,8 +77,11 @@ class HasSecondaryTrackedObject:
     """
     A mixin class that provides the tracked objects for the event.
     """
+
     with_object: Optional[Body] = None
-    with_object_frozen_cp: Optional[SemanticAnnotation] = field(init=False, default=None, repr=False, hash=False)
+    with_object_frozen_cp: Optional[SemanticAnnotation] = field(
+        init=False, default=None, repr=False, hash=False
+    )
 
     def __post_init__(self):
         if self.with_object is not None:
@@ -83,11 +96,17 @@ class HasSecondaryTrackedObject:
 
     @cached_property
     def with_object_tracker(self) -> Optional[ObjectTracker]:
-        return ObjectTrackerFactory.get_tracker(self.with_object) if self.with_object is not None else None
+        return (
+            ObjectTrackerFactory.get_tracker(self.with_object)
+            if self.with_object is not None
+            else None
+        )
 
 
 @dataclass(kw_only=True, unsafe_hash=True)
-class HasPrimaryAndSecondaryTrackedObjects(HasPrimaryTrackedObject, HasSecondaryTrackedObject):
+class HasPrimaryAndSecondaryTrackedObjects(
+    HasPrimaryTrackedObject, HasSecondaryTrackedObject
+):
     """
     A mixin class that provides the tracked objects for the event.
     """

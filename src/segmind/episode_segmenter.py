@@ -11,12 +11,12 @@ from semantic_digital_twin.semantic_annotations.semantic_annotations import (
     HasSupportingSurface,
 )
 from semantic_digital_twin.world_description.world_entity import Region
-from .datastructures.events_SDT import *
-from .datastructures.object_tracker_SDT import ObjectTracker
-from .detectors.coarse_event_detectors_SDT import *
-from .detectors.spatial_relation_detector_SDT import SpatialRelationDetector
-from .episode_player_SDT import EpisodePlayer
-from .event_logger_SDT import EventLogger
+from .datastructures.events import *
+from .datastructures.object_tracker import ObjectTracker
+from .detectors.coarse_event_detectors import *
+from .detectors.spatial_relation_detector import SpatialRelationDetector
+from .episode_player import EpisodePlayer
+from .event_logger import EventLogger
 from .utils import check_if_object_is_supported, Imaginator
 
 

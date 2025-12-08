@@ -17,13 +17,12 @@ loginfo = logging.info
 from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable, Tuple
 
 from pycram.datastructures.dataclasses import TextAnnotation
-from pycram.datastructures.enums import WorldMode
 
 # from pycram.datastructures.world import World
 
 # from pycram.ros import loginfo, logdebug, logerr
 # from pycram.world_concepts.world_object import Object, Link
-from .datastructures.events_SDT import (
+from .datastructures.events import (
     Event,
     EventUnion,
     EventWithTrackedObjects,
@@ -31,9 +30,9 @@ from .datastructures.events_SDT import (
     PickUpEvent,
     InsertionEvent,
 )
-from .datastructures.mixins_SDT import HasPrimaryTrackedObject
-from .datastructures.object_tracker_SDT import ObjectTrackerFactory
-from .utils_SDT import text_to_speech
+from .datastructures.mixins import HasPrimaryTrackedObject
+from .datastructures.object_tracker import ObjectTrackerFactory
+from .utils import text_to_speech
 
 if TYPE_CHECKING:
     from .detectors.coarse_event_detectors import DetectorWithStarterEvent

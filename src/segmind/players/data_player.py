@@ -27,7 +27,7 @@ from semantic_digital_twin.spatial_types.spatial_types import (
 )
 
 from ..datastructures.enums import PlayerStatus
-from ..episode_player_SDT import EpisodePlayer
+from ..episode_player import EpisodePlayer
 
 
 @dataclass

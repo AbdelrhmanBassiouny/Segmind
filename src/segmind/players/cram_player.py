@@ -4,14 +4,14 @@ from datetime import timedelta
 
 from typing_extensions import Optional
 from enum import Enum
-from ..episode_player_SDT import EpisodePlayer
+from ..episode_player import EpisodePlayer
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 loginfo = logging.info
 
-from pycram.datastructures.enums import Arms, Grasp, TorsoState, TaskStatus
+from pycram.datastructures.enums import Grasp, TorsoState, TaskStatus
 from pycram.datastructures.grasp import GraspDescription
 from pycram.designator import ObjectDesignatorDescription
 
@@ -36,13 +36,7 @@ from pycram.process_module import ProcessModule, simulated_robot
 # from pycram.world_concepts.world_object import Object
 
 from semantic_digital_twin.world import World
-from semantic_digital_twin.robots.abstract_robot import (
-    ArmSelector,
-    TorsoState,
-    Grasp,
-    GraspDescription,
-    TaskStatus,
-)
+from semantic_digital_twin.robots.abstract_robot import Arm
 
 
 class ExecutionStatus(Enum):
@@ -89,7 +83,7 @@ class CRAMPlayer(EpisodePlayer):
         self.ready = True
         object_description = ObjectDesignatorDescription(names=["milk"])
         description = PickUpActionDescription(
-            object_description, [ArmSelector.LEFT], [GraspDescription(Grasp.FRONT)]
+            object_description, [Arm.LEFT], [GraspDescription(Grasp.FRONT)]
         )
         with simulated_robot:
             plan = SequentialPlan(

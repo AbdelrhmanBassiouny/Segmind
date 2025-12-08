@@ -8,7 +8,7 @@ from pycram.datastructures.pose import Header
 
 # from pycram.world_concepts.world_object import Object
 # from pycrap.ontologies import PhysicalObject
-from .data_player_SDT import FilePlayer, FrameData
+from .data_player import FilePlayer, FrameData
 
 from semantic_digital_twin.world_description.world_entity import Body
 from semantic_digital_twin.spatial_types.spatial_types import (
