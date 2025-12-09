@@ -3,28 +3,55 @@ import time
 from datetime import timedelta
 
 from typing_extensions import Optional
+from enum import Enum
+from ..episode_player import EpisodePlayer
+import logging
 
-from pycram.datastructures.enums import Arms, Grasp, TorsoState, PlanStatus
+logging.basicConfig(level=logging.INFO)
+logdebug = logging.debug
+loginfo = logging.info
+
+from pycram.datastructures.enums import Grasp, TorsoState, TaskStatus
 from pycram.datastructures.grasp import GraspDescription
 from pycram.designator import ObjectDesignatorDescription
-from pycram.designators.action_designator import PickUpActionDescription, MoveTorsoActionDescription
+
+# from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import (
+    PickUpActionDescription,
+    PlaceActionDescription,
+    PickUpAction,
+    PlaceAction,
+    MoveTorsoActionDescription,
+)
 from pycram.language import SequentialPlan
 from pycram.datastructures.pose import Pose
-from pycram.datastructures.world import World
+
+# from pycram.datastructures.world import World
 from pycram.plan import Plan
 from pycram.process_module import ProcessModule, simulated_robot
-from pycram.ros import logdebug
-from pycram.worlds.bullet_world import BulletWorld
-from pycrap.ontologies import Robot, Kitchen
-from pycram.world_concepts.world_object import Object
-from ..episode_player import EpisodePlayer
+
+# from pycram.ros import logdebug
+# from pycram.worlds.bullet_world import BulletWorld
+# from pycrap.ontologies import Robot, Kitchen
+# from pycram.world_concepts.world_object import Object
+
+from semantic_digital_twin.world import World
+from semantic_digital_twin.robots.abstract_robot import Arm
+
+
+class ExecutionStatus(Enum):
+    RUNNING = 1
+    PAUSED = 2
 
 
 class CRAMPlayer(EpisodePlayer):
     world: World
 
-    def __init__(self, world: Optional[World] = None,
-                 time_between_frames: timedelta = timedelta(seconds=0.5)):
+    def __init__(
+        self,
+        world: Optional[World] = None,
+        time_between_frames: timedelta = timedelta(seconds=0.5),
+    ):
         """
         Initialize the CRAM player.
 
@@ -42,23 +69,26 @@ class CRAMPlayer(EpisodePlayer):
         """
         self.world = world if world else World.current_world
         if not self.world:
-            self.world = BulletWorld()
-    
+            self.world = World()
+
     def _pause(self):
         logdebug("Pausing Plan")
-        Plan.status = PlanStatus.PAUSED
+        Plan.status = TaskStatus.PAUSED
 
     def _resume(self):
         logdebug("Resuming Plan")
-        Plan.status = PlanStatus.RUNNING
+        Plan.status = TaskStatus.RUNNING
 
     def _run(self):
         self.ready = True
         object_description = ObjectDesignatorDescription(names=["milk"])
-        description = PickUpActionDescription(object_description, [Arms.LEFT], [GraspDescription(Grasp.FRONT)])
+        description = PickUpActionDescription(
+            object_description, [Arm.LEFT], [GraspDescription(Grasp.FRONT)]
+        )
         with simulated_robot:
-            plan = SequentialPlan(MoveTorsoActionDescription(TorsoState.HIGH),
-                                  description)
+            plan = SequentialPlan(
+                MoveTorsoActionDescription(TorsoState.HIGH), description
+            )
             plan.perform()
         plan.plot()
         # while self.world.current_world is not None:

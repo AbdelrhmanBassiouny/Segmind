@@ -4,15 +4,14 @@ from datetime import timedelta
 from threading import RLock
 from typing import Callable, Tuple
 
-from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict, Set
+from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict
 
 import numpy as np
+import logging
 
-from pycram.world_concepts.world_object import Object
-from pycram.ros import logwarn
-from pycram.description import RootLink, Link
-from pycram.datastructures.dataclasses import ObjectState
-from pycram.datastructures.world_entity import PhysicalBody
+logger = logging.getLogger(__name__)
+
+from semantic_digital_twin.world_description.world_entity import Body
 
 if TYPE_CHECKING:
     from .events import Event, EventUnion
@@ -21,19 +20,19 @@ if TYPE_CHECKING:
 
 class ObjectTracker:
 
-    def __init__(self, obj: PhysicalBody):
+    def __init__(self, obj: Body):
         self.obj = obj
         self._lock: RLock = RLock()
         self._event_history: List[Event] = []
         self._current_detectors: List[DetectorWithStarterEvent] = []
-        self._support: Optional[PhysicalBody] = None
+        self._support: Optional[Body] = None
 
     @property
-    def support(self) -> Optional[PhysicalBody]:
+    def support(self) -> Optional[Body]:
         return self._support
 
     @support.setter
-    def support(self, support: PhysicalBody):
+    def support(self, support: Body):
         with self._lock:
             self._support = support
 
@@ -51,15 +50,20 @@ class ObjectTracker:
         self._event_history = []
 
     @property
-    def current_state(self) -> ObjectState:
-        return self.obj.current_state
+    def current_state(self) -> Body:
+        return self.obj
 
     def add_event(self, event: Event):
         with self._lock:
             self._event_history.append(event)
             self._event_history.sort(key=lambda e: e.timestamp)
-        if isinstance(self.obj, Link):
-            ObjectTrackerFactory.get_tracker(self.obj.parent_entity).add_event(event)
+        if (
+            isinstance(self.obj, Body)
+            and self.obj.parent_kinematic_structure_entity is not None
+        ):
+            ObjectTrackerFactory.get_tracker(
+                self.obj.parent_kinematic_structure_entity
+            ).add_event(event)
 
     def get_event_history(self) -> List[Event]:
         with self._lock:
@@ -86,48 +90,86 @@ class ObjectTracker:
     def get_first_event_before(self, timestamp: float) -> Optional[Event]:
         with self._lock:
             first_event_index = self.get_index_of_first_event_before(timestamp)
-            return self._event_history[first_event_index] if first_event_index is not None else None
+            return (
+                self._event_history[first_event_index]
+                if first_event_index is not None
+                else None
+            )
 
     def get_first_event_after(self, timestamp: float) -> Optional[Event]:
         with self._lock:
             first_event_index = self.get_index_of_first_event_after(timestamp)
-            return self._event_history[first_event_index] if first_event_index is not None else None
+            return (
+                self._event_history[first_event_index]
+                if first_event_index is not None
+                else None
+            )
 
-    def get_nearest_event_of_type_to_event(self, event: Event, event_type: Type[Event],
-                                           tolerance: Optional[timedelta] = None) -> Optional[EventUnion]:
-        return self.get_nearest_event_of_type_to_timestamp(event.timestamp, event_type, tolerance)
+    def get_nearest_event_of_type_to_event(
+        self,
+        event: Event,
+        event_type: Type[Event],
+        tolerance: Optional[timedelta] = None,
+    ) -> Optional[EventUnion]:
+        return self.get_nearest_event_of_type_to_timestamp(
+            event.timestamp, event_type, tolerance
+        )
 
-    def get_nearest_event_of_type_to_timestamp(self, timestamp: float, event_type: Type[Event],
-                                               tolerance: Optional[timedelta] = None) -> Optional[Event]:
+    def get_nearest_event_of_type_to_timestamp(
+        self,
+        timestamp: float,
+        event_type: Type[Event],
+        tolerance: Optional[timedelta] = None,
+    ) -> Optional[Event]:
         with self._lock:
             time_stamps = self.time_stamps_array
-            type_cond = np.array([isinstance(event, event_type) for event in self._event_history])
+            type_cond = np.array(
+                [isinstance(event, event_type) for event in self._event_history]
+            )
             valid_indices = np.where(type_cond)[0]
             if len(valid_indices) > 0:
                 time_stamps = time_stamps[valid_indices]
-                nearest_event_index = self._get_nearest_index(time_stamps, timestamp, tolerance)
+                nearest_event_index = self._get_nearest_index(
+                    time_stamps, timestamp, tolerance
+                )
                 if nearest_event_index is not None:
                     return self._event_history[valid_indices[nearest_event_index]]
 
-    def get_nearest_event_to(self, timestamp: float, tolerance: Optional[timedelta] = None) -> Optional[Event]:
+    def get_nearest_event_to(
+        self, timestamp: float, tolerance: Optional[timedelta] = None
+    ) -> Optional[Event]:
         with self._lock:
             time_stamps = self.time_stamps_array
-            nearest_event_index = self._get_nearest_index(time_stamps, timestamp, tolerance)
+            nearest_event_index = self._get_nearest_index(
+                time_stamps, timestamp, tolerance
+            )
             if nearest_event_index is not None:
                 return self._event_history[nearest_event_index]
 
-    def _get_nearest_index(self, time_stamps: np.ndarray,
-                           timestamp: float, tolerance: Optional[timedelta] = None) -> Optional[int]:
+    def _get_nearest_index(
+        self,
+        time_stamps: np.ndarray,
+        timestamp: float,
+        tolerance: Optional[timedelta] = None,
+    ) -> Optional[int]:
         with self._lock:
             nearest_event_index = np.argmin(np.abs(time_stamps - timestamp))
-            if tolerance is not None and abs(time_stamps[nearest_event_index] - timestamp) > tolerance.total_seconds():
+            if (
+                tolerance is not None
+                and abs(time_stamps[nearest_event_index] - timestamp)
+                > tolerance.total_seconds()
+            ):
                 return None
             return nearest_event_index
 
-    def get_nearest_event_to_event_with_conditions(self, event: Event, conditions: Callable[[Event], bool]) -> Optional[Event]:
+    def get_nearest_event_to_event_with_conditions(
+        self, event: Event, conditions: Callable[[Event], bool]
+    ) -> Optional[Event]:
         with self._lock:
             events = self.get_events_sorted_by_nearest_to_event(event)
-            found_events = self.get_event_where(conditions, events=[e[0] for e in events])
+            found_events = self.get_event_where(
+                conditions, events=[e[0] for e in events]
+            )
             if len(found_events) == 0:
                 return None
             else:
@@ -136,18 +178,26 @@ class ObjectTracker:
     def get_events_sorted_by_nearest_to_event(self, event: Event):
         return self.get_events_sorted_by_nearest_to_timestamp(event.timestamp)
 
-    def get_events_sorted_by_nearest_to_timestamp(self, timestamp: float) -> List[Tuple[Event, float]]:
+    def get_events_sorted_by_nearest_to_timestamp(
+        self, timestamp: float
+    ) -> List[Tuple[Event, float]]:
         with self._lock:
             time_stamps = self.time_stamps_array
             time_diff = np.abs(time_stamps - timestamp)
-            events_with_time_diff = [(event, dt) for event, dt in zip(self._event_history, time_diff)]
+            events_with_time_diff = [
+                (event, dt) for event, dt in zip(self._event_history, time_diff)
+            ]
             events_with_time_diff.sort(key=lambda e: e[1])
         return events_with_time_diff
 
-    def get_first_event_of_type_after_event(self, event_type: Type[Event], event: Event) -> Optional[EventUnion]:
+    def get_first_event_of_type_after_event(
+        self, event_type: Type[Event], event: Event
+    ) -> Optional[EventUnion]:
         return self.get_first_event_of_type_after_timestamp(event_type, event.timestamp)
 
-    def get_first_event_of_type_after_timestamp(self, event_type: Type[Event], timestamp: float) -> Optional[Event]:
+    def get_first_event_of_type_after_timestamp(
+        self, event_type: Type[Event], timestamp: float
+    ) -> Optional[Event]:
         with self._lock:
             start_index = self.get_index_of_first_event_after(timestamp)
             if start_index is not None:
@@ -155,14 +205,24 @@ class ObjectTracker:
                     if isinstance(event, event_type):
                         return event
 
-    def get_first_event_of_type_before_event(self, event_type: Type[Event], event: Event) -> Optional[EventUnion]:
-        return self.get_first_event_of_type_before_timestamp(event_type, event.timestamp)
+    def get_first_event_of_type_before_event(
+        self, event_type: Type[Event], event: Event
+    ) -> Optional[EventUnion]:
+        return self.get_first_event_of_type_before_timestamp(
+            event_type, event.timestamp
+        )
 
-    def get_first_event_of_type_before_timestamp(self, event_type: Type[Event], timestamp: float) -> Optional[Event]:
+    def get_first_event_of_type_before_timestamp(
+        self, event_type: Type[Event], timestamp: float
+    ) -> Optional[Event]:
         with self._lock:
             start_index = self.get_index_of_first_event_before(timestamp)
             if start_index is not None:
-                for event in reversed(self._event_history[:min(start_index+1, len(self._event_history))]):
+                for event in reversed(
+                    self._event_history[
+                        : min(start_index + 1, len(self._event_history))
+                    ]
+                ):
                     if isinstance(event, event_type):
                         return event
 
@@ -172,7 +232,7 @@ class ObjectTracker:
             try:
                 return np.where(time_stamps > timestamp)[0][0]
             except IndexError:
-                logwarn(f"No events after timestamp {timestamp}")
+                logger.warning(f"No events after timestamp {timestamp}")
                 return None
 
     def get_index_of_first_event_before(self, timestamp: float) -> Optional[int]:
@@ -181,27 +241,42 @@ class ObjectTracker:
             try:
                 return np.where(time_stamps < timestamp)[0][-1]
             except IndexError:
-                logwarn(f"No events before timestamp {timestamp}")
+                logger.warning(f"No events before timestamp {timestamp}")
                 return None
 
-    def get_events_between_two_events(self, event1: Event, event2: Event) -> List[Event]:
-        return [e for e in self.get_events_between_timestamps(event1.timestamp, event2.timestamp)
-                if e not in [event1, event2]]
+    def get_events_between_two_events(
+        self, event1: Event, event2: Event
+    ) -> List[Event]:
+        return [
+            e
+            for e in self.get_events_between_timestamps(
+                event1.timestamp, event2.timestamp
+            )
+            if e not in [event1, event2]
+        ]
 
-    def get_events_between_timestamps(self, timestamp1: float, timestamp2: float) -> List[Event]:
+    def get_events_between_timestamps(
+        self, timestamp1: float, timestamp2: float
+    ) -> List[Event]:
         with self._lock:
             time_stamps = self.time_stamps_array
             if timestamp1 > timestamp2:
                 timestamp1, timestamp2 = timestamp2, timestamp1
             try:
-                indices = np.where(np.logical_and(time_stamps <= timestamp2, time_stamps >= timestamp1))[0]
+                indices = np.where(
+                    np.logical_and(time_stamps <= timestamp2, time_stamps >= timestamp1)
+                )[0]
                 events = [self._event_history[i] for i in indices]
                 return events
             except IndexError:
-                logwarn(f"No events between timestamps {timestamp1}, {timestamp2}")
+                logger.warning(
+                    f"No events between timestamps {timestamp1}, {timestamp2}"
+                )
                 return []
 
-    def get_event_where(self, conditions: Callable[[Event], bool], events: Optional[List[Event]] = None) -> List[Event]:
+    def get_event_where(
+        self, conditions: Callable[[Event], bool], events: Optional[List[Event]] = None
+    ) -> List[Event]:
         events = events if events is not None else self._event_history
         return [event for event in events if conditions(event)]
 
@@ -217,7 +292,7 @@ class ObjectTracker:
 
 class ObjectTrackerFactory:
 
-    _trackers: Dict[PhysicalBody, ObjectTracker] = {}
+    _trackers: Dict[Body, ObjectTracker] = {}
     _lock: RLock = RLock()
 
     @classmethod
@@ -226,10 +301,8 @@ class ObjectTrackerFactory:
             return list(cls._trackers.values())
 
     @classmethod
-    def get_tracker(cls, obj: PhysicalBody) -> ObjectTracker:
+    def get_tracker(cls, obj: Body) -> ObjectTracker:
         with cls._lock:
             if obj not in cls._trackers:
                 cls._trackers[obj] = ObjectTracker(obj)
             return cls._trackers[obj]
-
-

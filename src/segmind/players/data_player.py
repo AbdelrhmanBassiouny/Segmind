@@ -10,14 +10,21 @@ from threading import RLock
 
 from typing_extensions import Callable, Optional, Dict, Generator, List
 
-from pycram.datastructures.pose import Pose, Vector3
-from pycram.datastructures.world import World
-from pycram.world_concepts.world_object import Object
+# from pycram.datastructures.pose import Pose, Vector3
+# from pycram.datastructures.world import World
+# from pycram.world_concepts.world_object import Object
 
 try:
     from pycram.worlds.multiverse import Multiverse
 except ImportError:
     Multiverse = None
+
+from semantic_digital_twin.world import World
+from semantic_digital_twin.world_description.world_entity import Body
+from semantic_digital_twin.spatial_types.spatial_types import (
+    TransformationMatrix,
+    Vector3,
+)
 
 from ..datastructures.enums import PlayerStatus
 from ..episode_player import EpisodePlayer
@@ -28,6 +35,7 @@ class FrameData:
     """
     A dataclass to store the frame data.
     """
+
     time: float
     """
     The time of the frame.
@@ -52,10 +60,19 @@ class DataPlayer(EpisodePlayer, ABC):
 
     frame_callback_lock: RLock = RLock()
 
-    def __init__(self, time_between_frames: Optional[timedelta] = None, use_realtime: bool = False,
-                 stop_after_ready: bool = False, world: Optional[World] = None):
-        super().__init__(time_between_frames=time_between_frames, use_realtime=use_realtime,
-                         stop_after_ready=stop_after_ready, world=world)
+    def __init__(
+        self,
+        time_between_frames: Optional[timedelta] = None,
+        use_realtime: bool = False,
+        stop_after_ready: bool = False,
+        world: Optional[World] = None,
+    ):
+        super().__init__(
+            time_between_frames=time_between_frames,
+            use_realtime=use_realtime,
+            stop_after_ready=stop_after_ready,
+            world=world,
+        )
         self.frame_callbacks: List[Callable[[float], None]] = []
         self.frame_data_generator: FrameDataGenerator = self.get_frame_data_generator()
         self.sync_robot_only: bool = False
@@ -145,7 +162,9 @@ class DataPlayer(EpisodePlayer, ABC):
             self.world.robot.set_multiple_joint_positions(joint_states)
 
     @abstractmethod
-    def get_objects_poses(self, frame_data: FrameData) -> Dict[Object, Pose]:
+    def get_objects_poses(
+        self, frame_data: FrameData
+    ) -> Dict[Body, TransformationMatrix]:
         """
         Get the poses of the objects.
 
@@ -162,9 +181,16 @@ class FilePlayer(DataPlayer, ABC):
     file_path: str
     models_dir: Optional[str]
 
-    def __init__(self, file_path: str, models_dir: Optional[str] = None, world: Optional[World] = None,
-                 time_between_frames: Optional[timedelta] = None, use_realtime: bool = False,
-                 stop_after_ready: bool = False, position_shift: Optional[Vector3] = None):
+    def __init__(
+        self,
+        file_path: str,
+        models_dir: Optional[str] = None,
+        world: Optional[World] = None,
+        time_between_frames: Optional[timedelta] = None,
+        use_realtime: bool = False,
+        stop_after_ready: bool = False,
+        position_shift: Optional[Vector3] = None,
+    ):
         """
         Initializes the FAMEEpisodePlayer with the specified file.
 
@@ -177,10 +203,16 @@ class FilePlayer(DataPlayer, ABC):
         :param position_shift: The position shift to apply to the objects.
         """
         self.file_path = file_path
-        super().__init__(time_between_frames=time_between_frames, use_realtime=use_realtime, world=world,
-                         stop_after_ready=stop_after_ready)
+        super().__init__(
+            time_between_frames=time_between_frames,
+            use_realtime=use_realtime,
+            world=world,
+            stop_after_ready=stop_after_ready,
+        )
 
-        self.models_dir = models_dir or os.path.join(os.path.dirname(self.file_path), "models")
+        self.models_dir = models_dir or os.path.join(
+            os.path.dirname(self.file_path), "models"
+        )
 
         self.copy_model_files_to_world_data_dir()
         self.position_shift: Optional[Vector3] = position_shift
@@ -190,4 +222,6 @@ class FilePlayer(DataPlayer, ABC):
         Copy the model files to the world data directory.
         """
         # Copy the entire folder and its contents
-        shutil.copytree(self.models_dir, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
+        shutil.copytree(
+            self.models_dir, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True
+        )

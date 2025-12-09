@@ -2,25 +2,48 @@ from __future__ import annotations
 
 import os.path
 
-from pycram.plan import Plan
-from pycram.designators.action_designator import PickUpAction, PlaceAction
-from pycrap.ontologies import Location, Supporter, Floor, Agent
-from ripple_down_rules.rdr_decorators import RDRDecorator
-
-
 try:
     from matplotlib import pyplot as plt
 except ImportError:
     plt = None
-
 from typing_extensions import Optional, List, Union, Dict
-
-from pycram.datastructures.world import UseProspectionWorld
-from pycram.ros import logdebug, loginfo
+from typing import Dict
 from .atomic_event_detectors import *
 from ..datastructures.events import *
-from ..utils import get_angle_between_vectors, get_support, is_object_supported_by_container_body
+from ..utils import (
+    get_angle_between_vectors,
+    get_support,
+    is_object_supported_by_container_body,
+)
 from ..episode_player import EpisodePlayer
+from ripple_down_rules.rdr_decorators import RDRDecorator
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logdebug = logging.debug
+loginfo = logging.info
+
+# from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import (
+    PickUpActionDescription,
+    PlaceActionDescription,
+    PickUpAction,
+    PlaceAction,
+    MoveTorsoActionDescription,
+)
+
+# from pycrap.ontologies import Location, Supporter, Floor, Agent
+# from pycram.datastructures.world import UseProspectionWorld
+# from pycram.ros import logdebug, loginfo
+
+from semantic_digital_twin.world_description.world_entity import (
+    Body,
+    Agent,
+    Region,
+)
+from semantic_digital_twin.semantic_annotations.semantic_annotations import Floor, Table
+from semantic_digital_twin.collision_checking.collision_detector import Collision
 
 
 class DetectorWithStarterEvent(AtomicEventDetector, ABC):
@@ -28,8 +51,14 @@ class DetectorWithStarterEvent(AtomicEventDetector, ABC):
     A type of event detector that requires an event to occur as a start condition.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[timedelta] = None,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        logger: EventLogger,
+        starter_event: EventUnion,
+        wait_time: Optional[timedelta] = None,
+        *args,
+        **kwargs,
+    ):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
@@ -74,27 +103,41 @@ class DetectorWithStarterEvent(AtomicEventDetector, ABC):
         self._start_timestamp = timestamp
 
     def _no_event_found_log(self, event_type: Type[Event]):
-        logdebug(f"{self} with starter event: {self.starter_event} found no event of type: {event_type}")
+        logdebug(
+            f"{self} with starter event: {self.starter_event} found no event of type: {event_type}"
+        )
 
 
-class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrimaryTrackedObject, ABC):
+class DetectorWithTrackedObjectAndStarterEvent(
+    DetectorWithStarterEvent, HasPrimaryTrackedObject, ABC
+):
     """
     A type of event detector that requires an event to occur as a start condition and has one tracked object.
     """
 
-    currently_tracked_objects: Optional[Dict[Object, DetectorWithTrackedObjectAndStarterEvent]] = None
+    currently_tracked_objects: Optional[
+        Dict[Body, DetectorWithTrackedObjectAndStarterEvent]
+    ] = None
     """
     All the objects that are currently tracked by a detector with a starter event.
     """
 
-    def __init__(self, logger: EventLogger, starter_event: EventUnion, wait_time: Optional[timedelta] = None,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        logger: EventLogger,
+        starter_event: EventUnion,
+        wait_time: Optional[timedelta] = None,
+        *args,
+        **kwargs,
+    ):
         """
         :param logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
-        DetectorWithStarterEvent.__init__(self, logger, starter_event, wait_time, *args, **kwargs)
+        DetectorWithStarterEvent.__init__(
+            self, logger, starter_event, wait_time, *args, **kwargs
+        )
         object_to_track = self.get_object_to_track_from_starter_event(starter_event)
         HasPrimaryTrackedObject.__init__(self, tracked_object=object_to_track)
         if self.currently_tracked_objects is None:
@@ -107,34 +150,45 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
     def reset(self):
         self.currently_tracked_objects = {}
 
-    def check_for_event_pre_starter_event(self, event_type: Type[Event],
-                                          time_tolerance: timedelta) -> Optional[EventUnion]:
+    def check_for_event_pre_starter_event(
+        self, event_type: Type[Event], time_tolerance: timedelta
+    ) -> Optional[EventUnion]:
         """
         Check if the tracked_object was involved in an event before the starter event.
 
         :param event_type: The event type to check for.
         :param time_tolerance: The time tolerance to consider the event as before the starter event.
         """
-        event = self.object_tracker.get_first_event_of_type_before_event(event_type, self.starter_event)
-        if event is not None and self.start_timestamp - event.timestamp <= time_tolerance.total_seconds():
+        event = self.object_tracker.get_first_event_of_type_before_event(
+            event_type, self.starter_event
+        )
+        if (
+            event is not None
+            and self.start_timestamp - event.timestamp <= time_tolerance.total_seconds()
+        ):
             return event
         else:
             self._no_event_found_log(event_type)
 
-    def check_for_event_post_starter_event(self, event_type: Type[Event]) -> Optional[EventUnion]:
+    def check_for_event_post_starter_event(
+        self, event_type: Type[Event]
+    ) -> Optional[EventUnion]:
         """
         Check if the tracked_object was involved in an event after the starter event.
 
         :param event_type: The event type to check for.
         :return: The event if the tracked_object was involved in an event, else None.
         """
-        event = self.object_tracker.get_first_event_of_type_after_event(event_type, self.starter_event)
+        event = self.object_tracker.get_first_event_of_type_after_event(
+            event_type, self.starter_event
+        )
         if event is None:
             self._no_event_found_log(event_type)
         return event
 
-    def check_for_event_near_starter_event(self, event_type: Type[Event],
-                                           time_tolerance: timedelta) -> Optional[EventUnion]:
+    def check_for_event_near_starter_event(
+        self, event_type: Type[Event], time_tolerance: timedelta
+    ) -> Optional[EventUnion]:
         """
         Check if the tracked_object was involved in an event near the starter event (i.e. could be before or after).
 
@@ -142,16 +196,16 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
         :param time_tolerance: The time tolerance to consider the event as near the starter event.
         :return: The event if the tracked_object was involved in an event, else None.
         """
-        event = self.object_tracker.get_nearest_event_of_type_to_event(self.starter_event,
-                                                                       tolerance=time_tolerance,
-                                                                       event_type=event_type)
+        event = self.object_tracker.get_nearest_event_of_type_to_event(
+            self.starter_event, tolerance=time_tolerance, event_type=event_type
+        )
         if event is None:
             self._no_event_found_log(event_type)
         return event
 
     @classmethod
     @abstractmethod
-    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
+    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Body:
         """
         Get the object to track from the starter event.
 
@@ -167,6 +221,7 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
     """
     An abstract detector that detects an interaction between the agent and an object.
     """
+
     models_path: str = os.path.join(os.path.dirname(__file__), "models")
     """
     The path to the directory where the Ripple Down Rules models are stored.
@@ -178,7 +233,9 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
         :param starter_event: An instance of a type of Event that represents the event to
          start the event detector.
         """
-        DetectorWithTrackedObjectAndStarterEvent.__init__(self, logger, starter_event, *args, **kwargs)
+        DetectorWithTrackedObjectAndStarterEvent.__init__(
+            self, logger, starter_event, *args, **kwargs
+        )
         self.run_once: bool = True
 
     def detect_events(self) -> List[EventUnion]:
@@ -198,7 +255,9 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
             break
 
         if event:
-            loginfo(f"{self.__class__.__name__} detected an interaction with: {self.tracked_object.name}")
+            loginfo(
+                f"{self.__class__.__name__} detected an interaction with: {self.tracked_object.name}"
+            )
             return [event]
 
         return []
@@ -214,7 +273,7 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
 
     @classmethod
     @abstractmethod
-    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
+    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Body:
         """
         Get the object to track for interaction from the possible starter event.
 
@@ -233,7 +292,8 @@ class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
     """
     An abstract detector that detects if the tracked_object was picked up.
     """
-    currently_tracked_objects: Dict[Object, AbstractPickUpDetector] = {}
+
+    currently_tracked_objects: Dict[Body, AbstractPickUpDetector] = {}
 
     @classmethod
     def action_type(cls):
@@ -248,36 +308,66 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     A detector that detects pick-up events based on incremental learning using Ripple Down Rules.
     """
+
     models_path: str = AbstractInteractionDetector.models_path
-    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind",
-     fit=False, update_existing_rules=False, use_generated_classifier=True, fitting_decorator=EpisodePlayer.pause_resume)
+    interaction_checks_rdr: RDRDecorator = RDRDecorator(
+        models_path,
+        (PickUpEvent, type(None)),
+        True,
+        package_name="segmind",
+        fit=False,
+        update_existing_rules=False,
+        use_generated_classifier=True,
+        fitting_decorator=EpisodePlayer.pause_resume,
+    )
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
-   
-    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+
+    object_to_track_rdr: RDRDecorator = RDRDecorator(
+        models_path,
+        (Body, type(None)),
+        True,
+        package_name="segmind",
+        fit=False,
+        use_generated_classifier=False,
+        fitting_decorator=EpisodePlayer.pause_resume,
+    )
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
+
     @staticmethod
     def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        return isinstance(event, LossOfSupportEvent) and event.tracked_object.name == "montessori_object_5"
-    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now,
-                                                     generate_dot_file=True)
+        return (
+            isinstance(event, LossOfSupportEvent)
+            and event.tracked_object.name == "montessori_object_5"
+        )
+
+    start_condition_rdr: RDRDecorator = RDRDecorator(
+        models_path,
+        (bool,),
+        True,
+        package_name="segmind",
+        fit=False,
+        use_generated_classifier=False,
+        fitting_decorator=EpisodePlayer.pause_resume,
+        ask_now=ask_now,
+        generate_dot_file=True,
+    )
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
+
     @interaction_checks_rdr.decorator
     def get_interaction_event(self) -> Optional[PickUpEvent]:
         pass
 
     @classmethod
     @object_to_track_rdr.decorator
-    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Object:
+    def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Body:
         pass
 
     @classmethod
@@ -286,7 +376,10 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
         pass
 
     def __str__(self):
-        if hasattr(self.starter_event, "agent") and self.starter_event.agent is not None:
+        if (
+            hasattr(self.starter_event, "agent")
+            and self.starter_event.agent is not None
+        ):
             return f"{super().__str__()} - Agent: {self.agent.name}"
         else:
             return super().__str__()
@@ -300,24 +393,49 @@ class PlacingDetector(AbstractInteractionDetector):
     thread_prefix = "placing_"
 
     models_path: str = AbstractInteractionDetector.models_path
-    interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PlacingEvent, type(None)), True, package_name="segmind",
-     fit=False, update_existing_rules=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+    interaction_checks_rdr: RDRDecorator = RDRDecorator(
+        models_path,
+        (PlacingEvent, type(None)),
+        True,
+        package_name="segmind",
+        fit=False,
+        update_existing_rules=True,
+        use_generated_classifier=False,
+        fitting_decorator=EpisodePlayer.pause_resume,
+    )
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
-   
-    object_to_track_rdr: RDRDecorator = RDRDecorator(models_path, (Object, type(None)), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+
+    object_to_track_rdr: RDRDecorator = RDRDecorator(
+        models_path,
+        (Body, type(None)),
+        True,
+        package_name="segmind",
+        fit=False,
+        use_generated_classifier=False,
+        fitting_decorator=EpisodePlayer.pause_resume,
+    )
     """
     A decorator that uses a Ripple Down Rules model to get the object to track from the starter event.
     """
+
     @staticmethod
     def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
         return isinstance(event, SupportEvent)
-    start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
-     fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now)
+
+    start_condition_rdr: RDRDecorator = RDRDecorator(
+        models_path,
+        (bool,),
+        True,
+        package_name="segmind",
+        fit=False,
+        use_generated_classifier=False,
+        fitting_decorator=EpisodePlayer.pause_resume,
+        ask_now=ask_now,
+    )
     """
     A decorator that uses a Ripple Down Rules model to check for starting conditions for the pick up event.
     """
@@ -336,7 +454,9 @@ class PlacingDetector(AbstractInteractionDetector):
 
     @classmethod
     @object_to_track_rdr.decorator
-    def get_object_to_track_from_starter_event(cls, starter_event: ContactEvent) -> Object:
+    def get_object_to_track_from_starter_event(
+        cls, starter_event: ContactEvent
+    ) -> Body:
         pass
 
     @classmethod
@@ -350,46 +470,65 @@ class PlacingDetector(AbstractInteractionDetector):
         pass
 
 
-def check_for_supporting_surface(tracked_object: Object,
-                                 possible_surfaces: Optional[List[Object]] = None) -> Optional[Object]:
+def check_for_supporting_surface(
+    tracked_object: Body,
+    contact_points: Collision,
+    possible_surfaces: Optional[List[Body]] = None,
+) -> Optional[Body]:
     """
     Check if any of the possible surfaces are supporting the tracked_object.
 
-    :param tracked_object: An instance of the Object class that represents the tracked_object to check.
-    :param possible_surfaces: A list of Object instances that represent the possible surfaces.
-    :return: An instance of the Object class that represents the supporting surface if found, else None.
+    :param tracked_object: Body to check.
+    :param contact_points: ContactPointsList containing all current contact points.
+    :param possible_surfaces: Optional list of possible supporting surfaces.
+                              If None, all contacted bodies are considered.
+    :return: The supporting surface Body if found, else None.
     """
-    with UseProspectionWorld():
-        dt = 0.07
-        World.current_world.simulate(dt)
-        prospection_obj = World.current_world.get_prospection_object_for_object(tracked_object)
-        contact_points = prospection_obj.contact_points
-        contacted_bodies = contact_points.get_all_bodies()
-        contacted_bodies = [body for body in contacted_bodies if body.name != tracked_object.name]
-        contacted_body_names = [body.name for body in contacted_bodies]
-        contacted_bodies = dict(zip(contacted_body_names, contacted_bodies))
-        if possible_surfaces is None:
-            possible_surface_names = contacted_body_names
-        else:
-            possible_surface_names = [obj.name for obj in possible_surfaces]
-            possible_surface_names = list(set(contacted_body_names).intersection(possible_surface_names))
-    supporting_surface = None
-    opposite_gravity = [0, 0, 1]
-    smallest_angle = np.pi / 8
+    # Filter contacted bodies to exclude the tracked object itself
+    contacted_bodies = [
+        b for b in contact_points.get_all_bodies() if b != tracked_object
+    ]
+    contacted_body_names = [b.name for b in contacted_bodies]
+    contacted_bodies_dict = dict(zip(contacted_body_names, contacted_bodies))
+
+    # Determine which surfaces to check
+    if possible_surfaces is None:
+        possible_surface_names = contacted_body_names
+    else:
+        possible_surface_names = [obj.name for obj in possible_surfaces]
+        possible_surface_names = list(
+            set(contacted_body_names).intersection(possible_surface_names)
+        )
+
+    # Analyze contact normals to find upright supporting surface
+    supporting_surface: Optional[Body] = None
+    opposite_gravity = [0.0, 0.0, 1.0]
+    smallest_angle = np.pi / 8  # tolerance for upright surface
+
     for obj_name in possible_surface_names:
-        obj = World.current_world.get_object_by_name(obj_name)
-        normals = [n.to_list() for n in contact_points.get_normals_of_object(contacted_bodies[obj_name])]
-        normal = np.mean(np.array(normals), axis=0)
-        angle = get_angle_between_vectors(normal, opposite_gravity)
+        obj = contacted_bodies_dict[obj_name]
+
+        # Collect normals for this body
+        normals = contact_points.get_normals_of_object(obj)
+        if not normals:
+            continue
+
+        avg_normal = np.mean(np.array(normals), axis=0)
+        angle = get_angle_between_vectors(avg_normal.tolist(), opposite_gravity)
+
         if 0 <= angle <= smallest_angle:
             smallest_angle = angle
             supporting_surface = obj
-    if supporting_surface is not None:
-        logdebug(f"found surface {supporting_surface.name}")
+
+    if supporting_surface:
+        logdebug(f"Found supporting surface: {supporting_surface.name}")
+
     return supporting_surface
 
 
-def select_transportable_objects_from_contact_event(event: Union[ContactEvent, AgentContactEvent]) -> List[Object]:
+def select_transportable_objects_from_contact_event(
+    event: Union[ContactEvent, AgentContactEvent],
+) -> List[Body]:
     """
     Select the objects that can be transported from the contact event.
 
@@ -399,31 +538,53 @@ def select_transportable_objects_from_contact_event(event: Union[ContactEvent, A
     return select_transportable_objects(contacted_objects + [event.tracked_object])
 
 
-def select_transportable_objects_from_loss_of_contact_event(event: LossOfContactEvent) -> List[Object]:
+def select_transportable_objects_from_loss_of_contact_event(
+    event: LossOfContactEvent,
+) -> List[Body]:
     """
     Select the objects that can be transported from the loss of contact event.
     """
     return select_transportable_objects([event.tracked_object])
 
 
-def select_transportable_objects(objects: List[Object], not_contained: bool = False) -> List[Object]:
+def select_transportable_objects(
+    objects: List[Body], not_contained: bool = False
+) -> List[Body]:
     """
     Select the objects that can be transported
 
     :param objects: A list of Object instances.
     """
-    transportable_objects = [obj for obj in objects
-                             if not issubclass(obj.ontology_concept, (Agent, Location, Supporter, Floor))]
+    transportable_objects = [
+        obj
+        for obj in objects
+        if not issubclass(obj.ontology_concept, (Agent, Region, Table, Floor))
+    ]
     if not_contained:
-        transportable_objects = [obj for obj in transportable_objects
-                                 if not is_object_supported_by_container_body(obj)]
+        transportable_objects = [
+            obj
+            for obj in transportable_objects
+            if not is_object_supported_by_container_body(obj)
+        ]
 
     return transportable_objects
 
 
-EventDetectorUnion = Union[NewObjectDetector, ContactDetector, LossOfContactDetector,
-MotionDetector, TranslationDetector, RotationDetector, PlacingDetector]
-TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector],
-Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
-Type[NewObjectDetector],
-Type[PlacingDetector]]
+EventDetectorUnion = Union[
+    NewObjectDetector,
+    ContactDetector,
+    LossOfContactDetector,
+    MotionDetector,
+    TranslationDetector,
+    RotationDetector,
+    PlacingDetector,
+]
+TypeEventDetectorUnion = Union[
+    Type[ContactDetector],
+    Type[LossOfContactDetector],
+    Type[MotionDetector],
+    Type[TranslationDetector],
+    Type[RotationDetector],
+    Type[NewObjectDetector],
+    Type[PlacingDetector],
+]
