@@ -75,7 +75,7 @@ class EventLogger:
         self.event_callbacks_lock: RLock = RLock()
         self.annotate_events = annotate_events
         self.events_to_annotate = events_to_annotate
-        if annotate_events and World.current_world.mode == WorldMode.GUI:
+        if annotate_events:
             self.annotation_queue = queue.Queue()
             self.annotation_thread = EventAnnotationThread(self)
             self.annotation_thread.start()
@@ -126,10 +126,10 @@ class EventLogger:
 
         :param event: The event to annotate the scene with.
         """
-        # logerr(f"Logging event: {event}")
+        # logdebug(f"Logging event: {event}")
         if self.events_to_annotate is not None and (type(event) in self.events_to_annotate):
-            logerr(f"Logging event: {event}")
-            if self.annotate_events and World.current_world.mode == WorldMode.GUI:
+            loginfo(f"Logging event: {event}")
+            if self.annotation_thread is not None:
                 self.annotation_queue.put(event)
                 
 
@@ -363,9 +363,13 @@ class EventLogger:
         """
         Wait for all events to be processed and all annotations to be added.
         """
-        if self.annotate_events and World.current_world is not None and World.current_world.mode == WorldMode.GUI:
+        if self.annotation_thread is not None:
             self.annotation_thread.stop()
             self.annotation_thread.join()
+            while self.annotation_queue.unfinished_tasks > 0:
+                event = self.annotation_queue.get_nowait()
+                logdebug(f"Left out annotation for event: {event}")
+                self.annotation_queue.task_done()
             self.annotation_queue.join()
         self.event_queue.join()
 
@@ -374,54 +378,35 @@ class EventLogger:
 
 
 class EventAnnotationThread(threading.Thread):
-    def __init__(self, logger: EventLogger,
-                 initial_z_offset: float = 3,
-                 step_z_offset: float = 0.2,
-                 max_annotations: int = 3):
+    def __init__(self, logger: EventLogger):
         super().__init__()
         self.logger = logger
-        self.initial_z_offset = initial_z_offset
-        self.step_z_offset = step_z_offset
         self.current_annotations: List[TextAnnotation] = []
-        self.max_annotations = max_annotations
         self.kill_event = threading.Event()
 
-    def get_next_z_offset(self):
-        return self.initial_z_offset - self.step_z_offset * len(self.current_annotations)
-
     def run(self):
-        while not self.kill_event.is_set():
+        while not self.kill_event.is_set() or not self.logger.annotation_queue.empty():
             try:
-                event = self.logger.annotation_queue.get(block=False)
+                event = self.logger.annotation_queue.get_nowait()
+                self.logger.annotation_queue.task_done()
             except queue.Empty:
                 time.sleep(0.1)
                 continue
-            self.logger.annotation_queue.task_done()
             obj_name_map = {"montessori_object_6": "Cylinder",
                             "montessori_object_3": "Cube",
                             "montessori_object_5": "Cuboid",
                             "montessori_object_2": "Triangle", }
-            if isinstance(event, PickUpEvent) and event.tracked_object.name in obj_name_map:
-                text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was picked")
-            elif isinstance(event, InsertionEvent) and event.tracked_object.name in obj_name_map:
-                hole_name = event.through_hole.name.replace('_', ' ').strip()
-                hole_name = re.sub(r'\d+', '', hole_name).strip()
-                text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {hole_name}")
-            # if len(self.current_annotations) >= self.max_annotations:
-            #     # Move all annotations up and remove the oldest one
-            #     for text_ann in self.current_annotations:
-            #         World.current_world.remove_text(text_ann.id)
-            #     self.current_annotations.pop(0)
-            #     for text_ann in self.current_annotations:
-            #         text_ann.position[2] += self.step_z_offset
-            #         text_ann.id = World.current_world.add_text(text_ann.text,
-            #                                                    text_ann.position,
-            #                                                    color=text_ann.color,
-            #                                                    size=text_ann.size)
-            # z_offset = self.get_next_z_offset()
-            # text_ann = event.annotate([1.5, 1, z_offset])
-            # self.current_annotations.append(text_ann)
-            # time.sleep(0.1)
+            try:
+                if isinstance(event, PickUpEvent) and event.tracked_object.name in obj_name_map:
+                    text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was picked")
+                elif isinstance(event, InsertionEvent) and event.tracked_object.name in obj_name_map:
+                    hole_name = event.through_hole.name.replace('_', ' ').strip()
+                    hole_name = re.sub(r'\d+', '', hole_name).strip()
+                    text_to_speech(f"The {obj_name_map[event.tracked_object.name]} was inserted into the {hole_name}")
+                event.annotate()
+            except Exception as e:
+                logerr(f"Error annotating event {event}: {e}")
+                continue
 
     def stop(self):
         self.kill_event.set()

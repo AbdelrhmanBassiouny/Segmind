@@ -1,22 +1,11 @@
-import os
-import shutil
-import time
-from datetime import timedelta, datetime
-from os import path
-from os.path import abspath, dirname
-from pathlib import Path
+from datetime import datetime
 
 import pandas as pd
-from typing_extensions import Optional, Dict, Set
+from typing_extensions import Dict, Set
 
-from pycram.datastructures.dataclasses import MeshVisualShape, BoxVisualShape, CylinderVisualShape, Color
 from pycram.datastructures.pose import Pose, PoseStamped, Vector3, Quaternion, Header
-from pycram.datastructures.world import World
-from pycram.ros import logdebug
 from pycram.world_concepts.world_object import Object
-from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
-from pycrap.ontologies import PhysicalObject, Location, Robot
-from ..episode_player import EpisodePlayer
+from pycrap.ontologies import PhysicalObject
 from .data_player import FilePlayer, FrameData
 
 
@@ -47,7 +36,10 @@ class CSVEpisodePlayer(FilePlayer):
             obj_position = [objects_data[f"{obj_name}:position_{i}"] for i in range(3)]
             obj_orientation = [objects_data[f"{obj_name}:quaternion_{i}"] for i in range(4)]
             obj_orientation[0], obj_orientation[3] = obj_orientation[3], obj_orientation[0]
-            obj_pose = PoseStamped(Pose(Vector3(*obj_position), Quaternion(*obj_orientation)), Header(stamp=datetime.fromtimestamp(current_time)))
+            obj_pose = PoseStamped(Pose(Vector3(*obj_position), Quaternion(*obj_orientation)),
+                                   Header(stamp=datetime.fromtimestamp(current_time)))
+            if self.position_shift is not None:
+                obj_pose.position += self.position_shift
             obj_type = PhysicalObject
 
             # Create the object if it does not exist in the world and set its pose

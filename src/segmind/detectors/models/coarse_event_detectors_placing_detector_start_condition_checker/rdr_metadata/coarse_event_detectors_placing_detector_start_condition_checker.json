@@ -52,17 +52,7 @@
                     "mutually_exclusive": true
                 },
                 "parent": null,
-                "corner_case": {
-                    "_type": "ripple_down_rules.datastructures.case.Case",
-                    "cls_": {
-                        "_type": "segmind.detectors.coarse_event_detectors.PlacingDetector"
-                    },
-                    "event": null,
-                    "output_": null,
-                    "_id": 140676628591360,
-                    "_obj_type": "builtins.dict",
-                    "_name": "PlacingDetector_start_condition_checker"
-                },
+                "corner_case": null,
                 "conclusion_name": "output_",
                 "weight": null,
                 "uid": "124701724059586364685260806439568356831",

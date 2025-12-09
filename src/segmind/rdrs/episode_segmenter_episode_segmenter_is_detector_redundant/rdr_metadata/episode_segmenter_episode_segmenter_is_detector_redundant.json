@@ -7,7 +7,7 @@
                 "_type": "ripple_down_rules.rules.SingleClassRule",
                 "conditions": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        return False\n        return issubclass(detector_type, AbstractInteractionDetector)\n    return conditions_for_episode_segmenter_is_detector_redundant(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        return False\n        return issubclass(detector_type, AbstractInteractionDetector)\n    return conditions_for_episode_segmenter_is_detector_redundant(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
@@ -24,7 +24,6 @@
                         "ContactEvent": "segmind.datastructures.events.ContactEvent",
                         "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                         "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
-                        "LossOfSurfaceEvent": "segmind.datastructures.events.LossOfSurfaceEvent",
                         "MotionEvent": "segmind.datastructures.events.MotionEvent",
                         "NewObjectEvent": "segmind.datastructures.events.NewObjectEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -34,7 +33,6 @@
                         "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
                         "ContactDetector": "segmind.detectors.atomic_event_detectors.ContactDetector",
                         "LossOfContactDetector": "segmind.detectors.atomic_event_detectors.LossOfContactDetector",
-                        "LossOfSurfaceDetector": "segmind.detectors.atomic_event_detectors.LossOfSurfaceDetector",
                         "MotionDetector": "segmind.detectors.atomic_event_detectors.MotionDetector",
                         "NewObjectDetector": "segmind.detectors.atomic_event_detectors.NewObjectDetector",
                         "RotationDetector": "segmind.detectors.atomic_event_detectors.RotationDetector",
@@ -57,7 +55,7 @@
                 },
                 "conclusion": {
                     "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                    "user_input": "def _get_value(case):\n    def episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get possible value(s) for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        similar_detectors = [(se, de, de_inst) for (se, de), de_inst in self_.starter_event_to_detector_thread_map.items()\n        if isinstance(se, starter_event.__class__) and issubclass(de, detector_type)]\n    \n        for prev_start_event, _, prev_detector in similar_detectors:\n            candidate_objects = starter_event.tracked_objects\n            if isinstance(starter_event, AbstractContactEvent):\n                candidate_objects.extend(starter_event.objects)\n            pickable_objects = select_transportable_objects(candidate_objects)\n            new_pickable_objects = [obj for obj in pickable_objects if obj in prev_detector.currently_tracked_objects]\n            if len(new_pickable_objects) > 0:\n                return False\n            common_pickable_objects = [obj for obj in pickable_objects if obj not in new_pickable_objects]\n            for obj in common_pickable_objects:\n                if starter_event.timestamp - prev_start_event.timestamp < timedelta(milliseconds=200).total_seconds():\n                    return True\n        return False\n    return episode_segmenter_is_detector_redundant(**case)\n    ",
+                    "user_input": "def _get_value(case):\n    def episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get possible value(s) for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        similar_detectors = [(se, de, de_inst) for (se, de), de_inst in self_.starter_event_to_detector_thread_map.items()\n        if isinstance(se, starter_event.__class__) and issubclass(de, detector_type)]\n    \n        for prev_start_event, _, prev_detector in similar_detectors:\n            candidate_objects = starter_event.tracked_objects\n            if isinstance(starter_event, AbstractContactEvent):\n                candidate_objects.extend(starter_event.objects)\n            pickable_objects = select_transportable_objects(candidate_objects)\n            new_pickable_objects = [obj for obj in pickable_objects if obj in prev_detector.currently_tracked_objects]\n            if len(new_pickable_objects) > 0:\n                return False\n            common_pickable_objects = [obj for obj in pickable_objects if obj not in new_pickable_objects]\n            for obj in common_pickable_objects:\n                if starter_event.timestamp - prev_start_event.timestamp < timedelta(milliseconds=200).total_seconds():\n                    return True\n        return False\n    return episode_segmenter_is_detector_redundant(**case)\n    ",
                     "conclusion_type": [
                         "builtins.bool"
                     ],
@@ -74,7 +72,6 @@
                         "ContactEvent": "segmind.datastructures.events.ContactEvent",
                         "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                         "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
-                        "LossOfSurfaceEvent": "segmind.datastructures.events.LossOfSurfaceEvent",
                         "MotionEvent": "segmind.datastructures.events.MotionEvent",
                         "NewObjectEvent": "segmind.datastructures.events.NewObjectEvent",
                         "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -84,7 +81,6 @@
                         "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
                         "ContactDetector": "segmind.detectors.atomic_event_detectors.ContactDetector",
                         "LossOfContactDetector": "segmind.detectors.atomic_event_detectors.LossOfContactDetector",
-                        "LossOfSurfaceDetector": "segmind.detectors.atomic_event_detectors.LossOfSurfaceDetector",
                         "MotionDetector": "segmind.detectors.atomic_event_detectors.MotionDetector",
                         "NewObjectDetector": "segmind.detectors.atomic_event_detectors.NewObjectDetector",
                         "RotationDetector": "segmind.detectors.atomic_event_detectors.RotationDetector",
@@ -106,18 +102,7 @@
                     "mutually_exclusive": true
                 },
                 "parent": null,
-                "corner_case": {
-                    "_type": "ripple_down_rules.datastructures.case.Case",
-                    "self_": null,
-                    "detector_type": {
-                        "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                    },
-                    "starter_event": null,
-                    "output_": false,
-                    "_id": 140146060501056,
-                    "_obj_type": "builtins.dict",
-                    "_name": "EpisodeSegmenter_is_detector_redundant"
-                },
+                "corner_case": null,
                 "conclusion_name": "output_",
                 "weight": null,
                 "uid": "318535409151373315477142163500790537263",
@@ -125,7 +110,7 @@
                     "_type": "ripple_down_rules.rules.SingleClassRule",
                     "conditions": {
                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                        "user_input": "def _get_value(case):\n    def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        return False\n        if not issubclass(detector_type, GeneralPickUpDetector):\n            return False\n        if not isinstance(starter_event, EventWithOneTrackedObject):\n            return False\n        pick_up_detetectors = [detector for (_,_), detector in self_.starter_event_to_detector_thread_map.items()\n         if isinstance(detector, GeneralPickUpDetector)]\n        is_being_picked_objects = [detector.tracked_object for detector in pick_up_detetectors if detector.is_alive()]\n        if starter_event.tracked_object in is_being_picked_objects:\n            return True\n        # object_tracker = ObjectTrackerFactory.get_tracker(starter_event.tracked_object)\n        # latest_pick_up_event = object_tracker.get_latest_event_of_type(PickUpEvent)\n        # if latest_pick_up_event is not None:\n        #     latest_placing_event = object_tracker.get_first_event_of_type_after_event(PlacingEvent, latest_pick_up_event)\n        #     latest_insertion_event = object_tracker.get_first_event_of_type_after_event(InsertionEvent, latest_pick_up_event)\n        #     if latest_placing_event is None and latest_insertion_event is None:\n        #         return True\n        picked_objects = [detector.tracked_object for detector in pick_up_detetectors if not detector.is_alive()]\n        if starter_event.tracked_object in picked_objects:\n            contacted_bodies = starter_event.tracked_object.contact_points.get_all_bodies()\n            if len(contacted_bodies) == 0:\n                return True\n            agents = [body for body in contacted_bodies if (isinstance(body, Link) and issubclass(body.parent_entity.obj_type, Agent)) or\n             (isinstance(body, Object) and issubclass(body.obj_type, Agent))]\n            if len(agents) == len(contacted_bodies):\n                return True\n        return False\n    return conditions_for_episode_segmenter_is_detector_redundant(**case)\n    ",
+                        "user_input": "def _get_value(case):\n    def conditions_for_episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get conditions on whether it's possible to conclude a value for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        return False\n        if not issubclass(detector_type, GeneralPickUpDetector):\n            return False\n        if not isinstance(starter_event, EventWithOneTrackedObject):\n            return False\n        pick_up_detetectors = [detector for (_,_), detector in self_.starter_event_to_detector_thread_map.items()\n         if isinstance(detector, GeneralPickUpDetector)]\n        is_being_picked_objects = [detector.tracked_object for detector in pick_up_detetectors if detector.is_alive()]\n        if starter_event.tracked_object in is_being_picked_objects:\n            return True\n        # object_tracker = ObjectTrackerFactory.get_tracker(starter_event.tracked_object)\n        # latest_pick_up_event = object_tracker.get_latest_event_of_type(PickUpEvent)\n        # if latest_pick_up_event is not None:\n        #     latest_placing_event = object_tracker.get_first_event_of_type_after_event(PlacingEvent, latest_pick_up_event)\n        #     latest_insertion_event = object_tracker.get_first_event_of_type_after_event(InsertionEvent, latest_pick_up_event)\n        #     if latest_placing_event is None and latest_insertion_event is None:\n        #         return True\n        picked_objects = [detector.tracked_object for detector in pick_up_detetectors if not detector.is_alive()]\n        if starter_event.tracked_object in picked_objects:\n            contacted_bodies = starter_event.tracked_object.contact_points.get_all_bodies()\n            if len(contacted_bodies) == 0:\n                return True\n            agents = [body for body in contacted_bodies if (isinstance(body, Link) and issubclass(body.parent_entity.obj_type, Agent)) or\n             (isinstance(body, Object) and issubclass(body.obj_type, Agent))]\n            if len(agents) == len(contacted_bodies):\n                return True\n        return False\n    return conditions_for_episode_segmenter_is_detector_redundant(**case)\n    ",
                         "conclusion_type": [
                             "builtins.bool"
                         ],
@@ -142,7 +127,6 @@
                             "ContactEvent": "segmind.datastructures.events.ContactEvent",
                             "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                             "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
-                            "LossOfSurfaceEvent": "segmind.datastructures.events.LossOfSurfaceEvent",
                             "MotionEvent": "segmind.datastructures.events.MotionEvent",
                             "NewObjectEvent": "segmind.datastructures.events.NewObjectEvent",
                             "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -152,7 +136,6 @@
                             "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
                             "ContactDetector": "segmind.detectors.atomic_event_detectors.ContactDetector",
                             "LossOfContactDetector": "segmind.detectors.atomic_event_detectors.LossOfContactDetector",
-                            "LossOfSurfaceDetector": "segmind.detectors.atomic_event_detectors.LossOfSurfaceDetector",
                             "MotionDetector": "segmind.detectors.atomic_event_detectors.MotionDetector",
                             "NewObjectDetector": "segmind.detectors.atomic_event_detectors.NewObjectDetector",
                             "RotationDetector": "segmind.detectors.atomic_event_detectors.RotationDetector",
@@ -175,7 +158,7 @@
                     },
                     "conclusion": {
                         "_type": "ripple_down_rules.datastructures.callable_expression.CallableExpression",
-                        "user_input": "def _get_value(case):\n    def episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, LossOfSurfaceEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get possible value(s) for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        return True\n    return episode_segmenter_is_detector_redundant(**case)\n    ",
+                        "user_input": "def _get_value(case):\n    def episode_segmenter_is_detector_redundant(self_: NoAgentEpisodeSegmenter, detector_type: Union[Type[ContactDetector], Type[LossOfContactDetector], Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector], Type[NewObjectDetector], Type[PlacingDetector]], starter_event: Union[NewObjectEvent, MotionEvent, StopMotionEvent, ContactEvent, LossOfContactEvent, AgentContactEvent, AgentLossOfContactEvent, PickUpEvent, PlacingEvent], output_: bool) -> bool:\n        \"\"\"Get possible value(s) for EpisodeSegmenter_is_detector_redundant.output_  of type .\"\"\"\n        return True\n    return episode_segmenter_is_detector_redundant(**case)\n    ",
                         "conclusion_type": [
                             "builtins.bool"
                         ],
@@ -192,7 +175,6 @@
                             "ContactEvent": "segmind.datastructures.events.ContactEvent",
                             "InsertionEvent": "segmind.datastructures.events.InsertionEvent",
                             "LossOfContactEvent": "segmind.datastructures.events.LossOfContactEvent",
-                            "LossOfSurfaceEvent": "segmind.datastructures.events.LossOfSurfaceEvent",
                             "MotionEvent": "segmind.datastructures.events.MotionEvent",
                             "NewObjectEvent": "segmind.datastructures.events.NewObjectEvent",
                             "PickUpEvent": "segmind.datastructures.events.PickUpEvent",
@@ -202,7 +184,6 @@
                             "EventWithOneTrackedObject": "segmind.datastructures.events.EventWithOneTrackedObject",
                             "ContactDetector": "segmind.detectors.atomic_event_detectors.ContactDetector",
                             "LossOfContactDetector": "segmind.detectors.atomic_event_detectors.LossOfContactDetector",
-                            "LossOfSurfaceDetector": "segmind.detectors.atomic_event_detectors.LossOfSurfaceDetector",
                             "MotionDetector": "segmind.detectors.atomic_event_detectors.MotionDetector",
                             "NewObjectDetector": "segmind.detectors.atomic_event_detectors.NewObjectDetector",
                             "RotationDetector": "segmind.detectors.atomic_event_detectors.RotationDetector",
@@ -224,18 +205,7 @@
                         "mutually_exclusive": true
                     },
                     "parent": null,
-                    "corner_case": {
-                        "_type": "ripple_down_rules.datastructures.case.Case",
-                        "self_": null,
-                        "detector_type": {
-                            "_type": "segmind.detectors.coarse_event_detectors.GeneralPickUpDetector"
-                        },
-                        "starter_event": null,
-                        "output_": false,
-                        "_id": 132550719767168,
-                        "_obj_type": "builtins.dict",
-                        "_name": "EpisodeSegmenter_is_detector_redundant"
-                    },
+                    "corner_case": null,
                     "conclusion_name": null,
                     "weight": "except if",
                     "uid": "217503528191875472672592688900935027547",

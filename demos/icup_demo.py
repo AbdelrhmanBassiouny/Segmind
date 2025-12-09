@@ -21,7 +21,7 @@ from pycram.designators.action_designator import PickUpActionDescription, PlaceA
 from pycram.language import SequentialPlan
 from pycram.process_module import real_robot
 from pycram.robot_description import RobotDescriptionManager, RobotDescription
-from pycram.ros import logerr
+from pycram.ros import logerr, loginfo, logdebug
 from pycram.world_concepts.world_object import Object, Link
 from pycram.worlds.bullet_world import BulletWorld
 from pycrap.ontologies import Robot, Location, PhysicalObject
@@ -165,7 +165,7 @@ while True:
     object_pick_up_actions: Dict[Object, PickUpActionDescription] = {}
     object_picked_arm_and_grasp: Dict[Object, Tuple[Arms, GraspDescription, PoseStamped]] = {}
     mapped_objects: Dict[Object, Object] = {}
-    logerr(str(actionable_events))
+    loginfo(str(actionable_events))
     objects_to_insert = []
 
     for i, actionable_event in enumerate(actionable_events):
@@ -191,11 +191,10 @@ while True:
                 else:
                     action_descriptions.remove(action_descriptions[-1])
                     break
-                    # raise ValueError("No pickup objects detected")
             else:
                 to_pick_object = actionable_event.tracked_object
                 pickable_objects.remove(actionable_event.tracked_object)
-            logerr(f"Object to Pick is {to_pick_object.name}")
+            loginfo(f"Object to Pick is {to_pick_object.name}")
             mapped_objects[actionable_event.tracked_object] = to_pick_object
             arm, grasp = get_arm_and_grasp_description_for_object(to_pick_object)
             end_effector = RobotDescription.current_robot_description.get_arm_chain(arm).end_effector
@@ -223,13 +222,13 @@ while True:
                     scene_obj = actionable_event.through_hole.parent_entity
                     place_pose = scene_obj.links[obj_hole_map[object_to_place.name]].pose
                 else:
-                    logerr("Not Matching Shapes")
-                    logerr(f"Placing in the {actionable_event.through_hole.name}")
+                    loginfo("Not Matching Shapes")
+                    loginfo(f"Placing in the {actionable_event.through_hole.name}")
                     place_pose = actionable_event.through_hole.pose
-                    logerr(f"Placing pose is {place_pose}")
+                    loginfo(f"Placing pose is {place_pose}")
                 place_pose.position.z += 0.002
                 place_pose.orientation = pose.orientation
-            logerr(f"Object to Place is {object_to_place.name}")
+            loginfo(f"Object to Place is {object_to_place.name}")
             action_descriptions[-1] = (actionable_event,
                                        PlaceActionDescription(object_to_place, target_location=place_pose,
                                                               arm=arm,
@@ -256,7 +255,7 @@ while True:
             if not validate:
                 continue
             if issubclass(performable.action, PlaceAction):
-                logerr(f"Placing Pose is {performable.kwargs['target_location']}")
+                logdebug(f"Placing Pose is {performable.kwargs['target_location']}")
                 obj = performable.kwargs["object_designator"]
                 obj_tracker = ObjectTrackerFactory.get_tracker(obj)
                 latest_pick_up = obj_tracker.get_first_event_of_type_after_event(PickUpEvent, latest_event)
@@ -348,4 +347,4 @@ multiverse_player.join()
 
 episode_segmenter.stop()
 thread.join()
-logerr("Joined Thread.")
+loginfo("Joined Thread.")

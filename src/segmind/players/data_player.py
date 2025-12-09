@@ -10,7 +10,7 @@ from threading import RLock
 
 from typing_extensions import Callable, Optional, Dict, Generator, List
 
-from pycram.datastructures.pose import Pose
+from pycram.datastructures.pose import Pose, Vector3
 from pycram.datastructures.world import World
 from pycram.world_concepts.world_object import Object
 
@@ -60,6 +60,14 @@ class DataPlayer(EpisodePlayer, ABC):
         self.frame_data_generator: FrameDataGenerator = self.get_frame_data_generator()
         self.sync_robot_only: bool = False
 
+    def reset(self):
+        """
+        Reset the player to its initial state.
+        """
+        self.ready = False
+        self.frame_callbacks = []
+        self.frame_data_generator = self.get_frame_data_generator()
+
     @abstractmethod
     def get_frame_data_generator(self) -> FrameDataGenerator:
         """
@@ -75,6 +83,16 @@ class DataPlayer(EpisodePlayer, ABC):
         """
         with self.frame_callback_lock:
             self.frame_callbacks.append(callback)
+
+    def remove_frame_callback(self, callback: Callable):
+        """
+        Remove a callback that is called when a frame is processed.
+
+        :param callback: The callback.
+        """
+        with self.frame_callback_lock:
+            if callback in self.frame_callbacks:
+                self.frame_callbacks.remove(callback)
 
     def _run(self):
         is_first_frame = True
@@ -146,7 +164,7 @@ class FilePlayer(DataPlayer, ABC):
 
     def __init__(self, file_path: str, models_dir: Optional[str] = None, world: Optional[World] = None,
                  time_between_frames: Optional[timedelta] = None, use_realtime: bool = False,
-                 stop_after_ready: bool = False):
+                 stop_after_ready: bool = False, position_shift: Optional[Vector3] = None):
         """
         Initializes the FAMEEpisodePlayer with the specified file.
 
@@ -154,6 +172,9 @@ class FilePlayer(DataPlayer, ABC):
         :param world: The world that is used to replay the episode.
         :param time_between_frames: The time between frames.
         :param use_realtime: Whether to use realtime.
+        :param stop_after_ready: Whether to stop the player after it is ready.
+        :param models_dir: The directory that contains the model files.
+        :param position_shift: The position shift to apply to the objects.
         """
         self.file_path = file_path
         super().__init__(time_between_frames=time_between_frames, use_realtime=use_realtime, world=world,
@@ -162,6 +183,7 @@ class FilePlayer(DataPlayer, ABC):
         self.models_dir = models_dir or os.path.join(os.path.dirname(self.file_path), "models")
 
         self.copy_model_files_to_world_data_dir()
+        self.position_shift: Optional[Vector3] = position_shift
 
     def copy_model_files_to_world_data_dir(self):
         """

@@ -49,7 +49,7 @@ class DetectorWithStarterEvent(AtomicEventDetector, ABC):
 
     @classmethod
     @abstractmethod
-    def event_type(cls) -> Type[Event]:
+    def event_types(cls) -> List[Type[Event]]:
         """
         The event type that this detector invokes.
         """
@@ -96,10 +96,13 @@ class DetectorWithTrackedObjectAndStarterEvent(DetectorWithStarterEvent, HasPrim
         """
         DetectorWithStarterEvent.__init__(self, logger, starter_event, wait_time, *args, **kwargs)
         object_to_track = self.get_object_to_track_from_starter_event(starter_event)
-        HasPrimaryTrackedObject.__init__(self, object_to_track)
+        HasPrimaryTrackedObject.__init__(self, tracked_object=object_to_track)
         if self.currently_tracked_objects is None:
             self.currently_tracked_objects = {}
         self.currently_tracked_objects[self.tracked_object] = self
+
+    def __hash__(self):
+        return DetectorWithStarterEvent.__hash__(self)
 
     def reset(self):
         self.currently_tracked_objects = {}
@@ -176,16 +179,7 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
          start the event detector.
         """
         DetectorWithTrackedObjectAndStarterEvent.__init__(self, logger, starter_event, *args, **kwargs)
-        self.interaction_event: Optional[EventUnion] = self._init_interaction_event()
-        self.end_timestamp: Optional[float] = None
-        self.run_once = True
-
-    @abstractmethod
-    def _init_interaction_event(self) -> EventUnion:
-        """
-        Initialize the interaction event.
-        """
-        pass
+        self.run_once: bool = True
 
     def detect_events(self) -> List[EventUnion]:
         """
@@ -196,13 +190,11 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
         event = None
         while not self.kill_event.is_set():
 
-            interaction_event = self.get_interaction_event()
-            if not interaction_event:
+            event = self.get_interaction_event()
+            if not event:
                 time.sleep(0.01)
                 continue
-            interaction_event.update_action_description()
             self.currently_tracked_objects.pop(self.tracked_object, None)
-            event = interaction_event
             break
 
         if event:
@@ -243,16 +235,13 @@ class AbstractPickUpDetector(AbstractInteractionDetector, ABC):
     """
     currently_tracked_objects: Dict[Object, AbstractPickUpDetector] = {}
 
-    def _init_interaction_event(self) -> EventUnion:
-        return PickUpEvent(self.tracked_object, timestamp=self.start_timestamp)
-
     @classmethod
     def action_type(cls):
         return PickUpAction
 
     @classmethod
-    def event_type(cls):
-        return PickUpEvent
+    def event_types(cls) -> List[Type[PickUpEvent]]:
+        return [PickUpEvent]
 
 
 class GeneralPickUpDetector(AbstractPickUpDetector):
@@ -261,7 +250,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     """
     models_path: str = AbstractInteractionDetector.models_path
     interaction_checks_rdr: RDRDecorator = RDRDecorator(models_path, (PickUpEvent, type(None)), True, package_name="segmind",
-     fit=False, update_existing_rules=True, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume)
+     fit=False, update_existing_rules=False, use_generated_classifier=True, fitting_decorator=EpisodePlayer.pause_resume)
     """
     A decorator that uses a Ripple Down Rules model to check if the tracked_object was picked up and returns the PickUp Event.
     """
@@ -275,7 +264,7 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     def ask_now(case_dict):
         cls_ = case_dict["cls_"]
         event = case_dict["event"]
-        return isinstance(event, LossOfSupportEvent)
+        return isinstance(event, LossOfSupportEvent) and event.tracked_object.name == "montessori_object_5"
     start_condition_rdr: RDRDecorator = RDRDecorator(models_path, (bool,), True, package_name="segmind",
      fit=False, use_generated_classifier=False, fitting_decorator=EpisodePlayer.pause_resume, ask_now=ask_now,
                                                      generate_dot_file=True)
@@ -338,11 +327,8 @@ class PlacingDetector(AbstractInteractionDetector):
         return PlaceAction
 
     @classmethod
-    def event_type(cls):
-        return PlacingEvent
-
-    def _init_interaction_event(self) -> EventUnion:
-        return PlacingEvent(self.tracked_object, timestamp=self.start_timestamp)
+    def event_types(cls) -> List[Type[PlacingEvent]]:
+        return [PlacingEvent]
 
     @interaction_checks_rdr.decorator
     def get_interaction_event(self) -> Optional[PlacingEvent]:
@@ -392,7 +378,7 @@ def check_for_supporting_surface(tracked_object: Object,
     smallest_angle = np.pi / 8
     for obj_name in possible_surface_names:
         obj = World.current_world.get_object_by_name(obj_name)
-        normals = contact_points.get_normals_of_object(contacted_bodies[obj_name])
+        normals = [n.to_list() for n in contact_points.get_normals_of_object(contacted_bodies[obj_name])]
         normal = np.mean(np.array(normals), axis=0)
         angle = get_angle_between_vectors(normal, opposite_gravity)
         if 0 <= angle <= smallest_angle:
@@ -435,9 +421,9 @@ def select_transportable_objects(objects: List[Object], not_contained: bool = Fa
     return transportable_objects
 
 
-EventDetectorUnion = Union[NewObjectDetector, ContactDetector, LossOfContactDetector, LossOfSurfaceDetector,
+EventDetectorUnion = Union[NewObjectDetector, ContactDetector, LossOfContactDetector,
 MotionDetector, TranslationDetector, RotationDetector, PlacingDetector]
-TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector], Type[LossOfSurfaceDetector],
+TypeEventDetectorUnion = Union[Type[ContactDetector], Type[LossOfContactDetector],
 Type[MotionDetector], Type[TranslationDetector], Type[RotationDetector],
 Type[NewObjectDetector],
 Type[PlacingDetector]]

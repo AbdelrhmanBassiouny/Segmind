@@ -108,7 +108,7 @@ class EpisodePlayer(PropagatingThread, ABC):
         """
         Wait if the episode player is paused.
         """
-        while self.status == PlayerStatus.PAUSED:
+        while self.status == PlayerStatus.PAUSED and not self.kill_event.is_set():
             time.sleep(0.1)
 
     def _wait_to_maintain_frame_rate(self, last_processing_time: float, delta_time: Optional[datetime.timedelta] = None):

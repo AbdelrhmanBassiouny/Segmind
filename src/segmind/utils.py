@@ -4,37 +4,34 @@ import math
 import threading
 import time
 from abc import ABC, abstractmethod
-import pytest
 
 import numpy as np
-from pycram.tf_transformations import quaternion_inverse, quaternion_multiply
 from typing_extensions import List, Optional, Tuple
 
-from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
 from pycram.datastructures.dataclasses import Color
-from pycram.datastructures.grasp import GraspDescription
+from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
 from pycram.datastructures.enums import Arms, Grasp, AxisIdentifier
-from pycram.datastructures.pose import Transform
+from pycram.datastructures.grasp import GraspDescription
+from pycram.datastructures.pose import Transform, Vector3
 from pycram.datastructures.world import World, UseProspectionWorld
 from pycram.datastructures.world_entity import PhysicalBody
 from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
-from pycram.world_concepts.world_object import Object, Link
-from pycrap.ontologies import Supporter, Floor, Location
-from pycram.ros import logdebug
+from pycram.ros import logdebug, logwarn
+from pycram.tf_transformations import quaternion_inverse, quaternion_multiply
+from pycram.world_concepts.world_object import Object
+from pycrap.ontologies import Supporter, Floor
 
-from semantic_world.views import Container
+try:
+    from semantic_world.views import Container
+except ImportError:
+    Container = None
+    logwarn("Container view is not available. Some functionalities may not work as expected.")
 
-# Import the required module for text
-# to speech conversion
 from gtts import gTTS
-
-# This module is imported so that we can
-# play the converted audio
-import os
 import pygame
 
-
 speech_lock = threading.RLock()
+
 
 def text_to_speech(text: str):
     # The text that you want to convert to audio
@@ -49,32 +46,26 @@ def text_to_speech(text: str):
     # have a high speed
     myobj = gTTS(text=text, lang=language, slow=False)
 
-    # Saving the converted audio in a mp3 file named
-    # welcome
     with speech_lock:
         myobj.save("welcome.mp3")
-
-        # time.sleep(1)
 
         # Initialize the mixer module
         try:
             pygame.mixer.init()
+            try:
+                pygame.mixer.music.load("welcome.mp3")
+            except pygame.error:
+                pass
+
+            # time.sleep(1)
+
+            # Play the loaded mp3 file
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy():
+                time.sleep(0.1)
+                continue
         except pygame.error:
-            print("Warning: Audio not available, running in silent mode.")
-            return
-
-        try:
-            pygame.mixer.music.load("welcome.mp3")
-        except pygame.error:
-            pass
-
-        # time.sleep(1)
-
-        # Play the loaded mp3 file
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            time.sleep(0.1)
-            continue
+            logwarn("Audio not available, running in silent mode.")
 
 
 def is_object_supported_by_container_body(obj: PhysicalBody, distance: float = 0.07,
@@ -135,14 +126,14 @@ class PropagatingThread(threading.Thread, ABC):
         """
         self.kill_event.set()
         self._join()
-    
+
     # def join(self, timeout=None):
     #     self._join(timeout)
     #     super().join(timeout)
     #     if self.exc is not None:
     #         pytest.fail(f"Exception in event detector {self}: {self.exc}")
     #         raise self.exc  # Propagate the exception to the main thread
-    
+
     @abstractmethod
     def _join(self, timeout=None):
         pass
@@ -209,7 +200,7 @@ def get_support(obj: Object, contact_bodies: Optional[List[PhysicalBody]] = None
         intersection = obj_bbox.intersection_with(body_aabb, axis_to_use=[AxisIdentifier.X, AxisIdentifier.Y])
         tracked_object_base = obj.position
         if tracked_object_base.z + 0.001 >= surface_z and intersection.width >= 0.5 * obj_bbox.width and \
-              intersection.depth >= 0.5 * obj_bbox.depth:
+                intersection.depth >= 0.5 * obj_bbox.depth:
             logdebug(f"Object {obj.name} IS supported by {body.name}")
             return body
     logdebug(f"Object {obj.name} IS NOT supported")
@@ -227,7 +218,7 @@ def check_if_object_is_supported_by_another_object(obj: Object, support_obj: Obj
     """
     if contact_points is None:
         contact_points = obj.get_contact_points_with_body(support_obj)
-    normals = [cp.normal for cp in contact_points if any(cp.normal)]
+    normals = [cp.normal.to_list() for cp in contact_points if any(cp.normal.to_list())]
     if len(normals) > 0:
         average_normal = np.mean(normals, axis=0)
         return is_vector_opposite_to_gravity(average_normal)
@@ -295,8 +286,8 @@ class Imaginator:
         print(f"support index: {cls.latest_surface_idx}")
         support_name = f"imagined_support_{cls.latest_surface_idx}"
         support_thickness = obj_aabb.depth if support_thickness is None else support_thickness
-        box_vis_shape = BoxVisualShape(Color(1, 1, 0, 1), [0, 0, 0],
-                                       [obj_aabb.width, obj_aabb.depth, support_thickness * 0.5])
+        box_vis_shape = BoxVisualShape(Color(1, 1, 0, 1), Vector3(0, 0, 0),
+                                       Vector3(obj_aabb.width, obj_aabb.depth, support_thickness * 0.5))
         support = GenericObjectDescription(support_name, box_vis_shape)
         support_obj = Object(support_name, Supporter, None, support, color=support.color)
         support_position = obj_aabb.base_origin
