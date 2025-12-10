@@ -10,6 +10,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 
+
+from semantic_digital_twin.world_description.world_entity import Body
+
 from segmind.datastructures.events import PlacingEvent
 from segmind.episode_player import EpisodePlayer
 from .atomic_event_detectors import AtomicEventDetector
@@ -31,7 +34,6 @@ from ..datastructures.object_tracker import ObjectTrackerFactory
 from ..utils import get_support
 from abc import abstractmethod
 
-from semantic_digital_twin.world_description.world_entity import Body
 
 EventCondition = Callable[[EventUnion], bool]
 

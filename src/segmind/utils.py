@@ -12,24 +12,10 @@ loginfo = logging.info
 import numpy as np
 from typing_extensions import List, Optional, Tuple
 
-# from pycram.datastructures.dataclasses import Color
-# from pycram.datastructures.dataclasses import (ContactPointsList, AxisAlignedBoundingBox as AABB, BoxVisualShape)
 from pycram.datastructures.enums import Grasp, AxisIdentifier
 from pycram.datastructures.grasp import GraspDescription
 
-# from pycram.datastructures.pose import Transform, Vector3
-# from pycram.datastructures.world import World, UseProspectionWorld
-# from pycram.datastructures.world_entity import PhysicalBody
-
-# from pycram.object_descriptors.generic import ObjectDescription as GenericObjectDescription
-# from pycram.ros import logdebug, logwarn
-from pycram.tf_transformations import quaternion_inverse, quaternion_multiply
-
-# from pycram.world_concepts.world_object import Object
-
-# from pycrap.ontologies import Supporter, Floor
-
-from semantic_digital_twin.semantic_annotations.semantic_annotations import Table, Floor
+from semantic_digital_twin.semantic_annotations.semantic_annotations import Floor
 from semantic_digital_twin.world_description.geometry import Color
 from semantic_digital_twin.world import World
 from semantic_digital_twin.robots.abstract_robot import Arm
@@ -41,6 +27,7 @@ from semantic_digital_twin.spatial_types.spatial_types import (
     Vector3,
     Quaternion,
 )
+from semantic_digital_twin.semantic_annotations.mixins import HasSupportingSurface
 
 from gtts import gTTS
 import pygame
@@ -181,6 +168,8 @@ def check_if_object_is_supported(obj: Body, distance: Optional[float] = 0.03) ->
     :param distance: The distance to check if the object is supported.
     :return: True if the object is supported, False otherwise.
     """
+
+    # check this with Bass
     supported = True
     with World():
         prospection_obj = World.current_world.get_prospection_object_for_object(obj)
@@ -349,8 +338,10 @@ class Imaginator:
             Vector3(0, 0, 0),
             Vector3(obj_aabb.width, obj_aabb.depth, support_thickness * 0.5),
         )
-        support = GenericObjectDescription(support_name, box_vis_shape)
-        support_obj = Body(support_name, Table, None, support, color=support.color)
+        support = Body(support_name, box_vis_shape)
+        support_obj = Body(
+            support_name, HasSupportingSurface, None, support, color=support.color
+        )
         support_position = obj_aabb.base_origin
         support_obj.set_position(support_position)
         cp = support_obj.closest_points(0.05)

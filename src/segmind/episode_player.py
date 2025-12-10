@@ -5,11 +5,13 @@ import threading
 from threading import RLock
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing_extensions import Callable, Any, Optional, Dict, Generator
+import logging
 
-# from pycram.ros import logdebug
-# from pycram.datastructures.world import World
+logging.basicConfig(level=logging.INFO)
+logdebug = logging.debug
+
+from semantic_digital_twin.world import World
 
 try:
     from pycram.worlds.multiverse import Multiverse
@@ -23,12 +25,6 @@ except ImportError:
 
 from .utils import PropagatingThread
 from .datastructures.enums import PlayerStatus
-
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-from semantic_digital_twin.world import World
 
 
 class EpisodePlayer(PropagatingThread, ABC):
@@ -59,7 +55,7 @@ class EpisodePlayer(PropagatingThread, ABC):
             super().__init__()
             self.rdr_viewer: Optional[RDRCaseViewer] = rdr_viewer
             self.stop_after_ready: bool = stop_after_ready
-            self.world: World = world if world is not None else World()
+            self.world: World = world if world is not None else World.current_world
             self._ready: bool = False
             self._status = PlayerStatus.CREATED
             self.time_between_frames: datetime.timedelta = (

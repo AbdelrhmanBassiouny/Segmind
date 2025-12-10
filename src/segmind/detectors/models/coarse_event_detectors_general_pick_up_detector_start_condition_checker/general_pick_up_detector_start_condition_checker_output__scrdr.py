@@ -1,11 +1,10 @@
 from types import NoneType
 from ripple_down_rules.datastructures.case import create_case
-from typing_extensions import Optional
+from typing_extensions import Optional, Dict
 from .general_pick_up_detector_start_condition_checker_output__scrdr_defs import *
-from typing import Any, Dict
 
 
-attribute_name = 'output_'
+attribute_name = "output_"
 conclusion_type = (bool,)
 mutually_exclusive = True
 

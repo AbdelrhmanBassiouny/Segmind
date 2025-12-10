@@ -1,21 +1,16 @@
-from datetime import datetime
 from typing import Dict
 
 from typing_extensions import Optional, List
 
-from pycram.datastructures.enums import JointType
+import logging
 
-# from pycram.datastructures.pose import Pose, Quaternion, Vector3, PoseStamped, Header
-from pycram.failures import ObjectNotFound
-from pycram.ros import logwarn, logdebug
 
-# from pycram.world_concepts.world_object import Object
+logging.basicConfig(level=logging.INFO)
+logdebug = logging.debug
+
 from semantic_digital_twin.world_description.world_entity import Body
 
-# from pycrap.ontologies import Floor, Supporter
 from .data_player import DataPlayer, FrameData, FrameDataGenerator
-
-# from .utils_SDT.multiverse_client import MultiverseMetaData, MultiverseConnector
 
 from semantic_digital_twin.spatial_types.spatial_types import (
     TransformationMatrix,
@@ -27,7 +22,9 @@ from semantic_digital_twin.semantic_annotations.semantic_annotations import (
     Floor,
     HasSupportingSurface,
 )
+from semantic_digital_twin.exceptions import WorldEntityNotFoundError
 import semantic_digital_twin.world_description.connections
+from .utils.multiverse_client import MultiverseMetaData, MultiverseConnector
 
 
 class MultiversePlayer(DataPlayer):
@@ -45,8 +42,8 @@ class MultiversePlayer(DataPlayer):
             if objects_names is not None
             else [
                 obj.root_link.name
-                for obj in self.world.objects
-                if not issubclass(obj.obj_type, (Floor, HasSupportingSurface))
+                for obj in self.world.bodies
+                if not issubclass(obj.name, (Floor, HasSupportingSurface))
             ]
         )
         self.joints_names: List[str] = [

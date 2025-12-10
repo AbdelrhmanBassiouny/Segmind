@@ -169,11 +169,8 @@ def conditions_for_episode_segmenter_is_detector_redundant(
         agents = [
             body
             for body in contacted_bodies
-            if (
-                isinstance(body, Body)
-                and isinstance(body.parent_kinematic_structure_entity, Agent)
-            )
-            or (isinstance(body, Body) and issubclass(body.obj_type, Agent))
+            if (isinstance(body, Body) and isinstance(body, Agent))
+            or (isinstance(body, Body) and issubclass(body.name, Agent))
         ]
         if len(agents) == len(contacted_bodies):
             return True

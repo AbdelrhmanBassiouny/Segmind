@@ -11,6 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 from semantic_digital_twin.world_description.world_entity import Body
 
 if TYPE_CHECKING:
@@ -49,21 +50,12 @@ class ObjectTracker:
     def reset(self) -> None:
         self._event_history = []
 
-    @property
-    def current_state(self) -> Body:
-        return self.obj
-
     def add_event(self, event: Event):
         with self._lock:
             self._event_history.append(event)
             self._event_history.sort(key=lambda e: e.timestamp)
-        if (
-            isinstance(self.obj, Body)
-            and self.obj.parent_kinematic_structure_entity is not None
-        ):
-            ObjectTrackerFactory.get_tracker(
-                self.obj.parent_kinematic_structure_entity
-            ).add_event(event)
+        if isinstance(self.obj, Body) and self.obj is not None:
+            ObjectTrackerFactory.get_tracker(self.obj).add_event(event)
 
     def get_event_history(self) -> List[Event]:
         with self._lock:

@@ -11,32 +11,21 @@ logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 loginfo = logging.info
 
+
 from pycram.datastructures.enums import Grasp, TorsoState, TaskStatus
 from pycram.datastructures.grasp import GraspDescription
-from pycram.designator import ObjectDesignatorDescription
-
-# from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
 from pycram.robot_plans import (
     PickUpActionDescription,
-    PlaceActionDescription,
-    PickUpAction,
-    PlaceAction,
     MoveTorsoActionDescription,
 )
 from pycram.language import SequentialPlan
-from pycram.datastructures.pose import Pose
 
-# from pycram.datastructures.world import World
 from pycram.plan import Plan
 from pycram.process_module import ProcessModule, simulated_robot
 
-# from pycram.ros import logdebug
-# from pycram.worlds.bullet_world import BulletWorld
-# from pycrap.ontologies import Robot, Kitchen
-# from pycram.world_concepts.world_object import Object
-
 from semantic_digital_twin.world import World
 from semantic_digital_twin.robots.abstract_robot import Arm
+from semantic_digital_twin.world_description.world_entity import Body
 
 
 class ExecutionStatus(Enum):
@@ -81,7 +70,7 @@ class CRAMPlayer(EpisodePlayer):
 
     def _run(self):
         self.ready = True
-        object_description = ObjectDesignatorDescription(names=["milk"])
+        object_description = Body(names=["milk"])
         description = PickUpActionDescription(
             object_description, [Arm.LEFT], [GraspDescription(Grasp.FRONT)]
         )

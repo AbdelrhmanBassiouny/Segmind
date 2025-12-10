@@ -1,7 +1,7 @@
 from typing_extensions import Type, List, Optional
 from queue import Queue
 
-# from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
+from pycram.robot_plans import ActionDescription
 from pycram.robot_plans import (
     PickUpActionDescription,
     PlaceActionDescription,
@@ -44,14 +44,16 @@ class CRAMSegmenter(AgentEpisodeSegmenter):
         for action_type in self.action_types:
             self.add_callback(action_type)
 
-        # def add_callback(self, action_type: Optional[Type[ActionDescription]] = None):
-        """
-        Add a callback for the given action type.
+        def add_callback(self, action_type: Optional[Type[ActionDescription]] = None):
+            """
+            Add a callback for the given action type.
 
-        :param action_type: The action type to add the callback for.
-        """
-        Plan.add_on_start_callback(self.start_action_callback, action_type=action_type)
-        Plan.add_on_end_callback(self.end_action_callback, action_type=action_type)
+            :param action_type: The action type to add the callback for.
+            """
+            Plan.add_on_start_callback(
+                self.start_action_callback, action_type=action_type
+            )
+            Plan.add_on_end_callback(self.end_action_callback, action_type=action_type)
 
     def start_action_callback(self, action_node: ResolvedActionNode):
         """

@@ -1,41 +1,37 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-
-import queue
-import os
 import queue
 import time
-import threading
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from math import ceil
 from queue import Queue, Empty, Full
-from scipy.spatial.transform import Rotation as R
+
 import numpy as np
 
-from segmind.datastructures.mixins import (
+from ..datastructures.mixins import (
     HasPrimaryTrackedObject,
     HasPrimaryAndSecondaryTrackedObjects,
 )
-from segmind.detectors.motion_detection_helpers import (
+from ..detectors.motion_detection_helpers import (
     is_displaced,
-    has_consistent_direction,
     is_stopped,
     ExponentialMovingAverage,
 )
-from segmind.episode_player import EpisodePlayer
+from ..episode_player import EpisodePlayer
 
 try:
     from matplotlib import pyplot as plt
 except ImportError:
     plt = None
-
 from typing_extensions import Optional, List, Union, Type, Tuple, Callable
-from ripple_down_rules.rdr_decorators import RDRDecorator
-from segmind.event_logger import EventLogger
-from segmind.datastructures.events import (
+
+from semantic_digital_twin.spatial_types import Quaternion
+from semantic_digital_twin.world import World
+from semantic_digital_twin.collision_checking.collision_detector import Collision
+from semantic_digital_twin.world_description.world_entity import Agent, Body
+from semantic_digital_twin.spatial_types import TransformationMatrix
+
+from ..event_logger import EventLogger
+from ..datastructures.events import (
     Event,
     ContactEvent,
     LossOfContactEvent,
@@ -51,41 +47,14 @@ from segmind.datastructures.events import (
     InterferenceEvent,
     AbstractContactEvent,
     AgentLossOfInterferenceEvent,
-    AbstractAgentContact,
     LossOfInterferenceEvent,
 )
-from segmind.detectors.motion_detection_helpers import DataFilter
-from segmind.utils import (
+from .motion_detection_helpers import DataFilter
+from ..utils import (
     calculate_quaternion_difference,
-    get_support,
     calculate_translation,
     PropagatingThread,
 )
-from dataclasses import dataclass
-import logging
-from typing import Optional, List, Tuple
-
-from pycram.tf_transformations import euler_from_quaternion
-
-# from pycram.datastructures.world import World
-# from pycram.datastructures.dataclasses import ContactPointsList
-from pycram.datastructures.pose import Pose
-
-# from pycram.datastructures.world_entity import PhysicalBody
-# from pycram.world_concepts.world_object import Object
-
-# from pycrap.ontologies import PhysicalObject, Agent
-
-from semantic_digital_twin.world import World
-from semantic_digital_twin.world_description.world_entity import (
-    Body,
-    Agent,
-)
-from semantic_digital_twin.spatial_types.spatial_types import (
-    TransformationMatrix,
-    Quaternion,
-)
-from semantic_digital_twin.collision_checking.collision_detector import Collision
 
 
 class AtomicEventDetector(PropagatingThread):
@@ -448,7 +417,7 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         """
         The object type of the object to track.
         """
-        return self.tracked_object.ontology_concept
+        return self.tracked_object.__class__  # check with Bass
 
     def detect_events(self) -> List[Event]:
         """
@@ -466,14 +435,14 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
 
     def get_contact_points(self) -> Tuple[Collision, Collision]:
         if self.with_object is not None:
-            contact_points = self.tracked_object.closest_points_with_obj(
+            contact_points = self.tracked_object.compute_closest_points_multi(
                 self.with_object, self.max_closeness_distance
             )
             interference_points = self.tracked_object.get_contact_points_with_body(
                 self.with_object
             )
         else:
-            contact_points = self.tracked_object.closest_points(
+            contact_points = self.tracked_object.compute_closest_points_multi(
                 self.max_closeness_distance
             )
             interference_points = self.tracked_object.contact_points
@@ -605,11 +574,11 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
     latest_pose: Optional[TransformationMatrix] = None
     """
-    The latest transformation of the object as a 4x4 matrix.
+    The latest transformation of the object.
     """
     latest_time: Optional[float] = None
     """
-    The latest time where the latest transformation was recorded.
+    The latest time where the latest pose was recorded.
     """
     event_time: Optional[float] = None
     """
@@ -638,7 +607,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         tracked_object: Body,
         velocity_threshold: Optional[float] = None,
         time_between_frames: timedelta = timedelta(milliseconds=200),
-        window_size_in_seconds: int = 0.1,
+        window_size_in_seconds: int = 0.3,
         distance_filter_method: Optional[DataFilter] = ExponentialMovingAverage(0.99),
         stop_velocity_threshold: Optional[float] = None,
         *args,
@@ -776,47 +745,34 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
                     self.data_queue.task_done()
                 except Empty:
                     pass
-        return latest_pose, latest_time
 
     def get_current_pose_and_time(self) -> Tuple[TransformationMatrix, float]:
         """
-        Returns the object's current pose and timestamp.
-        Uses mutable 'origin' if available; otherwise falls back to 'global_pose'.
+        Get the current pose and time of the object.
         """
         # Prefer mutable origin (updated in test)
         pose: TransformationMatrix = self.tracked_object.global_pose
-
-        pos = pose.to_position()  # Point3
-        latest_pose = pos.to_np()[:3]  # [x, y, z]
-
-        # Debug print
-        print("DEBUG: current pose:", latest_pose)
-
         return pose, time.time()
 
     def detect_events(self) -> Optional[List[MotionEvent]]:
         """
         Detect if the object starts or stops moving.
 
-        :return: A list of MotionEvent instances if motion state changed, else None.
+        :return: An instance of the TranslationEvent class that represents the event if the object is moving, else None.
         """
         try:
-            # Attempt to clear queue
+            # latest_pose, latest_time = self.update_with_latest_motion_data()
             _, _ = self.data_queue.get_nowait()
             self.data_queue.task_done()
-
-            # Get latest pose
             latest_pose, latest_time = self.get_current_pose_and_time()
             self.poses.append(latest_pose)
             self.times.append(latest_time)
-
             if len(self.poses) > 1:
                 self.calculate_and_update_latest_distance()
                 self._crop_distances_and_times_to_window_size()
 
             if not self.window_size_reached:
-                return None
-
+                return
             events: Optional[List[MotionEvent]] = None
             if self.motion_sate_changed:
                 self.last_state_change_idx = len(self.all_distances) - 1
@@ -827,7 +783,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
             return events
         except Empty:
-            return None
+            return
 
     def update_motion_state_and_create_event(self) -> MotionEvent:
         """
@@ -842,22 +798,16 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
     @property
     def motion_sate_changed(self) -> bool:
         """
-        Check if the object is moving/has stopped using the updated motion detection.
-        """
-        window_seconds = self.window_size_in_seconds
+        Check if the object is moving/has stopped by using the motion detection method.
 
+        :return: A boolean value that indicates if the object motion state has changed.
+        """
         if self.was_moving:
-            return is_stopped(
-                latest_distances=self.latest_distances,
-                velocity_threshold=self.stop_velocity_threshold,
-                window_size_seconds=window_seconds,
-            )
+            stopped = is_stopped(self.latest_distances, self.stop_distance_threshold)
+            return stopped
         else:
-            return is_displaced(
-                latest_distances=self.latest_distances,
-                velocity_threshold=self.velocity_threshold,
-                window_size_seconds=window_seconds,
-            )
+            displaced = is_displaced(self.latest_distances, self.distance_threshold)
+            return displaced
 
     def keep_track_of_history(self):
         """
@@ -921,7 +871,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
         :param index: The index of the latest pose, and time.
         """
-        self.start_pose: TransformationMatrix = self.poses[-self.window_size]
+        self.start_pose = self.poses[-self.window_size]
         self.event_time = self.latest_times[-self.window_size]
 
     def filter_data(self) -> np.ndarray:
@@ -1063,18 +1013,14 @@ class TranslationDetector(MotionDetector):
         """
         self.tracked_object.is_translating = is_moving
 
-    def calculate_distance(self) -> np.ndarray:
+    def calculate_distance(self):
         """
         Calculate the Euclidean distance between the latest and current positions of the object.
         """
-        prev_pose: TransformationMatrix = self.poses[-2]
-        curr_pose: TransformationMatrix = self.poses[-1]
-
+        # return calculate_euclidean_distance(self.latest_pose.position.to_list(), current_pose.position.to_list())
         translation = calculate_translation(
-            prev_pose.to_position().to_np(),
-            curr_pose.to_position().to_np(),
-        )[:3]
-        print(f"translation {translation}")
+            self.poses[-2].position.to_list(), self.poses[-1].position.to_list()
+        )
         return translation
 
     def get_event_type(self):
@@ -1095,17 +1041,13 @@ class RotationDetector(MotionDetector):
         """
         Calculate the angle between the latest and current quaternions of the object
         """
-        # Convert last two poses to Quaternion objects
-        q_prev = Quaternion.from_iterable(self.poses[-2].orientation.to_list())
-        q_curr = Quaternion.from_iterable(self.poses[-1].orientation.to_list())
+        quat_diff = calculate_quaternion_difference(
+            self.poses[-2].orientation.to_list(), self.poses[-1].orientation.to_list()
+        )
 
-        # Get relative rotation quaternion
-        q_diff = q_prev.diff(q_curr)  # Equivalent to q_prev.inverse() * q_curr
-
-        # Convert to Euler angles
-        euler_diff = list(q_diff.to_rpy())
+        q = Quaternion.from_iterable(quat_diff)
+        euler_diff = list(q.to_rpy())
         euler_diff[2] = 0  # ignore yaw if needed (matches your previous code)
-
         return euler_diff
 
     def get_event_type(self):

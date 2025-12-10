@@ -7,20 +7,9 @@ import time
 import numpy as np
 import scipy
 import trimesh
-from pycram.tf_transformations import (
-    euler_matrix,
-    quaternion_from_matrix,
-    quaternion_matrix,
-    quaternion_from_euler,
-    euler_from_quaternion,
-)
+
 from trimesh import Geometry, Trimesh
 from typing_extensions import Type, List, Tuple, Union, Dict, Optional
-
-# from pycram.datastructures.world import TransformStamped, World
-# from pycram.datastructures.pose import Header, PoseStamped, Vector3, Quaternion, Pose, Transform
-# from pycram.world_concepts.world_object import Object
-# from pycrap.ontologies import PhysicalObject
 
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.world_entity import Body

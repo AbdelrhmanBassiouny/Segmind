@@ -2,12 +2,8 @@ import time
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
 import copy
+
 import logging
-
-from entity_query_language import entity
-
-from semantic_digital_twin.robots.abstract_robot import AbstractRobot
-from semantic_digital_twin.spatial_types import TransformationMatrix
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +18,6 @@ from pycram.robot_plans import (
 
 from semantic_digital_twin.world_description.world_entity import (
     Body,
-    KinematicStructureEntity,
     Agent,
 )
 from semantic_digital_twin.world_description.geometry import Color
@@ -32,10 +27,11 @@ from segmind.datastructures.mixins import (
     HasPrimaryTrackedObject,
     HasPrimaryAndSecondaryTrackedObjects,
 )
+from semantic_digital_twin.orm.ormatic_interface import BodyDAO
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from semantic_digital_twin.world_description.geometry import BoundingBox
 from semantic_digital_twin.collision_checking.collision_detector import Collision
-from semantic_digital_twin.orm.ormatic_interface import BodyDAO
+from semantic_digital_twin.spatial_types import TransformationMatrix
 
 
 @dataclass
@@ -446,10 +442,10 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
         return self.tracked_object
 
     @property
-    def agent_link(self) -> KinematicStructureEntity:
+    def agent_link(self) -> Body:
         return self.main_link
 
-    def with_object_contact_link(self) -> Optional[KinematicStructureEntity]:
+    def with_object_contact_link(self) -> Optional[Body]:
         if self.with_object is None:
             return None
 
@@ -460,7 +456,7 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
 
     @property
     @abstractmethod
-    def object_link(self) -> KinematicStructureEntity:
+    def object_link(self) -> Body:
         pass
 
 
@@ -468,7 +464,7 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
 class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
     @property
-    def object_link(self) -> KinematicStructureEntity:
+    def object_link(self) -> Body:
         if self.with_object is not None:
             return self.with_object_contact_link()
         else:
@@ -483,7 +479,7 @@ class AgentInterferenceEvent(InterferenceEvent, AgentContactEvent): ...
 class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
-    def object_link(self) -> KinematicStructureEntity:
+    def object_link(self) -> Body:
         if self.with_object is not None:
             return self.with_object_contact_link()
         else:
@@ -498,7 +494,7 @@ class AgentLossOfInterferenceEvent(
 
 @dataclass(kw_only=True)
 class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
-    agent: Optional[AbstractRobot] = None
+    agent: Optional[Agent] = None
     timestamp: Optional[float] = None
     end_timestamp: Optional[float] = None
     agent_snapshot: Optional[BodyDAO] = field(
@@ -513,12 +509,6 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
     @property
     def involved_bodies(self) -> List[Body]:
         return self.tracked_objects
-
-    @property
-    def agent_state(self) -> Optional[Body]:
-        if self.agent is None:
-            return None
-        return self.agent.state
 
     def __eq__(self, other):
         if self.end_timestamp is None:
@@ -603,7 +593,7 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
     inserted_into_objects: List[Body] = field(
         init=False, default_factory=list, repr=False, hash=False
     )
-    inserted_into_objects_snapshots: List[Body] = field(
+    inserted_into_objects_snapshots: List[BodyDAO] = field(
         init=False, default_factory=list, repr=False, hash=False
     )
 
@@ -624,7 +614,7 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
             with_object=through_hole,
         )
         self.inserted_into_objects: List[Body] = inserted_into_objects
-        self.inserted_into_objects_snapshots: List[Body] = [
+        self.inserted_into_objects_snapshots: List[BodyDAO] = [
             copy.deepcopy(obj) for obj in inserted_into_objects
         ]
 

@@ -3,25 +3,25 @@ from __future__ import annotations
 import os
 import queue
 import threading
-from collections import UserDict, defaultdict
+from collections import UserDict
 from threading import RLock
 import time
 from datetime import timedelta
 from os.path import dirname, abspath
 import re
+
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 loginfo = logging.info
+
 from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable, Tuple
 
-from pycram.datastructures.dataclasses import TextAnnotation
-
-# from pycram.datastructures.world import World
-
-# from pycram.ros import loginfo, logdebug, logerr
-# from pycram.world_concepts.world_object import Object, Link
+from semantic_digital_twin.world_description.world_entity import (
+    SemanticAnnotation,
+    Body,
+)
 from .datastructures.events import (
     Event,
     EventUnion,
@@ -37,13 +37,9 @@ from .utils import text_to_speech
 if TYPE_CHECKING:
     from .detectors.coarse_event_detectors import DetectorWithStarterEvent
 
+
 ConditionFunction = Callable[[EventUnion], bool]
 CallbackFunction = Callable[[EventUnion], None]
-
-from semantic_digital_twin.world_description.world_entity import (
-    Body,
-    SemanticAnnotation,
-)
 
 
 class EventCallbacks(UserDict):
@@ -208,7 +204,7 @@ class EventLogger:
         import plotly.express as px
         import plotly.graph_objects as go
 
-        data_dict = defaultdict(list)
+        data_dict = Dict(list)
         for tracker in ObjectTrackerFactory.get_all_trackers():
             for event in tracker.get_event_history():
                 end_timestamp = event.timestamp + timedelta(seconds=0.1).total_seconds()
@@ -224,11 +220,9 @@ class EventLogger:
                 )
                 data_dict["object"].append(obj.name)
                 if isinstance(obj, Body):
-                    data_dict["obj_type"].append(obj.obj_type.name)
+                    data_dict["obj_type"].append(obj.name.name)
                 elif isinstance(obj, Body):
-                    data_dict["obj_type"].append(
-                        f"Link of {obj.parent_entity.obj_type}"
-                    )
+                    data_dict["obj_type"].append(f"Link of {obj.name.name}")
                 if (
                     isinstance(event, EventWithTwoTrackedObjects)
                     and event.with_object is not None
@@ -236,10 +230,10 @@ class EventLogger:
                     with_object = event.with_object
                     data_dict["with_object"].append(with_object.name)
                     if isinstance(with_object, Body):
-                        data_dict["with_obj_type"].append(with_object.obj_type.name)
+                        data_dict["with_obj_type"].append(with_object.name.name)
                     elif isinstance(with_object, Body):
                         data_dict["with_obj_type"].append(
-                            f"Link of {with_object.parent_entity.obj_type}"
+                            f"Link of {with_object.name.name}"
                         )
                 else:
                     data_dict["with_object"].append(None)

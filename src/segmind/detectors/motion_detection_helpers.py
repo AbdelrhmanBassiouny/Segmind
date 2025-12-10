@@ -4,7 +4,6 @@ from datetime import timedelta
 import numpy as np
 from scipy.signal import butter, sosfilt
 from typing_extensions import List, Callable
-from typing import Dict
 
 
 Distances = List[List[float]]
@@ -33,44 +32,22 @@ def has_consistent_direction(
     )
 
 
-def is_displaced(
-    latest_distances: Distances,
-    velocity_threshold: float = 0.05,
-    window_size_seconds: float = 1.0,
-) -> bool:
+def is_displaced(latest_distances: Distances, threshold: float = 0.05) -> bool:
     """
-    Determine if the object is moving based on average step velocity.
-    Handles back-and-forth motion correctly.
+    Check if the object is moving by checking if the displacement between latest position and the start position is
+    above a certain threshold.
     """
-    if len(latest_distances) < 2:
-        return False
-
-    distance_arr = np.array(latest_distances)
-    step_magnitudes = np.linalg.norm(distance_arr, axis=1)
-    timestep_seconds = window_size_seconds / len(step_magnitudes)
-    avg_velocity = step_magnitudes.mean() / timestep_seconds
-
-    return avg_velocity >= velocity_threshold
+    avg_distance = np.linalg.norm(np.sum(np.array(latest_distances)))
+    return avg_distance >= threshold
 
 
-def is_stopped(
-    latest_distances: Distances,
-    velocity_threshold: float = 0.01,
-    window_size_seconds: float = 1.0,
-) -> bool:
+def is_stopped(latest_distances: Distances, threshold: float = 0.01) -> bool:
     """
-    Determine if the object is stopped based on average step velocity.
-    Uses same metric as is_displaced for consistency.
+    Check if the object is stopped by checking if the displacement between latest position and the start position is
+    below a certain threshold.
     """
-    if len(latest_distances) < 2:
-        return True
-
-    distance_arr = np.array(latest_distances)
-    step_magnitudes = np.linalg.norm(distance_arr, axis=1)
-    timestep_seconds = window_size_seconds / len(step_magnitudes)
-    avg_velocity = step_magnitudes.mean() / timestep_seconds
-
-    return avg_velocity <= velocity_threshold
+    avg_distance = np.linalg.norm(np.sum(np.array(latest_distances)))
+    return avg_distance <= threshold
 
 
 class DataFilter(ABC):

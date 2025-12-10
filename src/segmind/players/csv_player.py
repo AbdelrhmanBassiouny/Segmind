@@ -3,11 +3,7 @@ from datetime import datetime
 import pandas as pd
 from typing_extensions import Dict, Set
 
-# from pycram.datastructures.pose import Pose, PoseStamped, Vector3, Quaternion, Header
 from pycram.datastructures.pose import Header
-
-# from pycram.world_concepts.world_object import Object
-# from pycrap.ontologies import PhysicalObject
 from .data_player import FilePlayer, FrameData
 
 from semantic_digital_twin.world_description.world_entity import Body

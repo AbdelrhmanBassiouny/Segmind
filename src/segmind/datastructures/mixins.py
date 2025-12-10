@@ -5,13 +5,10 @@ from functools import cached_property
 
 from typing_extensions import List, Optional, TYPE_CHECKING
 
+from semantic_digital_twin.orm.ormatic_interface import BodyDAO, WorldMappingDAO
 from .object_tracker import ObjectTrackerFactory, ObjectTracker
 
-from semantic_digital_twin.world_description.world_entity import (
-    Body,
-    SemanticAnnotation,
-)
-from semantic_digital_twin.world_description.world_state import WorldState
+from semantic_digital_twin.world_description.world_entity import Body
 
 
 @dataclass
@@ -37,35 +34,16 @@ class HasPrimaryTrackedObject:
     """
 
     tracked_object: Body
-    tracked_object_frozen_cp: Optional[SemanticAnnotation] = field(
+    tracked_object_frozen_cp: Optional[BodyDAO] = field(
         init=False, default=None, repr=False, hash=False
     )
-    world_frozen_cp: Optional[WorldState] = field(
+    world_frozen_cp: Optional[WorldMappingDAO] = field(
         init=False, default=None, repr=False, hash=False
     )
 
     def __post_init__(self):
-        # Create a snapshot of the tracked object using SemanticAnnotation
-        self.tracked_object_frozen_cp = SemanticAnnotation()
-        self.tracked_object_frozen_cp._bodies = [self.tracked_object]
-
-        # Create a snapshot of the world state
-        world_state: WorldState = getattr(self.tracked_object, "world_state", None)
-        if world_state is not None:
-            # Shallow copy of the numpy data to mimic frozen behavior
-            frozen_data = world_state.data.copy()
-            self.world_frozen_cp = WorldState()
-            self.world_frozen_cp.data = frozen_data
-            self.world_frozen_cp.version = world_state.version
-            self.world_frozen_cp.state_change_callbacks = list(
-                world_state.state_change_callbacks
-            )
-        else:
-            self.world_frozen_cp = None
-
-    @property
-    def tracked_object_state(self) -> Body:
-        return self.tracked_object
+        self.tracked_object_frozen_cp = self.tracked_object.frozen_copy()
+        self.world_frozen_cp = self.tracked_object.world.frozen_copy()
 
     @cached_property
     def object_tracker(self) -> ObjectTracker:
@@ -79,20 +57,13 @@ class HasSecondaryTrackedObject:
     """
 
     with_object: Optional[Body] = None
-    with_object_frozen_cp: Optional[SemanticAnnotation] = field(
+    with_object_frozen_cp: Optional[BodyDAO] = field(
         init=False, default=None, repr=False, hash=False
     )
 
     def __post_init__(self):
         if self.with_object is not None:
-            self.with_object_frozen_cp = SemanticAnnotation()
-            self.with_object_frozen_cp._bodies = [self.with_object]
-        else:
-            self.with_object_frozen_cp = None
-
-    @property
-    def with_object_state(self) -> Optional[Body]:
-        return self.with_object
+            self.with_object_frozen_cp = self.with_object.frozen_copy()
 
     @cached_property
     def with_object_tracker(self) -> Optional[ObjectTracker]:

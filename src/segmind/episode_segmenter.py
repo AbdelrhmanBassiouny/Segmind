@@ -2,15 +2,8 @@ import datetime
 import threading
 from os.path import dirname
 
-# from pycram.world_concepts.world_object import Object
-# from typing_extensions import List, Optional, Dict
+from typing_extensions import List, Optional, Dict
 
-# from pycram.ros import logerr
-from semantic_digital_twin.world import World
-from semantic_digital_twin.semantic_annotations.semantic_annotations import (
-    HasSupportingSurface,
-)
-from semantic_digital_twin.world_description.world_entity import Region
 from .datastructures.events import *
 from .datastructures.object_tracker import ObjectTracker
 from .detectors.coarse_event_detectors import *
@@ -18,6 +11,8 @@ from .detectors.spatial_relation_detector import SpatialRelationDetector
 from .episode_player import EpisodePlayer
 from .event_logger import EventLogger
 from .utils import check_if_object_is_supported, Imaginator
+from semantic_digital_twin.world_description.world_entity import Body
+from semantic_digital_twin.world import World
 
 
 class EpisodeSegmenter(ABC):
@@ -237,7 +232,7 @@ class EpisodeSegmenter(ABC):
         self.episode_player.pause()
         set_of_objects = set()
         for obj in World.current_world.objects:
-            if isinstance(obj, Body) and not self.avoid_object(obj):
+            if not self.avoid_object(obj):
                 set_of_objects.add(obj)
                 # if not check_if_object_is_supported(obj):
                 #     logdebug(f"Object {obj.name} is not supported.")
@@ -263,10 +258,7 @@ class EpisodeSegmenter(ABC):
         for obj in involved_objects:
             if self.avoid_object(obj):
                 continue
-            if (
-                isinstance(obj, Body)
-                and obj.parent_kinematic_structure_entity in self.object_trackers.keys()
-            ):
+            if isinstance(obj, Body) and obj in self.object_trackers.keys():
                 continue
             if obj not in self.object_trackers.keys():
                 logdebug(f"New object {obj.name}")
@@ -294,8 +286,7 @@ class EpisodeSegmenter(ABC):
         :return: A list of Object instances that are involved in the event.
         """
         if isinstance(event, EventWithTrackedObjects):
-            return event.involved_bodies or []
-        return []
+            return event.involved_bodies
 
     def avoid_object(self, obj: Body) -> bool:
         """
@@ -305,17 +296,10 @@ class EpisodeSegmenter(ABC):
         :return: True if the object should be avoided, False otherwise.
         """
         return (
-            any(
-                isinstance(annotation, (Floor, HasSupportingSurface, Region))
-                for annotation in obj.semantic_annotations
-            )
+            obj.is_an_environment
+            or issubclass(obj.name(), (HasSupportingSurface, Region))
             or any([k in obj.name.lower() for k in self.objects_to_avoid])
-        ) or (
-            isinstance(obj, Body)
-            and self.avoid_object(
-                getattr(obj, "parent_kinematic_structure_entity", None)
-            )
-        )
+        ) or (isinstance(obj, Body) and self.avoid_object(obj))
 
     def start_motion_threads_for_object(
         self, obj: Body, event: Optional[NewObjectEvent] = None
@@ -534,15 +518,11 @@ class AgentEpisodeSegmenter(EpisodeSegmenter):
             self.start_contact_threads_for_object(agent)
 
     @staticmethod
-    def get_agents() -> list[Body]:
+    def get_agents() -> List[Body]:
         """
         :return: A list of Object instances that represent the available agents in the world.
         """
-        return [
-            obj
-            for obj in World.current_world.objects
-            if issubclass(obj.obj_type, Agent)
-        ]
+        return [obj for obj in World.bodies if issubclass(obj.obj_type, Agent)]
 
 
 class NoAgentEpisodeSegmenter(EpisodeSegmenter):

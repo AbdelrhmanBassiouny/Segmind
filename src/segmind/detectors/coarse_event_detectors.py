@@ -1,13 +1,26 @@
 from __future__ import annotations
 
 import os.path
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logdebug = logging.debug
+loginfo = logging.info
+
+from pycram.robot_plans import (
+    PickUpAction,
+    PlaceAction,
+)
+from ripple_down_rules.rdr_decorators import RDRDecorator
+
 
 try:
     from matplotlib import pyplot as plt
 except ImportError:
     plt = None
+
 from typing_extensions import Optional, List, Union, Dict
-from typing import Dict
+
 from .atomic_event_detectors import *
 from ..datastructures.events import *
 from ..utils import (
@@ -16,34 +29,16 @@ from ..utils import (
     is_object_supported_by_container_body,
 )
 from ..episode_player import EpisodePlayer
-from ripple_down_rules.rdr_decorators import RDRDecorator
-
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-loginfo = logging.info
-
-# from pycram.robot_plans import ActionDescription, ObjectDesignatorDescription
-from pycram.robot_plans import (
-    PickUpActionDescription,
-    PlaceActionDescription,
-    PickUpAction,
-    PlaceAction,
-    MoveTorsoActionDescription,
-)
-
-# from pycrap.ontologies import Location, Supporter, Floor, Agent
-# from pycram.datastructures.world import UseProspectionWorld
-# from pycram.ros import logdebug, loginfo
 
 from semantic_digital_twin.world_description.world_entity import (
     Body,
     Agent,
     Region,
 )
-from semantic_digital_twin.semantic_annotations.semantic_annotations import Floor, Table
+from semantic_digital_twin.semantic_annotations.semantic_annotations import Floor
 from semantic_digital_twin.collision_checking.collision_detector import Collision
+from semantic_digital_twin.world import World
+from semantic_digital_twin.semantic_annotations.mixins import HasSupportingSurface
 
 
 class DetectorWithStarterEvent(AtomicEventDetector, ABC):
@@ -470,62 +465,6 @@ class PlacingDetector(AbstractInteractionDetector):
         pass
 
 
-def check_for_supporting_surface(
-    tracked_object: Body,
-    contact_points: Collision,
-    possible_surfaces: Optional[List[Body]] = None,
-) -> Optional[Body]:
-    """
-    Check if any of the possible surfaces are supporting the tracked_object.
-
-    :param tracked_object: Body to check.
-    :param contact_points: ContactPointsList containing all current contact points.
-    :param possible_surfaces: Optional list of possible supporting surfaces.
-                              If None, all contacted bodies are considered.
-    :return: The supporting surface Body if found, else None.
-    """
-    # Filter contacted bodies to exclude the tracked object itself
-    contacted_bodies = [
-        b for b in contact_points.get_all_bodies() if b != tracked_object
-    ]
-    contacted_body_names = [b.name for b in contacted_bodies]
-    contacted_bodies_dict = dict(zip(contacted_body_names, contacted_bodies))
-
-    # Determine which surfaces to check
-    if possible_surfaces is None:
-        possible_surface_names = contacted_body_names
-    else:
-        possible_surface_names = [obj.name for obj in possible_surfaces]
-        possible_surface_names = list(
-            set(contacted_body_names).intersection(possible_surface_names)
-        )
-
-    # Analyze contact normals to find upright supporting surface
-    supporting_surface: Optional[Body] = None
-    opposite_gravity = [0.0, 0.0, 1.0]
-    smallest_angle = np.pi / 8  # tolerance for upright surface
-
-    for obj_name in possible_surface_names:
-        obj = contacted_bodies_dict[obj_name]
-
-        # Collect normals for this body
-        normals = contact_points.get_normals_of_object(obj)
-        if not normals:
-            continue
-
-        avg_normal = np.mean(np.array(normals), axis=0)
-        angle = get_angle_between_vectors(avg_normal.tolist(), opposite_gravity)
-
-        if 0 <= angle <= smallest_angle:
-            smallest_angle = angle
-            supporting_surface = obj
-
-    if supporting_surface:
-        logdebug(f"Found supporting surface: {supporting_surface.name}")
-
-    return supporting_surface
-
-
 def select_transportable_objects_from_contact_event(
     event: Union[ContactEvent, AgentContactEvent],
 ) -> List[Body]:
@@ -558,7 +497,10 @@ def select_transportable_objects(
     transportable_objects = [
         obj
         for obj in objects
-        if not issubclass(obj.ontology_concept, (Agent, Region, Table, Floor))
+        if not issubclass(
+            obj.get_semantic_annotations_by_type(),
+            (Agent, Region, HasSupportingSurface, Floor),
+        )
     ]
     if not_contained:
         transportable_objects = [

@@ -3,13 +3,17 @@ from ripple_down_rules.datastructures.case import Case, create_case
 from typing_extensions import Optional
 from .general_pick_up_detector_get_object_to_track_from_starter_event_output__scrdr_defs import *
 
+from semantic_digital_twin.world_description.world_entity import Body
 
-attribute_name = 'output_'
-conclusion_type = (NoneType, Object,)
+attribute_name = "output_"
+conclusion_type = (
+    NoneType,
+    Body,
+)
 mutually_exclusive = True
 
 
-def classify(case: Dict, **kwargs) -> Optional[Object]:
+def classify(case: Dict, **kwargs) -> Optional[Body]:
     if not isinstance(case, Case):
         case = create_case(case, max_recursion_idx=3)
 

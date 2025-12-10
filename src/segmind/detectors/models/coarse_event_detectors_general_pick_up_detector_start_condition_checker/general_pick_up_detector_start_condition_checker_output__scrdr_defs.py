@@ -9,8 +9,6 @@ from segmind.episode_player import EpisodePlayer
 from segmind.utils import get_support
 from typing_extensions import Type
 
-from pycram.ros import logger
-
 
 def conditions_313968436519149281932112885344716145224(case) -> bool:
     def has_object_lost_support(
@@ -50,7 +48,7 @@ def conditions_259334668447470890319338447268411809573(case) -> bool:
         cls_: Type[GeneralPickUpDetector], event: Event, output_: bool
     ) -> bool:
         """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
-        return "hole" in event.with_object.name
+        return "hole" in event.with_object.name.name
 
     return is_the_support_a_virtual_hole(**case)
 
@@ -72,7 +70,7 @@ def conditions_1084517150588802996811823834978763787(case) -> bool:
         """Get conditions on whether it's possible to conclude a value for GeneralPickUpDetector_start_condition_checker.output_  of type ."""
         return any(
             [
-                "hole" in b.name
+                "hole" in b.name.name
                 for b in event.tracked_object.contact_points.get_all_bodies()
             ]
         )
