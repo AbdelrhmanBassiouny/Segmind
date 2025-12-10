@@ -277,18 +277,6 @@ def test_insertion_detector(create_kitchen_world_with_milk_and_robot):
         assert stop_motion_event is not None, "StopMotionEvent was not detected!"
         assert fridge_contains(milk_conn.child), "Milk was not detected in the fridge!"
 
-    finally:
-        # Stop and join detectors
-        for d in (translation_detector, sr_detector):
-            try:
-                d.stop()
-            except Exception:
-                pass
-            try:
-                d.join(timeout=2.0)
-            except Exception:
-                pass
-
 
 def run_and_get_translation_detector(
     obj: Body,
