@@ -74,7 +74,9 @@ class ObjectTracker:
 
     def get_latest_event_of_type(self, event_type: Type[Event]) -> Optional[Event]:
         with self._lock:
+            # print(f"Event history: {self._event_history}")
             for event in reversed(self._event_history):
+                # print(f"Event: {event}")
                 if isinstance(event, event_type):
                     return event
             return None

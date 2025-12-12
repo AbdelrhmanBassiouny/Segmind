@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 loginfo = logging.info
 
-from pycram.datastructures.enums import WorldMode
+# from pycram.datastructures.enums import WorldMode
 
 from pycram.robot_description import RobotDescriptionManager
 
@@ -64,7 +64,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         rdm = RobotDescriptionManager()
         rdm.load_description("iCub")
 
-        cls.world: World = World(WorldMode.DIRECT)
+        cls.world: World = World()
 
         cls.spawn_objects(models_dir)
 
@@ -103,9 +103,14 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             if obj_name == "PR2":
                 file = "PR2.urdf"
                 obj_type = PR2
-                pose = TransformationMatrix.from_translation_rotation(
-                    translation=Vector3(-0.8, 0, 0.55),
-                    quaternion=[0, 0, 0, 1],  # same as default Pose orientation
+                pose = TransformationMatrix.from_xyz_quaternion(
+                    pos_x=-0.8,
+                    pos_y=0,
+                    pos_z=0.55,
+                    quat_x=0,
+                    quat_y=0,
+                    quat_z=0,
+                    quat_w=1,
                 )
             elif obj_name == "scene":
                 obj_type = Region
@@ -123,13 +128,15 @@ class TestMultiverseEpisodeSegmenter(TestCase):
 
     @classmethod
     def copy_model_files_to_world_data_dir(cls, models_dir):
+        print(cls.world)
+        print(dir(cls.world))
         shutil.copytree(
             models_dir, cls.world.conf.cache_dir + "/objects", dirs_exist_ok=True
         )
 
     @classmethod
     def tearDownClass(cls):
-        cls.viz_marker_publisher._stop_publishing()
+        cls.viz_marker_publisher.stop()
         logdebug("Viz marker publisher has been stopped, exiting the world...")
         logdebug("World has been exited.")
 

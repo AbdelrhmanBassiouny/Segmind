@@ -10,17 +10,18 @@ import pytest
 from pycram.tf_transformations import quaternion_from_euler
 from typing_extensions import Tuple
 
-from segmind.datastructures.events_SDT import AbstractAgentObjectInteractionEvent
-from segmind.detectors.coarse_event_detectors_SDT import (
+from segmind.datastructures.events import AbstractAgentObjectInteractionEvent
+from segmind.detectors.coarse_event_detectors import (
     GeneralPickUpDetector,
     PlacingDetector,
 )
-from segmind.detectors.spatial_relation_detector_SDT import (
+from segmind.detectors.spatial_relation_detector import (
     InsertionDetector,
     SupportDetector,
     ContainmentDetector,
 )
-from segmind.episode_segmenter_SDT import NoAgentEpisodeSegmenter
+from segmind.episode_segmenter import NoAgentEpisodeSegmenter
+from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 
 try:
     from segmind.players.multiverse_player import MultiversePlayer
@@ -38,9 +39,7 @@ from pycram.robot_plans import ActionDescription
 from pycram.robot_plans import (
     PickUpActionDescription,
     PlaceActionDescription,
-    PickUpAction,
-    PlaceAction,
-    MoveTorsoActionDescription,
+    ParkArmsActionDescription,
 )
 from pycram.external_interfaces import giskard
 from pycram.failures import ObjectNotGraspedError
@@ -50,8 +49,9 @@ from pycram.robot_description import RobotDescriptionManager
 from semantic_digital_twin.world import World
 
 # from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
-from pycram.world_object import Object
-from semantic_digital_twin.world_description.world_entity import Body
+# from pycram.world_object import Object
+from semantic_digital_twin.world_description.world_entity import Body, Region
+
 
 # from pycram.worlds.bullet_world import BulletWorld
 # from pycrap.ontologies import Location, PhysicalObject, Robot
@@ -105,12 +105,12 @@ def spawn_objects(models_dir):
         obj_name = Path(file).stem
         pose = PoseStamped()
         if obj_name == "iCub":
-            obj_type = Robot
+            obj_type = AbstractRobot
             pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
         elif obj_name == "scene":
-            obj_type = Location
+            obj_type = Region
         else:
-            obj_type = PBody
+            obj_type = Body
         obj = Body(obj_name, obj_type, path=file, pose=pose)
 
 
@@ -162,7 +162,7 @@ def test_icub_pick_up_and_insert(set_up_demo_fixture):
 
     scene_obj = World.current_world.get_object_by_name("scene")
     square_hole_pose = scene_obj.get_link_pose("circular_hole_1")
-    object_description = ObjectDesignatorDescription(names=[obj_name])
+    object_description = Body(names=[obj_name])
     with real_robot:
         plan = SequentialPlan(
             ParkArmsActionDescription(Arms.BOTH),
@@ -179,7 +179,7 @@ def test_icub_pick_up_and_insert(set_up_demo_fixture):
 
 
 def get_arm_and_grasp_description_for_object(
-    obj: Object,
+    obj: Body,
 ) -> Tuple[Arms, GraspDescription]:
     obj_pose = obj.pose
     left_arm_pose = World.current_world.robot.get_link_pose("l_gripper_tool_frame")

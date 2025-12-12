@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from functools import cached_property
 
+from krrood.ormatic.dao import to_dao
+from sqlalchemy import create_engine
+from sqlalchemy.orm import session
 from typing_extensions import List, Optional, TYPE_CHECKING
 
 from semantic_digital_twin.orm.ormatic_interface import BodyDAO, WorldMappingDAO
@@ -30,7 +33,7 @@ class HasTrackedObjects:
 @dataclass(kw_only=True, unsafe_hash=True)
 class HasPrimaryTrackedObject:
     """
-    A mixin class that provides the tracked object for the event.
+    A mixin class that provides the primary tracked object for the event.
     """
 
     tracked_object: Body
@@ -42,8 +45,9 @@ class HasPrimaryTrackedObject:
     )
 
     def __post_init__(self):
-        self.tracked_object_frozen_cp = self.tracked_object.frozen_copy()
-        self.world_frozen_cp = self.tracked_object.world.frozen_copy()
+        # Freeze both the object and the world using DAO snapshots
+        self.tracked_object_frozen_cp = to_dao(self.tracked_object)
+        self.world_frozen_cp = to_dao(self.tracked_object._world)
 
     @cached_property
     def object_tracker(self) -> ObjectTracker:
@@ -63,7 +67,7 @@ class HasSecondaryTrackedObject:
 
     def __post_init__(self):
         if self.with_object is not None:
-            self.with_object_frozen_cp = self.with_object.frozen_copy()
+            self.with_object_frozen_cp = to_dao(self.with_object)
 
     @cached_property
     def with_object_tracker(self) -> Optional[ObjectTracker]:

@@ -329,7 +329,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         self.pose: TransformationMatrix = of_object.global_pose
         self.with_object_bounding_box: Optional[BoundingBox] = (
             BoundingBox.from_mesh(
-                with_object.Collision.combined_mesh,
+                with_object.collision.combined_mesh,
                 origin=with_object.global_pose.to_translation(),
             )
             if with_object is not None

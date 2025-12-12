@@ -10,12 +10,6 @@ from datetime import timedelta
 from os.path import dirname, abspath
 import re
 
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-loginfo = logging.info
-
 from typing_extensions import List, Optional, Dict, Type, TYPE_CHECKING, Callable, Tuple
 
 from semantic_digital_twin.world_description.world_entity import (
@@ -33,6 +27,7 @@ from .datastructures.events import (
 from .datastructures.mixins import HasPrimaryTrackedObject
 from .datastructures.object_tracker import ObjectTrackerFactory
 from .utils import text_to_speech
+from . import logger
 
 if TYPE_CHECKING:
     from .detectors.coarse_event_detectors import DetectorWithStarterEvent
@@ -147,11 +142,11 @@ class EventLogger:
 
         :param event: The event to annotate the scene with.
         """
-        # logdebug(f"Logging event: {event}")
+        # logger.debug(f"Logging event: {event}")
         if self.events_to_annotate is not None and (
             type(event) in self.events_to_annotate
         ):
-            loginfo(f"Logging event: {event}")
+            logger.debug(f"Logging event: {event}")
             if self.annotation_thread is not None:
                 self.annotation_queue.put(event)
 
@@ -198,7 +193,7 @@ class EventLogger:
         save_path to the save path you prefer).
         :param save_path: the html plot will be save the given path, if not provided, it will not be saved.
         """
-        loginfo("Plotting events:")
+        logger.info("Plotting events:")
         # construct a dataframe with the events
         import pandas as pd
         import plotly.express as px
@@ -239,7 +234,7 @@ class EventLogger:
                     data_dict["with_object"].append(None)
                     data_dict["with_obj_type"].append(None)
         if len(data_dict["start"]) == 0:
-            loginfo("No events to plot.")
+            logger.info("No events to plot.")
             return
         # subtract the start time from all timestamps
         min_start = min(data_dict["start"])
@@ -301,14 +296,14 @@ class EventLogger:
                 save_path += ".html"
             file_path = abspath(save_path)
             fig.write_html(file_path)
-            loginfo(f"Plot saved to {file_path}")
+            logger.info(f"Plot saved to {file_path}")
 
     def print_events(self):
         """
         Print all events that have been logged.
         """
-        loginfo("Events:")
-        loginfo(self.__str__())
+        logger.info("Events:")
+        logger.info(self.__str__())
 
     def get_events_per_thread(self) -> Dict[str, List[Event]]:
         """
@@ -420,7 +415,7 @@ class EventLogger:
             self.annotation_thread.join()
             while self.annotation_queue.unfinished_tasks > 0:
                 event = self.annotation_queue.get_nowait()
-                logdebug(f"Left out annotation for event: {event}")
+                logger.debug(f"Left out annotation for event: {event}")
                 self.annotation_queue.task_done()
             self.annotation_queue.join()
         self.event_queue.join()
@@ -469,7 +464,7 @@ class EventAnnotationThread(threading.Thread):
                     )
                 event.annotate()
             except Exception as e:
-                loginfo(f"Error annotating event {event}: {e}")
+                logger.info(f"Error annotating event {event}: {e}")
                 continue
 
     def stop(self):

@@ -363,12 +363,16 @@ class GeneralPickUpDetector(AbstractPickUpDetector):
     @classmethod
     @object_to_track_rdr.decorator
     def get_object_to_track_from_starter_event(cls, starter_event: EventUnion) -> Body:
+
         pass
 
     @classmethod
     @start_condition_rdr.decorator
     def start_condition_checker(cls, event: Event) -> bool:
-        pass
+        if event:
+            return True
+        else:
+            pass
 
     def __str__(self):
         if (

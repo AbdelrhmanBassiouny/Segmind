@@ -1,8 +1,7 @@
 from typing_extensions import Type, List, Optional
 from queue import Queue
-
 from pycram.robot_plans import ActionDescription
-from pycram.robot_plans import (
+from pycram.robot_plans.actions import (
     PickUpActionDescription,
     PlaceActionDescription,
     PickUpAction,

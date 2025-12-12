@@ -37,10 +37,9 @@ from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
 from semantic_digital_twin.robots.pr2 import PR2
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Container
 
-from semantic_digital_twin.utils import get_semantic_digital_twin_directory_root
+# from semantic_digital_twin.utils import get_semantic_digital_twin_directory_root
 
 apartment = os.path.join(
-    get_semantic_digital_twin_directory_root(os.getcwd()),
     "resources",
     "urdf",
     "apartment.urdf",

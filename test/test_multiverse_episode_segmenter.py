@@ -10,19 +10,21 @@ import pytest
 
 import pycram.ros
 from pycram.datastructures.pose import PoseStamped, Pose, Vector3
-from pycram.datastructures.world import World
+
+# from pycram.datastructures.world import World
 from pycram.datastructures.enums import WorldMode
 from pycram.robot_description import RobotDescriptionManager
-from pycram.world_concepts.world_object import Object
+
+# from pycram.world_concepts.world_object import Object
 from segmind.players.csv_player import CSVEpisodePlayer
 from segmind.episode_segmenter import NoAgentEpisodeSegmenter
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
 from segmind.detectors.spatial_relation_detector import InsertionDetector
 from pycram.datastructures.enums import WorldMode
-from pycram.datastructures.world import World
-from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
-from pycram.worlds.bullet_world import BulletWorld
-from pycrap.ontologies import Container, Bowl, Cup, Location, PhysicalObject, Robot
+
+from semantic_digital_twin.robots.abstract_robot import AbstractRobot
+
+# from pycrap.ontologies import Container, Bowl, Cup, Location, PhysicalObject, Robot
 
 try:
     from segmind.players.multiverse_player import MultiversePlayer
@@ -33,6 +35,10 @@ try:
     from pycram.worlds.multiverse2 import Multiverse
 except ImportError:
     Multiverse = None
+
+from semantic_digital_twin.world import World
+from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
+from semantic_digital_twin.world_description.world_entity import Body, Region
 
 
 @pytest.mark.skipif(MultiversePlayer is None, reason="MultiversePlayer not available")
@@ -47,38 +53,44 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         rdm = RobotDescriptionManager()
         rdm.load_description("iCub")
 
-        cls.world: BulletWorld = BulletWorld(WorldMode.GUI)
+        cls.world: World = World(WorldMode.GUI)
         pycram.ros.set_logger_level(pycram.datastructures.enums.LoggerLevel.ERROR)
         cls.viz_marker_publisher = VizMarkerPublisher()
 
         episode_name = "icub_montessori_no_hands"
-        cls.spawn_objects(f"{dirname(__file__)}/../resources/multiverse_episodes/{episode_name}/models")
+        cls.spawn_objects(
+            f"{dirname(__file__)}/../resources/multiverse_episodes/{episode_name}/models"
+        )
 
-        cls.player = MultiversePlayer(world=cls.world,
-                                      time_between_frames=datetime.timedelta(milliseconds=4))
+        cls.player = MultiversePlayer(
+            world=cls.world, time_between_frames=datetime.timedelta(milliseconds=4)
+        )
 
-        cls.episode_segmenter = NoAgentEpisodeSegmenter(cls.player, annotate_events=True,
-                                                        plot_timeline=True,
-                                                        plot_save_path=f'{dirname(__file__)}/test_results/multiverse_episode',
-                                                        detectors_to_start=[GeneralPickUpDetector],
-                                                        initial_detectors=[InsertionDetector])
+        cls.episode_segmenter = NoAgentEpisodeSegmenter(
+            cls.player,
+            annotate_events=True,
+            plot_timeline=True,
+            plot_save_path=f"{dirname(__file__)}/test_results/multiverse_episode",
+            detectors_to_start=[GeneralPickUpDetector],
+            initial_detectors=[InsertionDetector],
+        )
 
     @classmethod
     def spawn_objects(cls, models_dir):
         cls.copy_model_files_to_world_data_dir(models_dir)
         directory = Path(models_dir)
-        urdf_files = [f.name for f in directory.glob('*.urdf')]
+        urdf_files = [f.name for f in directory.glob("*.urdf")]
         for file in urdf_files:
             obj_name = Path(file).stem
             pose = PoseStamped()
             if obj_name == "iCub":
-                obj_type = Robot
+                obj_type = AbstractRobot
                 pose = PoseStamped(Pose(Vector3(-0.8, 0, 0.55)))
             elif obj_name == "scene":
-                obj_type = Location
+                obj_type = Region
             else:
-                obj_type = PhysicalObject
-            obj = Object(obj_name, obj_type, path=file, pose=pose)
+                obj_type = Body
+            obj = Body(obj_name, obj_type, path=file, pose=pose)
 
     @classmethod
     def copy_model_files_to_world_data_dir(cls, models_dir):
@@ -86,7 +98,9 @@ class TestMultiverseEpisodeSegmenter(TestCase):
         Copy the model files to the world data directory.
         """
         # Copy the entire folder and its contents
-        shutil.copytree(models_dir, cls.world.conf.cache_dir + "/objects", dirs_exist_ok=True)
+        shutil.copytree(
+            models_dir, cls.world.conf.cache_dir + "/objects", dirs_exist_ok=True
+        )
 
     @classmethod
     def tearDownClass(cls):

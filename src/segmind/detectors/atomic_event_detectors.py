@@ -1,5 +1,6 @@
 import queue
 import time
+import traceback
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from math import ceil
@@ -11,6 +12,7 @@ from ..datastructures.mixins import (
     HasPrimaryTrackedObject,
     HasPrimaryAndSecondaryTrackedObjects,
 )
+from ..datastructures.object_tracker import logger
 from ..detectors.motion_detection_helpers import (
     is_displaced,
     is_stopped,
@@ -87,7 +89,7 @@ class AtomicEventDetector(PropagatingThread):
         self.episode_player: EpisodePlayer = episode_player
         self.fit_mode = fit_mode
         self.logger: EventLogger = logger if logger else EventLogger.current_logger
-        self.world: World = world if world else World.current_world
+        self.world: World = world
         self.wait_time = (
             wait_time if wait_time is not None else timedelta(milliseconds=50)
         )
@@ -131,29 +133,37 @@ class AtomicEventDetector(PropagatingThread):
         exit_thread attribute to True. Additionally, there is an optional wait_time attribute that can be set to a float
         value to introduce a delay between calls to the event detector.
         """
-        while True:
+        try:
+            while True:
+                print(f"{self.__class__.__name__}  calling run")
+                # if (
+                #     self.kill_event.is_set()
+                #     # and self.all_queues_empty
+                #     and not self.is_processing_jobs
+                # ) or self.exc is not None:
+                #     break
 
-            if (
-                self.kill_event.is_set()
-                and self.all_queues_empty
-                and not self.is_processing_jobs
-            ) or self.exc is not None:
-                break
+                self._wait_if_paused()
+                if self.fit_mode and self.episode_player:
+                    self.episode_player.pause()
 
-            self._wait_if_paused()
-            if self.fit_mode and self.episode_player:
-                self.episode_player.pause()
+                last_processing_time = time.time()
+                self.detect_and_log_events()
 
-            last_processing_time = time.time()
-            self.detect_and_log_events()
+                if self.fit_mode and self.episode_player:
+                    self.episode_player.resume()
 
-            if self.fit_mode and self.episode_player:
-                self.episode_player.resume()
-
-            if self.run_once:
-                break
-            else:
-                self._wait_to_maintain_loop_rate(last_processing_time)
+                if self.run_once:
+                    break
+                else:
+                    self._wait_to_maintain_loop_rate(last_processing_time)
+            print(
+                f"{self.__class__.__name__}  ended!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            )
+        except Exception as e:
+            traceback.print_exc()
+            print(f"{self.__class__.__name__}  {e}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            pass
 
     @property
     def all_queues_empty(self) -> bool:
@@ -168,6 +178,7 @@ class AtomicEventDetector(PropagatingThread):
         """
         Detect and log the events.
         """
+        print(f"{self.__class__.__name__}  calling detect events")
         events = self.detect_events()
         if events:
             [self.log_event(event) for event in events]
@@ -745,6 +756,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
                     self.data_queue.task_done()
                 except Empty:
                     pass
+        return latest_pose, latest_time
 
     def get_current_pose_and_time(self) -> Tuple[TransformationMatrix, float]:
         """
@@ -765,18 +777,24 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
             _, _ = self.data_queue.get_nowait()
             self.data_queue.task_done()
             latest_pose, latest_time = self.get_current_pose_and_time()
+            logger.debug(f"pose: {latest_pose}, time: {latest_time}")
             self.poses.append(latest_pose)
             self.times.append(latest_time)
+            logger.debug(f"number of poses = {len(self.poses)}")
             if len(self.poses) > 1:
                 self.calculate_and_update_latest_distance()
                 self._crop_distances_and_times_to_window_size()
 
             if not self.window_size_reached:
                 return
+            print("window size reached")
+            logger.debug(f"window size reached")
             events: Optional[List[MotionEvent]] = None
             if self.motion_sate_changed:
+                logger.debug("motion_state_changed")
                 self.last_state_change_idx = len(self.all_distances) - 1
                 events = [self.update_motion_state_and_create_event()]
+                logger.debug(f"events: {events}")
 
             if self.plot_distances:
                 self.keep_track_of_history()
@@ -1011,17 +1029,17 @@ class TranslationDetector(MotionDetector):
         """
         Update the object motion state.
         """
-        self.tracked_object.is_translating = is_moving
+        self.was_moving = is_moving
 
     def calculate_distance(self):
         """
         Calculate the Euclidean distance between the latest and current positions of the object.
         """
         # return calculate_euclidean_distance(self.latest_pose.position.to_list(), current_pose.position.to_list())
-        translation = calculate_translation(
-            self.poses[-2].position.to_list(), self.poses[-1].position.to_list()
-        )
-        return translation
+
+        p_prev = self.poses[-2].to_position().to_np()
+        p_curr = self.poses[-1].to_position().to_np()
+        return calculate_translation(p_prev, p_curr)
 
     def get_event_type(self):
         return TranslationEvent if self.was_moving else StopTranslationEvent
