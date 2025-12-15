@@ -153,51 +153,7 @@ def test_general_pick_up_start_condition_checker(
     assert GeneralPickUpDetector.start_condition_checker(event)
 
 
-def test_translation_detector(create_kitchen_world_with_milk_and_robot):
-    world, milk_conn, _, table_conn, _, target_position = (
-        create_kitchen_world_with_milk_and_robot
-    )
-    milk_tracker = ObjectTrackerFactory.get_tracker(milk_conn.child)
-    translation_detector = run_and_get_translation_detector(
-        milk_conn.child, world=world
-    )
-    translation_detector.disable_thread = True
-
-    # Initial pose
-    translation_detector.update_with_latest_motion_data()
-
-    # Move object
-    fridge_pos = target_position.to_np()[:3]
-    milk_conn.origin = TransformationMatrix.from_xyz_rpy(
-        x=float(fridge_pos[0]),
-        y=float(fridge_pos[1]),
-        z=float(fridge_pos[2]),
-        reference_frame=table_conn.child,
-    )
-    world.notify_state_change()
-
-    # Now give it 2 more updates BEFORE trying to detect anything
-    translation_detector.update_with_latest_motion_data()
-    translation_detector.update_with_latest_motion_data()
-
-    # NOW it is safe to run event detection
-    translation_detector.detect_and_log_events()
-
-    translation_event = milk_tracker.get_latest_event_of_type(TranslationEvent)
-    # print(f"Latest TranslationEvent: {translation_event}")
-    # assert translation_event is not None
-
-    # Simulate stopping
-    translation_detector.update_with_latest_motion_data()
-    translation_detector.detect_and_log_events()
-
-    stop_event = milk_tracker.get_first_event_of_type_after_event(
-        StopTranslationEvent, translation_event
-    )
-    # assert stop_event is not None
-
-
-def test_insertion_detector(create_kitchen_world_with_milk_and_robot):
+def test_translation_and_insertion_detector(create_kitchen_world_with_milk_and_robot):
     world, milk_conn, robot_conn, table_conn, fridge_conn, target_position = (
         create_kitchen_world_with_milk_and_robot
     )
