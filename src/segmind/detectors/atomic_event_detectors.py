@@ -135,7 +135,7 @@ class AtomicEventDetector(PropagatingThread):
         """
         try:
             while True:
-                print(f"{self.__class__.__name__}  calling run")
+                # print(f"{self.__class__.__name__}  calling run")
                 # if (
                 #     self.kill_event.is_set()
                 #     # and self.all_queues_empty
@@ -157,12 +157,12 @@ class AtomicEventDetector(PropagatingThread):
                     break
                 else:
                     self._wait_to_maintain_loop_rate(last_processing_time)
-            print(
-                f"{self.__class__.__name__}  ended!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            )
+            # print(
+            #     f"{self.__class__.__name__}  ended!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            # )
         except Exception as e:
             traceback.print_exc()
-            print(f"{self.__class__.__name__}  {e}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            # print(f"{self.__class__.__name__}  {e}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             pass
 
     @property
@@ -178,7 +178,7 @@ class AtomicEventDetector(PropagatingThread):
         """
         Detect and log the events.
         """
-        print(f"{self.__class__.__name__}  calling detect events")
+        # print(f"{self.__class__.__name__}  calling detect events")
         events = self.detect_events()
         if events:
             [self.log_event(event) for event in events]

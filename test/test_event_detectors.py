@@ -197,7 +197,7 @@ def test_translation_detector(create_kitchen_world_with_milk_and_robot):
     # assert stop_event is not None
 
 
-def test_insertion_detector2(create_kitchen_world_with_milk_and_robot):
+def test_insertion_detector(create_kitchen_world_with_milk_and_robot):
     world, milk_conn, robot_conn, table_conn, fridge_conn, target_position = (
         create_kitchen_world_with_milk_and_robot
     )
@@ -273,91 +273,6 @@ def test_insertion_detector2(create_kitchen_world_with_milk_and_robot):
         sr_detector.stop()
         translation_detector.join()
         sr_detector.join()
-
-
-def test_insertion_detector(create_kitchen_world_with_milk_and_robot):
-    world, milk_conn, robot_conn, table_conn, fridge_conn, target_position = (
-        create_kitchen_world_with_milk_and_robot
-    )
-    milk_tracker = ObjectTrackerFactory.get_tracker(milk_conn.child)
-
-    # Start translation detector with lowered thresholds
-    translation_detector = run_and_get_translation_detector(
-        milk_conn.child, time_between_frames=timedelta(seconds=0.01), world=world
-    )
-    translation_detector.min_translation_threshold = 1e-4
-    translation_detector.min_velocity_threshold = 1e-4
-
-    # Start spatial relation detector (InsertionDetector)
-    sr_detector = InsertionDetector(wait_time=timedelta(seconds=0.01), world=world)
-    sr_detector.start()
-
-    # Proper containment check using bounding boxes
-    def fridge_contains(body: Body):
-        fridge_box = fridge_conn.child.collision.shapes[0]  # assume single Box
-        milk_box = body.collision.shapes[0]
-
-        fridge_pos = fridge_conn.origin.to_position().to_np()[:3]
-        milk_pos = milk_conn.origin.to_position().to_np()[:3]
-
-        fridge_min = fridge_pos - np.array(
-            [fridge_box.scale.x / 2, fridge_box.scale.y / 2, fridge_box.scale.z / 2]
-        )
-        fridge_max = fridge_pos + np.array(
-            [fridge_box.scale.x / 2, fridge_box.scale.y / 2, fridge_box.scale.z / 2]
-        )
-
-        milk_min = milk_pos - np.array(
-            [milk_box.scale.x / 2, milk_box.scale.y / 2, milk_box.scale.z / 2]
-        )
-        milk_max = milk_pos + np.array(
-            [milk_box.scale.x / 2, milk_box.scale.y / 2, milk_box.scale.z / 2]
-        )
-
-        return np.all(milk_min >= fridge_min) and np.all(milk_max <= fridge_max)
-
-    # Initially milk is not in fridge
-    # print(f"Initial milk position: {milk_conn.origin.to_position().to_np()[:3]}")
-    # print(f"Fridge position: {fridge_conn.origin.to_position().to_np()[:3]}")
-    assert not fridge_contains(milk_conn.child)
-
-    # Move milk to fridge gradually in world coordinates
-    fridge_pos = fridge_conn.origin.to_position().to_np()[:3]
-    current_pos = milk_conn.origin.to_position().to_np()[:3]
-    steps = 5  # enough steps to trigger the translation detector
-    for i in range(steps):
-        interp_pos = current_pos + (fridge_pos - current_pos) * (i + 1) / steps
-        milk_conn.origin = TransformationMatrix.from_xyz_rpy(
-            x=float(interp_pos[0]),
-            y=float(interp_pos[1]),
-            z=float(interp_pos[2]),
-            reference_frame=table_conn.child,
-        )
-        world.notify_state_change()
-        translation_detector.update_with_latest_motion_data()
-
-        # Debug prints
-        # print(f"Step {i+1}/{steps} - Milk position: {interp_pos}")
-        # print(
-        #     f"  Latest TranslationEvent: {milk_tracker.get_latest_event_of_type(TranslationEvent)}"
-        # )
-        # print(
-        #     f"  Latest StopTranslationEvent: {milk_tracker.get_latest_event_of_type(StopTranslationEvent)}"
-        # )
-        time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
-
-    # Wait a bit to allow StopTranslationEvent & StopMotionEvent
-    for j in range(5):
-        translation_detector.update_with_latest_motion_data()
-        world.notify_state_change()
-        stop_motion_event = milk_tracker.get_latest_event_of_type(StopMotionEvent)
-        # print(f"Wait {j+1}/5 - StopMotionEvent: {stop_motion_event}")
-        time.sleep(translation_detector.get_n_changes_wait_time(1) * 2)
-
-    # Final assertions
-    stop_motion_event = milk_tracker.get_latest_event_of_type(StopMotionEvent)
-    assert stop_motion_event is not None, "StopMotionEvent was not detected!"
-    assert fridge_contains(milk_conn.child), "Milk was not detected in the fridge!"
 
 
 def run_and_get_translation_detector(
