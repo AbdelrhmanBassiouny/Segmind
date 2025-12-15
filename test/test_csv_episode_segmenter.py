@@ -10,7 +10,6 @@ logging.basicConfig(level=logging.INFO)
 logdebug = logging.debug
 loginfo = logging.info
 
-# from pycram.datastructures.enums import WorldMode
 
 from pycram.robot_description import RobotDescriptionManager
 
