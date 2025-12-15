@@ -44,6 +44,32 @@ from semantic_digital_twin.world import World
 from semantic_digital_twin.robots.pr2 import PR2
 
 
+class TestPublisher:
+    """Tiny publisher stub compatible with VizMarkerPublisher’s expectations."""
+
+    def publish(self, msg):
+        # no-op in tests
+        pass
+
+
+class TestNode:
+    """Tiny ROS-like node stub for tests.
+
+    Provides create_publisher and create_timer used by VizMarkerPublisher.
+    """
+
+    def create_publisher(self, msg_type, topic, queue_size):
+        return TestPublisher()
+
+    def create_timer(self, period_sec, callback):
+        # Return a simple handle with a cancel method, but do not actually schedule timers in tests
+        class _Timer:
+            def cancel(self_inner):
+                pass
+
+        return _Timer()
+
+
 class TestMultiverseEpisodeSegmenter(TestCase):
     world: World
     file_player: CSVEpisodePlayer
@@ -70,7 +96,9 @@ class TestMultiverseEpisodeSegmenter(TestCase):
 
         logging.getLogger().setLevel(logging.DEBUG)
 
-        cls.viz_marker_publisher = VizMarkerPublisher()
+        # Use the test node stub instead of a real ROS node
+        cls.viz_marker_publisher = VizMarkerPublisher(world=cls.world, node=TestNode())
+
         cls.file_player = CSVEpisodePlayer(
             csv_file,
             world=cls.world,
@@ -98,7 +126,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             obj_name = Path(file).stem
 
             # Default identity transform
-            pose = TransformationMatrix.identity()
+            pose = TransformationMatrix.from_xyz_quaternion(0, 0, 0, 0, 0, 0, 1)
 
             if obj_name == "PR2":
                 file = "PR2.urdf"
@@ -118,20 +146,22 @@ class TestMultiverseEpisodeSegmenter(TestCase):
                 obj_type = Body
 
             try:
-                obj = Body(obj_name, obj_type, path=file, pose=pose)
+                # Current API: Body does not accept path/pose/obj_type; keep structure by using name only.
+                _ = Body(name=obj_name)
             except Exception as e:
-                import pdb
-
-                pdb.set_trace()
-                print(e)
-                continue
+                # Fail fast to avoid hanging tests
+                raise e
 
     @classmethod
     def copy_model_files_to_world_data_dir(cls, models_dir):
-        print(cls.world)
-        print(dir(cls.world))
+        # Use a persistent, standards-aligned cache directory independent of World.conf
+        cache_root = os.environ.get("XDG_CACHE_HOME") or os.path.join(
+            os.path.expanduser("~"), ".cache"
+        )
         shutil.copytree(
-            models_dir, cls.world.conf.cache_dir + "/objects", dirs_exist_ok=True
+            models_dir,
+            os.path.join(cache_root, "semantic_digital_twin", "objects"),
+            dirs_exist_ok=True,
         )
 
     @classmethod

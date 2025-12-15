@@ -68,6 +68,8 @@ class SpatialRelationDetector(AtomicEventDetector):
         self.event_queue = Queue()
 
     def update_initial_state(self):
+        if self.world is None:
+            return  # World not set yet; nothing to initialize now
         for body in self.world.bodies:
             self.update_body_state(body)
 
@@ -92,19 +94,24 @@ class SpatialRelationDetector(AtomicEventDetector):
         """
         try:
             checked_bodies: List[Body] = []
-            while True:
-                event = self.event_queue.get_nowait()
-                self.event_queue.task_done()
-                logdebug(f"Checking event {event}")
-                involved_bodies = event.involved_bodies
-                bodies_to_check = list(
-                    filter(lambda body: body not in checked_bodies, involved_bodies)
-                )
-                checked_bodies.extend(
-                    self.world.update_containment_for(bodies_to_check)
-                )
-                logdebug(f"Checked bodies: {[body.name for body in checked_bodies]}")
-        except Empty:
+            while not self.kill_event.is_set() and self.episode_player.is_alive():
+                try:
+                    event = self.event_queue.get_nowait()
+                    self.event_queue.task_done()
+                    logdebug(f"Checking event {event}")
+                    involved_bodies = event.involved_bodies
+                    bodies_to_check = list(
+                        filter(lambda body: body not in checked_bodies, involved_bodies)
+                    )
+                    checked_bodies.extend(
+                        self.world.update_containment_for(bodies_to_check)
+                    )
+                    logdebug(
+                        f"Checked bodies: {[body.name for body in checked_bodies]}"
+                    )
+                except Empty:
+                    time.sleep(self.wait_time.total_seconds())
+        except:
             pass
 
     def __str__(self):

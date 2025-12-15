@@ -55,7 +55,6 @@ from semantic_digital_twin.world import World
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot, Arm
 from semantic_digital_twin.world_description.world_entity import Region, Body
 from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
-from semantic_digital_twin.robots.pr2 import PR2
 
 objects_dir = World.conf.cache_dir + "/objects"
 
@@ -331,7 +330,7 @@ while True:
     failed_insertion_action: Optional[ActionDescription] = None
     failed_insertion_object_tracker: Optional[ObjectTracker] = None
     event_that_led_to_insertion_action: Optional[InsertionEvent] = None
-    with PR2:
+    with AbstractRobot:
         for event, partial_designator in action_descriptions:
             performable = partial_designator.current_node
             try:

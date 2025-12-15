@@ -146,7 +146,13 @@ class EpisodeSegmenter(ABC):
         """
         if not self.episode_player.is_alive():
             self.episode_player.start()
+        # Wait up to ~10 seconds for readiness, checking every 100 ms
+        start = time.time()
         while not self.episode_player.ready:
+            if not self.episode_player.is_alive():
+                break  # player quit early; do not wait forever
+            if time.time() - start > 10.0:
+                break  # timeout; avoid infinite wait
             time.sleep(0.1)
 
     def run_event_detectors(self) -> None:
@@ -210,11 +216,13 @@ class EpisodeSegmenter(ABC):
         pass
 
     def run_initial_event_detectors(self) -> None:
-        """
-        Run the initial event detectors on the episode played by the episode player thread.
-        """
         for detector in self.initial_detectors:
             self.create_detector_and_start_it(detector)
+        # After creating detectors and after the episode player is ready,
+        # refresh initial world-dependent states (guarded internally).
+        for det in self.detector_threads_list:
+            if isinstance(det, SpatialRelationDetector):
+                det.update_initial_state()
         self._run_initial_event_detectors()
 
     @abstractmethod
@@ -231,7 +239,7 @@ class EpisodeSegmenter(ABC):
         """
         self.episode_player.pause()
         set_of_objects = set()
-        for obj in World.current_world.objects:
+        for obj in self.episode_player.world.bodies:
             if not self.avoid_object(obj):
                 set_of_objects.add(obj)
                 # if not check_if_object_is_supported(obj):

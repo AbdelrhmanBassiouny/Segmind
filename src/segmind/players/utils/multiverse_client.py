@@ -1,4 +1,7 @@
-from multiverse_client_py import MultiverseClient, MultiverseMetaData
+from multiverse_client_py import (
+    MultiverseClient,
+    MultiverseMetaData,
+)
 
 
 class MultiverseConnector(MultiverseClient):
@@ -25,6 +28,7 @@ class MultiverseConnector(MultiverseClient):
         self._communicate(False)
         # self.loginfo("Received data: " + str(self.receive_data))
 
+
 import time
 
 if __name__ == "__main__":
@@ -37,8 +41,9 @@ if __name__ == "__main__":
         time_unit="s",
         handedness="rhs",
     )
-    my_connector = MultiverseConnector(port="5000",
-                                       multiverse_meta_data=multiverse_meta_data)
+    my_connector = MultiverseConnector(
+        port="5000", multiverse_meta_data=multiverse_meta_data
+    )
     my_connector.run()
 
     my_connector.request_meta_data["send"] = {}
@@ -64,10 +69,11 @@ if __name__ == "__main__":
         for object_name, object_attributes in response_meta_data["receive"].items():
             object_data_dict[object_name] = {}
             for attribute_name, attribute_value in object_attributes.items():
-                object_data_dict[object_name][attribute_name] = receive_data[idx:idx + len(attribute_value)]
+                object_data_dict[object_name][attribute_name] = receive_data[
+                    idx : idx + len(attribute_value)
+                ]
         world_time = my_connector.world_time
 
         print(f"Elapsed time: {time.time() - current_time}, Data: {object_data_dict}")
-
 
     my_connector.stop()

@@ -247,7 +247,8 @@ class NewObjectDetector(AtomicEventDetector):
         self.new_object_queue: Queue[Body] = Queue()
         self.queues.append(self.new_object_queue)
         self.avoid_objects = avoid_objects if avoid_objects else lambda obj: False
-        self.world.add_callback_on_add_object(self.on_add_object)
+        if self.world is not None:
+            self.world.add_callback_on_add_object(self.on_add_object)
 
     def on_add_object(self, obj: Body):
         """

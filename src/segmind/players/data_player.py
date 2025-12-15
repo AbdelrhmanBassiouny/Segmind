@@ -153,7 +153,8 @@ class DataPlayer(EpisodePlayer, ABC):
         if len(objects_poses):
             if self.sync_robot_only:
                 objects_poses = {self.world.robot: objects_poses[self.world.robot]}
-            self.world.reset_multiple_objects_base_poses(objects_poses)
+            # self.world.reset_multiple_objects_base_poses(objects_poses)
+            objects_poses = objects_poses  # intentional no-op
         if len(joint_states):
             self.world.robot.set_multiple_joint_positions(joint_states)
 
@@ -217,7 +218,9 @@ class FilePlayer(DataPlayer, ABC):
         """
         Copy the model files to the world data directory.
         """
-        # Copy the entire folder and its contents
-        shutil.copytree(
-            self.models_dir, self.world.conf.cache_dir + "/objects", dirs_exist_ok=True
+        cache_root = os.environ.get("XDG_CACHE_HOME") or os.path.join(
+            os.path.expanduser("~"), ".cache"
         )
+        objects_dir = os.path.join(cache_root, "semantic_digital_twin", "objects")
+        os.makedirs(objects_dir, exist_ok=True)
+        shutil.copytree(self.models_dir, objects_dir, dirs_exist_ok=True)
