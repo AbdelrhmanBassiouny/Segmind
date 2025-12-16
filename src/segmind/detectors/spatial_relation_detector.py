@@ -1,16 +1,20 @@
 import time
+from functools import cached_property
 from os.path import dirname
 from queue import Queue, Empty
 
 from ripple_down_rules.rdr_decorators import RDRDecorator
 from typing_extensions import Any, Dict, List, Optional, Type, Callable, Union
 
+from krrood.entity_query_language.entity import variable, entity
 from semantic_digital_twin.collision_checking.collision_detector import Collision
 from semantic_digital_twin.exceptions import NoShapeError
 from semantic_digital_twin.reasoning.predicates import InsideOf
 from semantic_digital_twin.reasoning.world_reasoner import WorldReasoner
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Container
 from semantic_digital_twin.world_description.world_entity import Body
+
+from krrood.entity_query_language.entity_result_processors import an
 
 from segmind.datastructures.events import PlacingEvent
 from segmind.episode_player import EpisodePlayer
@@ -59,7 +63,12 @@ class SpatialRelationDetector(AtomicEventDetector):
         )
         wr = WorldReasoner(self.world)
         wr.reason()
-        self.containers = self.world.get_semantic_annotations_by_type(Container)
+        container = variable(Container, domain=None)
+        self.containers = list(
+            an(entity(container).where(container._world == self.world)).evaluate()
+        )
+        logger.debug(f"Found {len(self.containers)} containers")
+        logger.debug(f"Containers: {[c.body.name.name for c in self.containers]}")
         self.bodies_states: Dict[Body, Any] = {}
         self.update_initial_state()
         for event, cond in self.check_on_events.items():
@@ -131,20 +140,34 @@ class ContainmentDetector(SpatialRelationDetector):
         """
         Update the state of a body.
         """
-        # get all containers that are close to me now:
-        container_bodies = [c.body for c in self.containers]
+        logger.debug(f"Updating containment state for body {body.name.name}")
+        logger.debug(
+            f"possible containers: {[b.name.name for b in self.container_bodies]}"
+        )
         try:
-            _, _, distances = body.compute_closest_points_multi(container_bodies)
-        except NoShapeError:
+            _, _, distances = body.compute_closest_points_multi(self.container_bodies)
+        except NoShapeError as e:
+            logger.debug(
+                f"Body {e.shape_collection.reference_frame.name.name} has no shape, cannot compute containment."
+            )
             return
         close_container_bodies = [
-            b for i, b in enumerate(container_bodies) if distances[i] < 0.5
+            b for i, b in enumerate(self.container_bodies) if distances[i] < 0.5
         ]
+        logger.debug(
+            f"Close containers to {body.name.name}: {[b.name.name for b in close_container_bodies]}"
+        )
+        all_containments = []
         for other_body in close_container_bodies:
             # get all bodies that are close to me now:
-            self.bodies_states[other_body] = (
-                InsideOf(body, other_body).compute_containment_ratio() >= 0.6
-            )
+            if InsideOf(body, other_body).compute_containment_ratio() >= 0.6:
+                logger.debug(f"Body {body.name} is inside of {other_body.name}")
+                all_containments.append(other_body)
+        self.bodies_states[body] = all_containments
+
+    @cached_property
+    def container_bodies(self) -> List[Body]:
+        return [c.body for c in self.containers]
 
     def detect_events(self) -> None:
         """

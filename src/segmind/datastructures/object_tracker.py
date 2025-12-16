@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from threading import RLock
-from typing import Callable, Tuple
+from typing import Callable, Tuple, TypeVar
 
 from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict
 
@@ -15,6 +15,9 @@ from semantic_digital_twin.world_description.world_entity import Body
 if TYPE_CHECKING:
     from .events import Event, EventUnion
     from ..detectors.coarse_event_detectors import DetectorWithStarterEvent
+
+
+E = TypeVar("E")
 
 
 class ObjectTracker:
@@ -73,7 +76,7 @@ class ObjectTracker:
             except IndexError:
                 return None
 
-    def get_latest_event_of_type(self, event_type: Type[Event]) -> Optional[Event]:
+    def get_latest_event_of_type(self, event_type: Type[E]) -> Optional[E]:
         with self._lock:
             # print(f"Event history: {self._event_history}")
             for event in reversed(self._event_history):

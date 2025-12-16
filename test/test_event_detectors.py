@@ -20,6 +20,7 @@ from segmind.datastructures.events import (
     StopMotionEvent,
     StopTranslationEvent,
     ContactEvent,
+    ContainmentEvent,
 )
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from segmind.detectors.atomic_event_detectors import TranslationDetector
@@ -217,6 +218,11 @@ def test_translation_and_containment_detector(visualize_kitchen_world):
 
     milk_body = milk_conn.child
     fridge_body = fridge.container.body
+
+    logger.debug(
+        f"fridge_body: {fridge_body} with name {fridge_body.name} and id {fridge_body.id}"
+    )
+
     translation_detector = run_and_get_translation_detector(
         milk_body, time_between_frames=timedelta(seconds=0.01), world=world
     )
@@ -227,7 +233,6 @@ def test_translation_and_containment_detector(visualize_kitchen_world):
         f"Milk tracker: {milk_tracker} with object {milk_body} with id {milk_body.id}"
     )
     # Use a permissive stop threshold so the windowed deltas qualify as "stopped"
-
     # Spatial-relation detector (InsertionDetector)
     sr_detector = ContainmentDetector(
         check_on_events={StopTranslationEvent: None}, world=world
@@ -274,11 +279,21 @@ def test_translation_and_containment_detector(visualize_kitchen_world):
         # assert milk_tracker.get_latest_event_of_type(StopTranslationEvent) is not None
         assert milk_tracker.get_latest_event_of_type(StopMotionEvent) is not None
 
+        # Wait for spatial-relation detector to process the stop event
+        time.sleep(sr_detector.wait_time.total_seconds() * 20)
+
         # Geometric containment check
         final_containment = InsideOf(milk_body, fridge_body).compute_containment_ratio()
         assert (
             final_containment >= 0.9
         ), f"Milk should be mostly inside the fridge, got {final_containment}"
+        assert milk_tracker.get_latest_event_of_type(ContainmentEvent) is not None
+        assert (
+            "fridge"
+            in milk_tracker.get_latest_event_of_type(
+                ContainmentEvent
+            ).with_object.name.name
+        )
     finally:
         # Stop detectors and join threads cleanly
         translation_detector.stop()

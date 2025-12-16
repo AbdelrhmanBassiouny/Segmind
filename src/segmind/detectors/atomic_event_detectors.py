@@ -175,9 +175,6 @@ class AtomicEventDetector(PropagatingThread):
         """
         Detect and log the events.
         """
-        logger.debug(
-            f"{self.__class__.__name__} detecting events..., wait time: {self.wait_time}"
-        )
         events = self.detect_events()
         if not events:
             return
