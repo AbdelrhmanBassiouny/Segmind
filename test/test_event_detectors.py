@@ -1,15 +1,20 @@
 import logging
+import os
+import threading
 import time
 from datetime import timedelta
 import casadi as ca
 
 import numpy as np
 import pytest
+import rclpy
 from krrood.ormatic.dao import to_dao
 from krrood.ormatic.utils import create_engine
+from pyglet import window
 from sqlalchemy.orm import Session
 from typing_extensions import List
 
+from conftest import apartment_world
 from segmind.datastructures.events import (
     TranslationEvent,
     StopMotionEvent,
@@ -19,17 +24,25 @@ from segmind.datastructures.events import (
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
 from segmind.detectors.atomic_event_detectors import TranslationDetector
 from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
-from segmind.detectors.spatial_relation_detector import InsertionDetector
+from segmind.detectors.spatial_relation_detector import (
+    InsertionDetector,
+    ContainmentDetector,
+)
 from segmind.detectors.motion_detection_helpers import (
     has_consistent_direction,
     is_displaced,
 )
 from segmind.event_logger import EventLogger
+from semantic_digital_twin import world
+from semantic_digital_twin.adapters.urdf import URDFParser
+from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
 from semantic_digital_twin.collision_checking.trimesh_collision_detector import (
     TrimeshCollisionDetector,
 )
 from semantic_digital_twin.orm.ormatic_interface import BodyDAO, Base, WorldMappingDAO
 from semantic_digital_twin.reasoning.predicates import InsideOf
+from semantic_digital_twin.reasoning.world_reasoner import WorldReasoner
+from semantic_digital_twin.semantic_annotations.semantic_annotations import Fridge
 
 from semantic_digital_twin.world import World
 from semantic_digital_twin.robots.pr2 import PR2
@@ -45,18 +58,15 @@ from semantic_digital_twin.spatial_types.spatial_types import (
 )
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from semantic_digital_twin.world_description.geometry import Box, Scale, Color
-import inspect
-from segmind import logger
-import logging
+from segmind import set_logger_level, LogLevel, logger
 
-
-logger.setLevel(logging.DEBUG)
+set_logger_level(LogLevel.INFO)
 
 
 @pytest.fixture
 def create_kitchen_world_with_milk_and_robot():
-    world = World()
 
+    world = World()
     with world.modify_world():
         # Root
         root = Body(name=PrefixedName("root"))
@@ -131,6 +141,54 @@ def create_kitchen_world_with_milk_and_robot():
     return world, milk_conn, robot_conn, table_conn, fridge_conn, target_position
 
 
+@pytest.fixture
+def kitchen_with_milk(kitchen_world):
+
+    world = kitchen_world
+
+    with world.modify_world():
+
+        # Milk (6DoF Connection)
+        milk_shape = Box(scale=Scale(0.1, 0.1, 0.2), color=Color(1.0, 1.0, 1.0))
+        milk_body = Body(
+            name=PrefixedName("milk"),
+            visual=ShapeCollection([milk_shape]),
+            collision=ShapeCollection([milk_shape]),
+        )
+        milk_conn = Connection6DoF.create_with_dofs(
+            world=world,
+            parent=world.root,
+            child=milk_body,
+            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
+                -1.02, 1.61, 0.864 + milk_body.combined_mesh.bounding_box.extents[2] / 2
+            ),
+        )
+        world.add_connection(milk_conn)
+
+        wr = WorldReasoner(world=world)
+        wr.reason()
+        fridge = world.get_semantic_annotations_by_type(Fridge)[0]
+
+        # Target position (Point3)
+        target_position = Point3.from_iterable([1.56, -0.972, 0.535])
+
+    return world, milk_conn, fridge, target_position
+
+
+@pytest.fixture
+def visualize_kitchen_world(kitchen_with_milk):
+    world, _, _, _ = kitchen_with_milk
+    rclpy.init()
+    node = rclpy.create_node("demo_node")
+    threading.Thread(target=rclpy.spin, args=(node,), daemon=True).start()
+
+    VizMarkerPublisher(world=world, node=node)
+    # # wait for key press
+    # input("Press Enter to continue...")
+    # rclpy.shutdown()
+    return kitchen_with_milk
+
+
 def test_general_pick_up_start_condition_checker(
     create_kitchen_world_with_milk_and_robot,
 ):
@@ -153,66 +211,64 @@ def test_general_pick_up_start_condition_checker(
     assert GeneralPickUpDetector.start_condition_checker(event)
 
 
-def test_translation_and_insertion_detector(create_kitchen_world_with_milk_and_robot):
-    world, milk_conn, robot_conn, table_conn, fridge_conn, target_position = (
-        create_kitchen_world_with_milk_and_robot
-    )
+def test_translation_and_containment_detector(visualize_kitchen_world):
 
-    milk_body = world.get_body_by_name("milk")
-    fridge_body = world.get_body_by_name("fridge")
+    world, milk_conn, fridge, target_position = visualize_kitchen_world
+
+    milk_body = milk_conn.child
+    fridge_body = fridge.container.body
     translation_detector = run_and_get_translation_detector(
         milk_body, time_between_frames=timedelta(seconds=0.01), world=world
     )
 
     # Track events from the milk object
     milk_tracker = ObjectTrackerFactory.get_tracker(milk_body)
+    logger.debug(
+        f"Milk tracker: {milk_tracker} with object {milk_body} with id {milk_body.id}"
+    )
     # Use a permissive stop threshold so the windowed deltas qualify as "stopped"
 
     # Spatial-relation detector (InsertionDetector)
-    sr_detector = InsertionDetector(world=world)
+    sr_detector = ContainmentDetector(
+        check_on_events={StopTranslationEvent: None}, world=world
+    )
     sr_detector.start()
 
     try:
         # Initial containment check
-        assert (
-            InsideOf(
-                world.get_body_by_name("milk"), world.get_body_by_name("fridge")
-            ).compute_containment_ratio()
-            == 0.0
-        )
+        assert InsideOf(milk_body, fridge_body).compute_containment_ratio() == 0.0
 
         # Establish baseline sample before the move
-        translation_detector.update_with_latest_motion_data()
-        time.sleep(translation_detector.get_n_changes_wait_time(1))
+        for _ in range(translation_detector.window_size + 1):
+            translation_detector.update_with_latest_motion_data()
+            time.sleep(translation_detector.get_n_changes_wait_time(1))
 
-        # Move milk to the fridge position in one jump
-        fridge_pos = fridge_body.global_pose.to_position().to_np()[:3]
+        # Move the milk into the fridge
         with world.modify_world():
             milk_conn.parent_T_connection_expression = (
                 TransformationMatrix.from_xyz_rpy(
-                    x=float(fridge_pos[0]),
-                    y=float(fridge_pos[1]),
-                    z=float(fridge_pos[2]),
+                    x=target_position.x,
+                    y=target_position.y,
+                    z=target_position.z,
                 )
             )
         world.notify_state_change()
 
-        for _ in range(6):
+        assert all(
+            current == expected
+            for current, expected in zip(
+                milk_body.global_pose.to_position().to_np(), target_position.to_np()
+            )
+        )
+
+        logger.debug(f"Milk event history: {milk_tracker.get_event_history()}")
+
+        for _ in range((translation_detector.window_size + 1) * 2):
             translation_detector.update_with_latest_motion_data()
-            time.sleep(translation_detector.get_n_changes_wait_time(1))
+            time.sleep(translation_detector.get_n_changes_wait_time(2))
+            logger.debug(f"latest_distances: {translation_detector.latest_distances}")
 
-        # Extra steady samples so the stop window is full of near-zeros
-        for _ in range(100):
-            translation_detector.update_with_latest_motion_data()
-            time.sleep(translation_detector.get_n_changes_wait_time(1))
-
-        # Optional debug: confirm near-zero tail in the distance window
-        try:
-            tail = translation_detector.latest_distances[-3:]
-            # print("Distance tail:", tail)
-        except Exception:
-            pass
-
+        logger.debug(f"Milk event history: {milk_tracker.get_event_history()}")
         # Assertions: start and stop motion events must be present
         assert milk_tracker.get_latest_event_of_type(TranslationEvent) is not None
         # assert milk_tracker.get_latest_event_of_type(StopTranslationEvent) is not None
@@ -240,9 +296,9 @@ def run_and_get_translation_detector(
     Create and start a TranslationDetector for the given object, with lowered
     thresholds for testing so even small movements trigger events.
     """
-    logger = EventLogger()
+    event_logger = EventLogger()
     translation_detector = TranslationDetector(
-        logger,
+        event_logger,
         obj,
         time_between_frames=time_between_frames,
         window_size_in_seconds=0.05,

@@ -6,9 +6,9 @@ import time
 from abc import ABC, abstractmethod
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-loginfo = logging.info
+# logging.basicConfig(level=logging.INFO)
+# logdebug = logging.debug
+# loginfo = logging.info
 import numpy as np
 from typing_extensions import List, Optional, Tuple
 

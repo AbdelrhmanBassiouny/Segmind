@@ -8,8 +8,8 @@ from abc import ABC, abstractmethod
 from typing_extensions import Callable, Any, Optional, Dict, Generator
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
+# logging.basicConfig(level=logging.INFO)
+# logdebug = logging.debug
 
 from semantic_digital_twin.world import World
 

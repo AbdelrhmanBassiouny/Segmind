@@ -24,10 +24,10 @@ from typing_extensions import Dict, Set
 import logging
 
 
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-loginfo = logging.info
-logerr = logging.error
+# logging.basicConfig(level=logging.INFO)
+# logdebug = logging.debug
+# loginfo = logging.info
+# logerr = logging.error
 
 from segmind.datastructures.events import (
     AbstractAgentObjectInteractionEvent,

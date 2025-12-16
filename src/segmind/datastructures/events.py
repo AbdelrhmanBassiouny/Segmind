@@ -123,6 +123,9 @@ class EventWithOneTrackedObject(EventWithTrackedObjects, HasPrimaryTrackedObject
     def update_object_trackers_with_event(self) -> None:
         ObjectTrackerFactory.get_tracker(self.tracked_object).add_event(self)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         return (
             f"{self.__class__.__name__}: {self.tracked_object.name} - {self.timestamp}"
@@ -160,6 +163,9 @@ class EventWithTwoTrackedObjects(
         if self.with_object is not None:
             ObjectTrackerFactory.get_tracker(self.with_object).add_event(self)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         with_object_name = (
             f" - {self.with_object.name}" if self.with_object is not None else ""
@@ -181,7 +187,7 @@ class EventWithTwoTrackedObjects(
         return hash(hash_tuple)
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(unsafe_hash=True, repr=False)
 class DefaultEventWithTwoTrackedObjects(EventWithTwoTrackedObjects):
     """
     A default implementation of EventWithTwoTrackedObjects that does not require a with_object.
@@ -199,7 +205,7 @@ class DefaultEventWithTwoTrackedObjects(EventWithTwoTrackedObjects):
         return self.tracked_object.color
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(unsafe_hash=True, repr=False)
 class NewObjectEvent(EventWithOneTrackedObject):
     """
     The NewObjectEvent class is used to represent an event that involves the addition of a new object to the world.
@@ -216,7 +222,7 @@ class NewObjectEvent(EventWithOneTrackedObject):
         return self.tracked_object.color
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(unsafe_hash=True, repr=False)
 class SupportEvent(DefaultEventWithTwoTrackedObjects):
     """
     The SupportEvent class is used to represent an event that involves an object that is supported by another object.
@@ -225,7 +231,7 @@ class SupportEvent(DefaultEventWithTwoTrackedObjects):
     ...
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(unsafe_hash=True, repr=False)
 class LossOfSupportEvent(DefaultEventWithTwoTrackedObjects):
     """
     The LossOfSupportEvent class is used to represent an event that involves an object that was supported by another
@@ -235,7 +241,7 @@ class LossOfSupportEvent(DefaultEventWithTwoTrackedObjects):
     ...
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class MotionEvent(EventWithOneTrackedObject, ABC):
     """
     The MotionEvent class is used to represent an event that involves an object that was stationary and then moved or
@@ -267,36 +273,36 @@ class MotionEvent(EventWithOneTrackedObject, ABC):
         self.tracked_object.set_color(color)
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class TranslationEvent(MotionEvent):
     @property
     def color(self) -> Color:
         return Color(0, 1, 1, 1)
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class RotationEvent(MotionEvent):
     @property
     def color(self) -> Color:
         return Color(0, 1, 1, 1)
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class StopMotionEvent(MotionEvent):
     @property
     def color(self) -> Color:
         return Color(1, 0, 0, 1)
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class StopTranslationEvent(StopMotionEvent): ...
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class StopRotationEvent(StopMotionEvent): ...
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
     contact_points: Collision = field(init=False, default_factory=Collision)
     latest_contact_points: Collision = field(init=False, default_factory=Collision)
@@ -371,7 +377,7 @@ class AbstractContactEvent(EventWithTwoTrackedObjects, ABC):
         pass
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class ContactEvent(AbstractContactEvent):
 
     @property
@@ -396,11 +402,11 @@ class ContactEvent(AbstractContactEvent):
         return self.contact_points.get_all_bodies()
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class InterferenceEvent(ContactEvent): ...
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class LossOfContactEvent(AbstractContactEvent):
 
     @property
@@ -431,11 +437,11 @@ class LossOfContactEvent(AbstractContactEvent):
         )
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class LossOfInterferenceEvent(LossOfContactEvent): ...
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class AbstractAgentContact(AbstractContactEvent, ABC):
     @property
     def agent(self) -> Body:
@@ -460,7 +466,7 @@ class AbstractAgentContact(AbstractContactEvent, ABC):
         pass
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class AgentContactEvent(ContactEvent, AbstractAgentContact):
 
     @property
@@ -471,11 +477,11 @@ class AgentContactEvent(ContactEvent, AbstractAgentContact):
             return self.contact_points[0].link_b
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class AgentInterferenceEvent(InterferenceEvent, AgentContactEvent): ...
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
 
     @property
@@ -486,13 +492,13 @@ class AgentLossOfContactEvent(LossOfContactEvent, AbstractAgentContact):
             return self.latest_contact_points[0].link_b
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class AgentLossOfInterferenceEvent(
     LossOfInterferenceEvent, AgentLossOfContactEvent
 ): ...
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, repr=False)
 class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
     agent: Optional[Agent] = None
     timestamp: Optional[float] = None
@@ -553,7 +559,7 @@ class AbstractAgentObjectInteractionEvent(EventWithTwoTrackedObjects, ABC):
         pass
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(unsafe_hash=True, repr=False)
 class PickUpEvent(AbstractAgentObjectInteractionEvent):
 
     @property
@@ -568,7 +574,7 @@ class PickUpEvent(AbstractAgentObjectInteractionEvent):
         return PickUpAction
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(unsafe_hash=True, repr=False)
 class PlacingEvent(AbstractAgentObjectInteractionEvent):
     placement_pose: Optional[TransformationMatrix] = None
 
@@ -588,7 +594,7 @@ class PlacingEvent(AbstractAgentObjectInteractionEvent):
         return PlaceAction
 
 
-@dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True, repr=False)
 class InsertionEvent(AbstractAgentObjectInteractionEvent):
     inserted_into_objects: List[Body] = field(
         init=False, default_factory=list, repr=False, hash=False
@@ -649,7 +655,7 @@ class InsertionEvent(AbstractAgentObjectInteractionEvent):
         return Color(1, 0, 1, 1)
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(unsafe_hash=True, repr=False)
 class ContainmentEvent(DefaultEventWithTwoTrackedObjects): ...
 
 

@@ -117,12 +117,17 @@ class EventLogger:
             self.event_callbacks[event_type] = [(condition, callback)]
 
     def log_event(self, event: Event):
+        curr_time = time.time()
+        logger.debug(f"Starting to log event {event}, current_time: {curr_time}")
         if self.is_event_in_timeline(event):
             return
         self.update_object_trackers_with_event(event)
         self.event_queue.put(event)
         self.annotate_scene_with_event(event)
         self.call_event_callbacks(event)
+        logger.debug(
+            f"Finished logging event {event}, time_difference: {time.time() - curr_time}"
+        )
 
     def call_event_callbacks(self, event: Event) -> None:
         """

@@ -7,9 +7,9 @@ from enum import Enum
 from ..episode_player import EpisodePlayer
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-loginfo = logging.info
+# logging.basicConfig(level=logging.INFO)
+# logdebug = logging.debug
+# loginfo = logging.info
 
 
 from pycram.datastructures.enums import Grasp, TorsoState, TaskStatus

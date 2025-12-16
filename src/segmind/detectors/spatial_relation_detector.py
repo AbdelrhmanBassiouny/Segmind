@@ -5,17 +5,17 @@ from queue import Queue, Empty
 from ripple_down_rules.rdr_decorators import RDRDecorator
 from typing_extensions import Any, Dict, List, Optional, Type, Callable, Union
 
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-
-
+from semantic_digital_twin.collision_checking.collision_detector import Collision
+from semantic_digital_twin.exceptions import NoShapeError
+from semantic_digital_twin.reasoning.predicates import InsideOf
+from semantic_digital_twin.reasoning.world_reasoner import WorldReasoner
+from semantic_digital_twin.semantic_annotations.semantic_annotations import Container
 from semantic_digital_twin.world_description.world_entity import Body
 
 from segmind.datastructures.events import PlacingEvent
 from segmind.episode_player import EpisodePlayer
 from .atomic_event_detectors import AtomicEventDetector
+from .. import logger
 from ..datastructures.events import (
     MotionEvent,
     EventUnion,
@@ -57,6 +57,9 @@ class SpatialRelationDetector(AtomicEventDetector):
         self.check_on_events = (
             check_on_events if check_on_events is not None else self.check_on_events
         )
+        wr = WorldReasoner(self.world)
+        wr.reason()
+        self.containers = self.world.get_semantic_annotations_by_type(Container)
         self.bodies_states: Dict[Body, Any] = {}
         self.update_initial_state()
         for event, cond in self.check_on_events.items():
@@ -98,7 +101,7 @@ class SpatialRelationDetector(AtomicEventDetector):
                 try:
                     event = self.event_queue.get_nowait()
                     self.event_queue.task_done()
-                    logdebug(f"Checking event {event}")
+                    logger.debug(f"Checking event {event}")
                     involved_bodies = event.involved_bodies
                     bodies_to_check = list(
                         filter(lambda body: body not in checked_bodies, involved_bodies)
@@ -106,7 +109,7 @@ class SpatialRelationDetector(AtomicEventDetector):
                     checked_bodies.extend(
                         self.world.update_containment_for(bodies_to_check)
                     )
-                    logdebug(
+                    logger.debug(
                         f"Checked bodies: {[body.name for body in checked_bodies]}"
                     )
                 except Empty:
@@ -128,12 +131,20 @@ class ContainmentDetector(SpatialRelationDetector):
         """
         Update the state of a body.
         """
-        if isinstance(body, Body):
-            for link in body.links.values():
-                self.bodies_states[link] = link.update_containment(
-                    intersection_ratio=0.6
-                )
-        self.bodies_states[body] = body.update_containment(intersection_ratio=0.6)
+        # get all containers that are close to me now:
+        container_bodies = [c.body for c in self.containers]
+        try:
+            _, _, distances = body.compute_closest_points_multi(container_bodies)
+        except NoShapeError:
+            return
+        close_container_bodies = [
+            b for i, b in enumerate(container_bodies) if distances[i] < 0.5
+        ]
+        for other_body in close_container_bodies:
+            # get all bodies that are close to me now:
+            self.bodies_states[other_body] = (
+                InsideOf(body, other_body).compute_containment_ratio() >= 0.6
+            )
 
     def detect_events(self) -> None:
         """
@@ -148,6 +159,8 @@ class ContainmentDetector(SpatialRelationDetector):
                 else:
                     known_containments = []
                 self.update_body_state(event.tracked_object)
+                if event.tracked_object not in self.bodies_states:
+                    continue
                 new_containments = set(self.bodies_states[event.tracked_object]) - set(
                     known_containments
                 )
@@ -206,7 +219,7 @@ class InsertionDetector(SpatialRelationDetector):
                 event: ContainmentEvent = self.event_queue.get_nowait()
                 self.event_queue.task_done()
                 if event.tracked_object in checked_bodies:
-                    logdebug(
+                    logger.debug(
                         f"tracked object {event.tracked_object.name} is already checked"
                     )
                     continue

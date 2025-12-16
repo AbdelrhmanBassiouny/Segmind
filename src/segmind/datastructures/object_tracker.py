@@ -7,9 +7,7 @@ from typing import Callable, Tuple
 from typing_extensions import List, Type, Optional, TYPE_CHECKING, Dict
 
 import numpy as np
-import logging
-
-logger = logging.getLogger(__name__)
+from .. import logger
 
 
 from semantic_digital_twin.world_description.world_entity import Body
@@ -54,8 +52,11 @@ class ObjectTracker:
         with self._lock:
             self._event_history.append(event)
             self._event_history.sort(key=lambda e: e.timestamp)
-        if isinstance(self.obj, Body) and self.obj is not None:
-            ObjectTrackerFactory.get_tracker(self.obj).add_event(event)
+            logger.debug(
+                f"Added event {event} to tracker of object {self.obj.name} with id {self.obj.id}"
+            )
+        # if isinstance(self.obj, Body) and self.obj is not None:
+        #     ObjectTrackerFactory.get_tracker(self.obj).add_event(event)
 
     def get_event_history(self) -> List[Event]:
         with self._lock:

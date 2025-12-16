@@ -5,8 +5,8 @@ from typing_extensions import Optional, List
 import logging
 
 
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
+# logging.basicConfig(level=logging.INFO)
+# logdebug = logging.debug
 
 from semantic_digital_twin.world_description.world_entity import Body
 

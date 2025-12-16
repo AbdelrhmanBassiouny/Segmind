@@ -12,7 +12,7 @@ from ..datastructures.mixins import (
     HasPrimaryTrackedObject,
     HasPrimaryAndSecondaryTrackedObjects,
 )
-from ..datastructures.object_tracker import logger
+from .. import logger
 from ..detectors.motion_detection_helpers import (
     is_displaced,
     is_stopped,
@@ -68,7 +68,7 @@ class AtomicEventDetector(PropagatingThread):
 
     def __init__(
         self,
-        logger: Optional[EventLogger] = None,
+        event_logger: Optional[EventLogger] = None,
         wait_time: Optional[timedelta] = None,
         world: Optional[World] = None,
         episode_player: Optional[EpisodePlayer] = None,
@@ -88,7 +88,9 @@ class AtomicEventDetector(PropagatingThread):
         super().__init__()
         self.episode_player: EpisodePlayer = episode_player
         self.fit_mode = fit_mode
-        self.logger: EventLogger = logger if logger else EventLogger.current_logger
+        self.logger: EventLogger = (
+            event_logger if event_logger else EventLogger.current_logger
+        )
         self.world: World = world
         self.wait_time = (
             wait_time if wait_time is not None else timedelta(milliseconds=50)
@@ -135,13 +137,12 @@ class AtomicEventDetector(PropagatingThread):
         """
         try:
             while True:
-                # print(f"{self.__class__.__name__}  calling run")
-                # if (
-                #     self.kill_event.is_set()
-                #     # and self.all_queues_empty
-                #     and not self.is_processing_jobs
-                # ) or self.exc is not None:
-                #     break
+                if (
+                    self.kill_event.is_set()
+                    and self.all_queues_empty
+                    and not self.is_processing_jobs
+                ) or self.exc is not None:
+                    break
 
                 self._wait_if_paused()
                 if self.fit_mode and self.episode_player:
@@ -157,12 +158,8 @@ class AtomicEventDetector(PropagatingThread):
                     break
                 else:
                     self._wait_to_maintain_loop_rate(last_processing_time)
-            # print(
-            #     f"{self.__class__.__name__}  ended!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            # )
         except Exception as e:
             traceback.print_exc()
-            # print(f"{self.__class__.__name__}  {e}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             pass
 
     @property
@@ -178,10 +175,14 @@ class AtomicEventDetector(PropagatingThread):
         """
         Detect and log the events.
         """
-        # print(f"{self.__class__.__name__}  calling detect events")
+        logger.debug(
+            f"{self.__class__.__name__} detecting events..., wait time: {self.wait_time}"
+        )
         events = self.detect_events()
-        if events:
-            [self.log_event(event) for event in events]
+        if not events:
+            return
+        for event in events:
+            self.log_event(event)
 
     def _wait_if_paused(self):
         """
@@ -232,18 +233,18 @@ class NewObjectDetector(AtomicEventDetector):
 
     def __init__(
         self,
-        logger: EventLogger,
+        event_logger: EventLogger,
         wait_time: Optional[timedelta] = None,
         avoid_objects: Optional[Callable[[Body], bool]] = None,
         *args,
         **kwargs,
     ):
         """
-        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param event_logger: An instance of the EventLogger class that is used to log the events.
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         :param avoid_objects: An optional list of strings that represent the names of the objects to avoid.
         """
-        super().__init__(logger, wait_time, *args, **kwargs)
+        super().__init__(event_logger, wait_time, *args, **kwargs)
         self.new_object_queue: Queue[Body] = Queue()
         self.queues.append(self.new_object_queue)
         self.avoid_objects = avoid_objects if avoid_objects else lambda obj: False
@@ -294,19 +295,19 @@ class DetectorWithTrackedObject(AtomicEventDetector, HasPrimaryTrackedObject, AB
 
     def __init__(
         self,
-        logger: EventLogger,
+        event_logger: EventLogger,
         tracked_object: Body,
         wait_time: Optional[timedelta] = None,
         *args,
         **kwargs,
     ):
         """
-        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param event_logger: An instance of the EventLogger class that is used to log the events.
         :param tracked_object: An Object instance that represents the object to track.
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         HasPrimaryTrackedObject.__init__(self, tracked_object=tracked_object)
-        AtomicEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
+        AtomicEventDetector.__init__(self, event_logger, wait_time, *args, **kwargs)
 
     def __str__(self):
         return f"{self.thread_id} - {self.tracked_object.name}"
@@ -321,7 +322,7 @@ class DetectorWithTwoTrackedObjects(
 
     def __init__(
         self,
-        logger: EventLogger,
+        event_logger: EventLogger,
         tracked_object: Body,
         with_object: Optional[Body] = None,
         wait_time: Optional[timedelta] = None,
@@ -329,7 +330,7 @@ class DetectorWithTwoTrackedObjects(
         **kwargs,
     ):
         """
-        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param event_logger: An instance of the EventLogger class that is used to log the events.
         :param tracked_object: An Object instance that represents the object to track.
         :param with_object: An optional Object instance that represents the object to track.
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
@@ -337,7 +338,7 @@ class DetectorWithTwoTrackedObjects(
         HasPrimaryAndSecondaryTrackedObjects.__init__(
             self, tracked_object=tracked_object, with_object=with_object
         )
-        AtomicEventDetector.__init__(self, logger, wait_time, *args, **kwargs)
+        AtomicEventDetector.__init__(self, event_logger, wait_time, *args, **kwargs)
 
     def __str__(self):
         with_object_name = (
@@ -349,7 +350,7 @@ class DetectorWithTwoTrackedObjects(
 class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
     def __init__(
         self,
-        logger: EventLogger,
+        event_logger: EventLogger,
         tracked_object: Body,
         with_object: Optional[Body] = None,
         max_closeness_distance: Optional[float] = 0.05,
@@ -358,13 +359,13 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         **kwargs,
     ):
         """
-        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param event_logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the Event class that represents the event to start the event detector.
         :param max_closeness_distance: An optional float value that represents the maximum distance between the object
         :param wait_time: An optional timedelta value that introduces a delay between calls to the event detector.
         """
         DetectorWithTwoTrackedObjects.__init__(
-            self, logger, tracked_object, with_object, wait_time, *args, **kwargs
+            self, event_logger, tracked_object, with_object, wait_time, *args, **kwargs
         )
         self.max_closeness_distance = max_closeness_distance
         self.latest_contact_points: Optional[Collision] = Collision([])
@@ -615,18 +616,18 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
     def __init__(
         self,
-        logger: EventLogger,
+        event_logger: EventLogger,
         tracked_object: Body,
         velocity_threshold: Optional[float] = None,
         time_between_frames: timedelta = timedelta(milliseconds=200),
-        window_size_in_seconds: int = 0.3,
+        window_size_in_seconds: float = 0.3,
         distance_filter_method: Optional[DataFilter] = ExponentialMovingAverage(0.99),
         stop_velocity_threshold: Optional[float] = None,
         *args,
         **kwargs,
     ):
         """
-        :param logger: An instance of the EventLogger class that is used to log the events.
+        :param event_logger: An instance of the EventLogger class that is used to log the events.
         :param starter_event: An instance of the NewObjectEvent class that represents the event to start the event.
         :param tracked_object: An optional Object instance that represents the object to track.
         :param velocity_threshold: The threshold for the velocity to detect movement.
@@ -636,7 +637,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         :param stop_velocity_threshold: The threshold for the velocity to detect stop.
         """
         DetectorWithTrackedObject.__init__(
-            self, logger, tracked_object, *args, **kwargs
+            self, event_logger, tracked_object, *args, **kwargs
         )
         if self.episode_player is not None:
             self.episode_player.add_frame_callback(self.update_with_latest_motion_data)
@@ -750,6 +751,9 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
         while repeat:
             try:
                 self.data_queue.put_nowait((latest_time, latest_pose))
+                logger.debug(
+                    f"Updated motion data: time={latest_time}, position={latest_pose.to_position()}"
+                )
                 repeat = False
             except Full:
                 try:
@@ -778,7 +782,7 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
             _, _ = self.data_queue.get_nowait()
             self.data_queue.task_done()
             latest_pose, latest_time = self.get_current_pose_and_time()
-            logger.debug(f"pose: {latest_pose}, time: {latest_time}")
+            logger.debug(f"position: {latest_pose.to_position()}, time: {latest_time}")
             self.poses.append(latest_pose)
             self.times.append(latest_time)
             logger.debug(f"number of poses = {len(self.poses)}")
@@ -788,7 +792,6 @@ class MotionDetector(DetectorWithTrackedObject, ABC):
 
             if not self.window_size_reached:
                 return
-            print("window size reached")
             logger.debug(f"window size reached")
             events: Optional[List[MotionEvent]] = None
             if self.motion_sate_changed:

@@ -3,9 +3,9 @@ from __future__ import annotations
 import os.path
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-loginfo = logging.info
+# logging.basicConfig(level=logging.INFO)
+# logdebug = logging.debug
+# loginfo = logging.info
 
 from pycram.robot_plans import (
     PickUpAction,

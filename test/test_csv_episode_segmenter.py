@@ -1,14 +1,17 @@
 import datetime
 import os
 import shutil
+import threading
 from os.path import dirname
 from pathlib import Path
 from unittest import TestCase
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logdebug = logging.debug
-loginfo = logging.info
+from semantic_digital_twin.robots.abstract_robot import AbstractRobot
+
+# logging.basicConfig(level=logging.INFO)
+# logdebug = logging.debug
+# loginfo = logging.info
 
 
 from pycram.robot_description import RobotDescriptionManager
@@ -40,7 +43,6 @@ from semantic_digital_twin.world_description.world_entity import (
 )
 from semantic_digital_twin.spatial_types import TransformationMatrix, Vector3
 from semantic_digital_twin.world import World
-from semantic_digital_twin.robots.pr2 import PR2
 
 
 class TestPublisher:
@@ -73,7 +75,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
     world: World
     file_player: CSVEpisodePlayer
     episode_segmenter: NoAgentEpisodeSegmenter
-    viz_marker_publisher: VizMarkerPublisher
+    # viz_marker_publisher: VizMarkerPublisher
 
     @classmethod
     def setUpClass(cls):
@@ -127,9 +129,9 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             # Default identity transform
             pose = TransformationMatrix.from_xyz_quaternion(0, 0, 0, 0, 0, 0, 1)
 
-            if obj_name == "PR2":
-                file = "PR2.urdf"
-                obj_type = PR2
+            if obj_name == "iCub":
+                file = "iCub.urdf"
+                obj_type = AbstractRobot
                 pose = TransformationMatrix.from_xyz_quaternion(
                     pos_x=-0.8,
                     pos_y=0,
@@ -148,7 +150,10 @@ class TestMultiverseEpisodeSegmenter(TestCase):
                 # Current API: Body does not accept path/pose/obj_type; keep structure by using name only.
                 _ = Body(name=obj_name)
             except Exception as e:
-                # Fail fast to avoid hanging tests
+                import pdb
+
+                pdb.set_trace()
+                print(e)
                 raise e
 
     @classmethod
