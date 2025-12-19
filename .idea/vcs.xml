@@ -2,6 +2,6 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../semantic_digital_twin" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../cognitive_robot_abstract_machine" vcs="Git" />
   </component>
 </project>

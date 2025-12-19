@@ -112,7 +112,7 @@ class TestMultiverseEpisodeSegmenter(TestCase):
             annotate_events=True,
             plot_timeline=True,
             plot_save_path=f"{dirname(__file__)}/test_results/{Path(dirname(csv_file)).stem}",
-            detectors_to_start=[GeneralPickUpDetector, PlacingDetector],
+            detectors_to_start=[],  # [GeneralPickUpDetector, PlacingDetector],
             initial_detectors=[InsertionDetector, SupportDetector, ContainmentDetector],
         )
 

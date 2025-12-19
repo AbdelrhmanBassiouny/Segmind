@@ -98,7 +98,7 @@ class DetectorWithStarterEvent(AtomicEventDetector, ABC):
         self._start_timestamp = timestamp
 
     def _no_event_found_log(self, event_type: Type[Event]):
-        logdebug(
+        logger.debug(
             f"{self} with starter event: {self.starter_event} found no event of type: {event_type}"
         )
 
@@ -250,7 +250,7 @@ class AbstractInteractionDetector(DetectorWithTrackedObjectAndStarterEvent, ABC)
             break
 
         if event:
-            loginfo(
+            logger.info(
                 f"{self.__class__.__name__} detected an interaction with: {self.tracked_object.name}"
             )
             return [event]
@@ -460,13 +460,16 @@ class PlacingDetector(AbstractInteractionDetector):
 
     @classmethod
     @start_condition_rdr.decorator
-    def start_condition_checker(cls, event: EventWithOneTrackedObject) -> bool:
+    def start_condition_checker(cls, event: Event) -> bool:
         """
         Check if an agent is in contact with the tracked_object.
 
         :param event: The ContactEvent instance that represents the contact event.
         """
-        pass
+        if event:
+            return True
+        else:
+            pass
 
 
 def select_transportable_objects_from_contact_event(

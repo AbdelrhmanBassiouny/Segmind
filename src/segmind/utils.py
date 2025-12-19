@@ -15,6 +15,10 @@ from typing_extensions import List, Optional, Tuple
 from pycram.datastructures.enums import Grasp, AxisIdentifier
 from pycram.datastructures.grasp import GraspDescription
 
+from segmind import logger
+from semantic_digital_twin.collision_checking.trimesh_collision_detector import (
+    TrimeshCollisionDetector,
+)
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Floor
 from semantic_digital_twin.world_description.geometry import Color
 from semantic_digital_twin.world import World
@@ -67,15 +71,16 @@ def text_to_speech(text: str):
                 time.sleep(0.1)
                 continue
         except pygame.error:
-            loginfo("Audio not available, running in silent mode.")
+            logger.info("Audio not available, running in silent mode.")
 
 
+# TODO: Fix this to use semdt properly
 def is_object_supported_by_container_body(
     obj: Body, distance: float = 0.07, bodies_to_check: Optional[List[Body]] = None
 ) -> bool:
     if bodies_to_check is None:
         bodies_to_check = obj.contact_points.get_all_bodies()
-    if hasattr(obj.world, "views") and obj.world.views is not None:
+    if hasattr(obj._world, "views") and obj.world.views is not None:
         containers = [v for v in obj.world.views["views"] if isinstance(v, Box)]
         container_bodies = [c.body for c in containers]
         container_body_names = [c.name.name for c in container_bodies]
@@ -198,46 +203,38 @@ def check_if_object_is_supported_using_contact_points(
             return True
 
 
+# TODO: Fix this to use semdt properly
 def get_support(
     obj: Body, contact_bodies: Optional[List[Body]] = None
 ) -> Optional[Body]:
     """
     Check if the object is in contact with a supporting surface and returns it.
-
-    :param obj: The object to check if it is in contact with a supporting surface.
-    :param contact_bodies: The bodies in contact with the object.
-    :return: The supporting surface if it exists, None otherwise.
     """
     if not contact_bodies:
+        # get all collisions with other bodies (we need the bodies
+        # that this body is colliding with) using semdt
         contact_bodies = obj.contact_points.get_all_bodies()
     excluded_bodies = [obj]
-    if isinstance(obj, Body):
-        excluded_bodies.extend(list(obj.links.values()))
-    for body in contact_bodies:
+    for body in contact_bodies or []:
         if body in excluded_bodies:
             continue
-        # if isinstance(body, Link):
-        #     parent_obj = body.parent_entity
-        # else:
-        #     parent_obj = body
-        # if issubclass(obj.obj_type, (SupportingSurface, Location)):
         if is_object_supported_by_container_body(obj, bodies_to_check=[body]):
             return body
-        body_aabb = body.get_axis_aligned_bounding_box()
+        body_aabb = body.get_axis_aligned_bounding_box()  # get from semdt
         surface_z = body_aabb.max_z - 0.001
-        obj_bbox = obj.get_axis_aligned_bounding_box()
+        obj_bbox = obj.get_axis_aligned_bounding_box()  # get from semdt
         intersection = obj_bbox.intersection_with(
             body_aabb, axis_to_use=[AxisIdentifier.X, AxisIdentifier.Y]
-        )
-        tracked_object_base = obj.position
+        )  # get from semdt (maybe needs to be implemented for semdt)
+        tracked_object_base = obj.position  # get from semdt
         if (
             tracked_object_base.z + 0.001 >= surface_z
             and intersection.width >= 0.5 * obj_bbox.width
             and intersection.depth >= 0.5 * obj_bbox.depth
         ):
-            logdebug(f"Object {obj.name} IS supported by {body.name}")
+            logger.debug(f"Object {obj.name} IS supported by {body.name}")
             return body
-    logdebug(f"Object {obj.name} IS NOT supported")
+    logger.debug(f"Object {obj.name} IS NOT supported")
 
 
 def check_if_object_is_supported_by_another_object(

@@ -3,6 +3,8 @@ import os
 import threading
 import time
 from datetime import timedelta
+from queue import Queue
+
 import casadi as ca
 
 import numpy as np
@@ -21,20 +23,33 @@ from segmind.datastructures.events import (
     StopTranslationEvent,
     ContactEvent,
     ContainmentEvent,
+    SupportEvent,
+    LossOfContactEvent,
+    LossOfSupportEvent,
+    PickUpEvent,
+    EventUnion,
 )
 from segmind.datastructures.object_tracker import ObjectTrackerFactory
-from segmind.detectors.atomic_event_detectors import TranslationDetector
-from segmind.detectors.coarse_event_detectors import GeneralPickUpDetector
+from segmind.detectors.atomic_event_detectors import (
+    TranslationDetector,
+    ContactDetector,
+    LossOfContactDetector,
+)
+from segmind.detectors.coarse_event_detectors import (
+    GeneralPickUpDetector,
+    PlacingDetector,
+)
 from segmind.detectors.spatial_relation_detector import (
     InsertionDetector,
     ContainmentDetector,
+    SupportDetector,
 )
 from segmind.detectors.motion_detection_helpers import (
     has_consistent_direction,
     is_displaced,
 )
 from segmind.event_logger import EventLogger
-from semantic_digital_twin import world
+from segmind.utils import get_support
 from semantic_digital_twin.adapters.urdf import URDFParser
 from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
 from semantic_digital_twin.collision_checking.trimesh_collision_detector import (
@@ -43,6 +58,7 @@ from semantic_digital_twin.collision_checking.trimesh_collision_detector import 
 from semantic_digital_twin.orm.ormatic_interface import BodyDAO, Base, WorldMappingDAO
 from semantic_digital_twin.reasoning.predicates import InsideOf
 from semantic_digital_twin.reasoning.world_reasoner import WorldReasoner
+from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Fridge
 
 from semantic_digital_twin.world import World
@@ -61,7 +77,7 @@ from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from semantic_digital_twin.world_description.geometry import Box, Scale, Color
 from segmind import set_logger_level, LogLevel, logger
 
-set_logger_level(LogLevel.INFO)
+set_logger_level(LogLevel.DEBUG)
 
 
 @pytest.fixture
@@ -79,11 +95,13 @@ def create_kitchen_world_with_milk_and_robot():
             visual=ShapeCollection([robot_shape]),
             collision=ShapeCollection([robot_shape]),
         )
+        robot_body.collision.reference_frame = robot_body
+
         robot_conn = FixedConnection(
             parent=root,
             child=robot_body,
             parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
-                x=3.60, y=1.20, z=0.34
+                x=3.60, y=0, z=0.35
             ),
         )
         world.add_connection(robot_conn)
@@ -95,6 +113,8 @@ def create_kitchen_world_with_milk_and_robot():
             visual=ShapeCollection([table_shape]),
             collision=ShapeCollection([table_shape]),
         )
+        table_body.collision.reference_frame = table_body
+
         table_conn = FixedConnection(
             parent=root,
             child=table_body,
@@ -111,35 +131,21 @@ def create_kitchen_world_with_milk_and_robot():
             visual=ShapeCollection([milk_shape]),
             collision=ShapeCollection([milk_shape]),
         )
+        milk_body.collision.reference_frame = milk_body
+
         milk_conn = Connection6DoF.create_with_dofs(
             world=world,
             parent=table_body,
             child=milk_body,
             parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
-                x=3.60, y=1.20, z=0.34
+                x=0, y=0, z=0.40
             ),
         )
         world.add_connection(milk_conn)
 
-        fridge_shape = Box(scale=Scale(0.6, 0.6, 1.8), color=Color(0.2, 0.8, 0.2))
-        fridge_body = Body(
-            name=PrefixedName("fridge"),
-            visual=ShapeCollection([fridge_shape]),
-            collision=ShapeCollection([fridge_shape]),
-        )
-        fridge_conn = FixedConnection(
-            parent=root,
-            child=fridge_body,
-            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
-                x=0.5, y=0.0, z=0.9  # place fridge somewhere in the kitchen
-            ),
-        )
-        world.add_connection(fridge_conn)
+        target_position = robot_conn.parent_T_connection_expression
 
-        # Target position (Point3)
-        target_position = Point3.from_iterable([0.0, 0.5, 0.15])
-
-    return world, milk_conn, robot_conn, table_conn, fridge_conn, target_position
+    return world, milk_conn, robot_conn, table_conn, target_position
 
 
 @pytest.fixture
@@ -190,26 +196,285 @@ def visualize_kitchen_world(kitchen_with_milk):
     return kitchen_with_milk
 
 
-def test_general_pick_up_start_condition_checker(
-    create_kitchen_world_with_milk_and_robot,
-):
-    world, milk_conn, robot_conn, table_conn, _, target_position = (
+@pytest.fixture
+def visualize_abstract_world(create_kitchen_world_with_milk_and_robot):
+    world, milk_conn, robot_conn, table_conn, target_position = (
         create_kitchen_world_with_milk_and_robot
     )
+    rclpy.init()
+    node = rclpy.create_node("demo2_node")
+    threading.Thread(target=rclpy.spin, args=(node,), daemon=True).start()
+
+    VizMarkerPublisher(world=world, node=node)
+    # # wait for key press
+    # input("Press Enter to continue...")
+    # rclpy.shutdown()
+    return create_kitchen_world_with_milk_and_robot
+
+
+def test_pick_place_and_support_detectors(visualize_abstract_world):
+    world, milk_conn, robot_conn, table_conn, target_position = visualize_abstract_world
+
+    # Bodies
     robot_body = world.get_body_by_name("robot")
     milk_body = world.get_body_by_name("milk")
+    table_body = world.get_body_by_name("table")
+
+    # Real Event Logger
+
+    event_logger = EventLogger()
+
+    # Real Support Detector
+    support_detector = SupportDetector(world=world, event_logger=event_logger)
+    support_detector.start()
+
+    # 1. Milk on table----------------------
+
+    # Check support directly
+    support = get_support(milk_body, contact_bodies=[table_body])
+    assert support == table_body, "get_support should detect table as support"
+
+    event_logger.log_event(
+        StopTranslationEvent(
+            tracked_object=milk_body,
+            start_pose=TransformationMatrix(),
+            current_pose=TransformationMatrix(),
+        )
+    )
+
+    time.sleep(1)
+
+    # Update detector state
+    # support_detector.update_body_state(milk_body, with_bodies=[table_body])
+    assert (
+        support_detector.bodies_states[milk_body] == table_body
+    ), "Milk should be supported by table"
+
+    # Check logged SupportEvent
+    events = logger.get_events()
+    support_events = [e for e in events if isinstance(e, SupportEvent)]
+    assert any(
+        e.tracked_object == milk_body and e.with_object == table_body
+        for e in support_events
+    ), "Support event should be logged for milk on table"
+
+    # 2. Robot picks up milk-------------------
+
+    with world.modify_world():
+        milk_conn.parent_T_connection_expression = TransformationMatrix.from_xyz_rpy(
+            x=3.6, y=0, z=0.35
+        )
+    world.notify_state_change()
+    time.sleep(2.0)
     tcd = TrimeshCollisionDetector(world)
-    event = ContactEvent(
+    pickup_event = ContactEvent(
         contact_points=tcd.check_collision_between_bodies(robot_body, milk_body),
         with_object=robot_body,
         of_object=milk_body,
         latest_contact_points=None,
     )
-    GeneralPickUpDetector.start_condition_checker(event)
-    # print(world.bodies_with_enabled_collision)
-    # print(tcd.check_collision_between_bodies(robot_body, milk_body))
-    # print(GeneralPickUpDetector.start_condition_checker(event))
-    assert GeneralPickUpDetector.start_condition_checker(event)
+
+    assert GeneralPickUpDetector.start_condition_checker(
+        pickup_event
+    ), "Pick-up should be detected"
+    GeneralPickUpDetector().get_object_to_track_from_starter_event(pickup_event)
+    GeneralPickUpDetector().get_interaction_event(pickup_event)
+
+    # support_detector.update_body_state(milk_body, with_bodies=[table_body])
+    assert (
+        support_detector.bodies_states[milk_body] is None
+    ), "Milk should no longer be supported after lift"
+
+    # Check logged LossOfSupportEvent
+    events = logger.get_events()
+    loss_events = [e for e in events if isinstance(e, LossOfSupportEvent)]
+    assert any(
+        e.tracked_object == milk_body and e.with_object == table_body
+        for e in loss_events
+    ), "Loss-of-support event should be logged when milk is lifted"
+
+    # 3. Milk placed back on table--------------------------------
+
+    with world.modify_world():
+        milk_conn.parent_T_connection_expression = TransformationMatrix.from_xyz_rpy(
+            x=0, y=0, z=0.40
+        )
+    world.notify_state_change()
+    time.sleep(2.0)
+    place_event = LossOfContactEvent(
+        contact_points=tcd.check_collision_between_bodies(robot_body, milk_body),
+        with_object=robot_body,
+        of_object=milk_body,
+        latest_contact_points=None,
+    )
+
+    assert PlacingDetector.start_condition_checker(place_event)
+
+    support_detector.update_body_state(milk_body, with_bodies=[table_body])
+    assert (
+        support_detector.bodies_states[milk_body] == table_body
+    ), "Milk should be supported again"
+
+    events = logger.get_events()
+    support_events = [e for e in events if isinstance(e, SupportEvent)]
+    assert any(
+        e.tracked_object == milk_body and e.with_object == table_body
+        for e in support_events
+    ), "Support event should be logged again after placing milk back"
+
+
+def test_contact_detector(visualize_abstract_world):
+    world, milk_conn, robot_conn, table_conn, target_position = visualize_abstract_world
+
+    milk_body = world.get_body_by_name("milk")
+    table_body = world.get_body_by_name("table")
+    robot_body = world.get_body_by_name("robot")
+    logger = EventLogger()
+
+    contact_detector = ContactDetector(
+        event_logger=logger,
+        tracked_object=milk_body,
+        with_object=table_body,
+        world=world,
+    )
+    contact_detector2 = ContactDetector(
+        event_logger=logger,
+        tracked_object=milk_body,
+        with_object=robot_body,
+        max_closeness_distance=0.9,
+        world=world,
+    )
+
+    loss_detector = LossOfContactDetector(
+        event_logger=logger,
+        tracked_object=milk_body,
+        with_object=table_body,
+        world=world,
+    )
+    loss_detector2 = LossOfContactDetector(
+        event_logger=logger,
+        tracked_object=milk_body,
+        with_object=robot_body,
+        max_closeness_distance=0.9,
+        world=world,
+    )
+    # Detect initial contact
+    contact_events = contact_detector.detect_events()
+    assert any(
+        isinstance(e, ContactEvent) and e.with_object == table_body
+        for e in contact_events
+    ), "Milk-table contact should be detected"
+
+    loss_detector.latest_contact_points = contact_detector.latest_contact_points.copy()
+    time.sleep(2)
+    with world.modify_world():
+        milk_conn.parent_T_connection_expression = TransformationMatrix.from_xyz_rpy(
+            x=3.60, y=0, z=0.35
+        )
+    world.notify_state_change()
+
+    events = loss_detector.detect_events()
+    lost_contact = any(
+        isinstance(e, LossOfContactEvent) and e.with_object == table_body
+        for e in events
+    )
+
+    print("Detected events after moving milk:", events)
+    print("Lost contact detected:", lost_contact)
+    assert (
+        lost_contact
+    ), "LossOfContactDetector should detect milk-table loss of contact"
+
+    contact_events = contact_detector2.detect_events()
+    assert any(
+        isinstance(e, ContactEvent) and e.with_object == robot_body
+        for e in contact_events
+    ), "Milk-robot contact should be detected"
+
+    loss_detector2.latest_contact_points = (
+        contact_detector2.latest_contact_points.copy()
+    )
+    time.sleep(2)
+    with world.modify_world():
+        milk_conn.parent_T_connection_expression = TransformationMatrix.from_xyz_rpy(
+            x=0, y=0, z=0.40
+        )
+    world.notify_state_change()
+
+    events = loss_detector2.detect_events()
+    lost_contact = any(
+        isinstance(e, LossOfContactEvent) and e.with_object == robot_body
+        for e in events
+    )
+
+    print("Detected events after moving milk:", events)
+    print("Lost contact detected:", lost_contact)
+    assert (
+        lost_contact
+    ), "LossOfContactDetector should detect milk-robot loss of contact"
+
+
+def test_contact_detector2(visualize_abstract_world):
+    world, milk_conn, robot_conn, table_conn, target_position = visualize_abstract_world
+
+    milk_body = world.get_body_by_name("milk")
+    table_body = world.get_body_by_name("table")
+    robot_body = world.get_body_by_name("robot")
+    logger = EventLogger()
+
+    contact_detector = ContactDetector(
+        event_logger=logger,
+        tracked_object=milk_body,
+        with_object=table_body,
+        world=world,
+    )
+    contact_detector2 = ContactDetector(
+        event_logger=logger,
+        tracked_object=milk_body,
+        with_object=robot_body,
+        world=world,
+    )
+
+    contact_detector.detect_events()
+    contact_detector2.detect_events()
+
+    # reset previous contacts to force event generation
+    contact_detector.latest_contact_points = []
+    contact_detector.latest_interference_points = None
+
+    contact_detector2.latest_contact_points = []
+    contact_detector2.latest_interference_points = None
+
+    time.sleep(2.0)
+
+    events = contact_detector.detect_events()
+    milk_table_contact = any(
+        isinstance(e, ContactEvent)
+        and any(
+            cp.body_a == milk_body and cp.body_b == table_body
+            for cp in e.contact_points
+        )
+        for e in events
+    )
+    assert milk_table_contact, "Milk-table contact should be detected"
+
+    with world.modify_world():
+        milk_conn.parent_T_connection_expression = TransformationMatrix.from_xyz_rpy(
+            x=3.60, y=0, z=0.35
+        )
+    world.notify_state_change()
+
+    events = contact_detector2.detect_events()
+    closest_points, interference = contact_detector2.get_contact_points()
+    milk_robot_contact = any(
+        isinstance(e, ContactEvent)
+        and any(
+            cp.body_a == milk_body and cp.body_b == robot_body
+            for cp in e.contact_points
+        )
+        for e in events
+    )
+    assert milk_robot_contact, "Milk-robot contact should be detected"
 
 
 def test_translation_and_containment_detector(visualize_kitchen_world):
@@ -232,8 +497,7 @@ def test_translation_and_containment_detector(visualize_kitchen_world):
     logger.debug(
         f"Milk tracker: {milk_tracker} with object {milk_body} with id {milk_body.id}"
     )
-    # Use a permissive stop threshold so the windowed deltas qualify as "stopped"
-    # Spatial-relation detector (InsertionDetector)
+
     sr_detector = ContainmentDetector(
         check_on_events={StopTranslationEvent: None}, world=world
     )

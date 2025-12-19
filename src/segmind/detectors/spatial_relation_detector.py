@@ -7,7 +7,13 @@ from ripple_down_rules.rdr_decorators import RDRDecorator
 from typing_extensions import Any, Dict, List, Optional, Type, Callable, Union
 
 from krrood.entity_query_language.entity import variable, entity
-from semantic_digital_twin.collision_checking.collision_detector import Collision
+from semantic_digital_twin.collision_checking.collision_detector import (
+    Collision,
+    CollisionCheck,
+)
+from semantic_digital_twin.collision_checking.trimesh_collision_detector import (
+    TrimeshCollisionDetector,
+)
 from semantic_digital_twin.exceptions import NoShapeError
 from semantic_digital_twin.reasoning.predicates import InsideOf
 from semantic_digital_twin.reasoning.world_reasoner import WorldReasoner
@@ -145,14 +151,16 @@ class ContainmentDetector(SpatialRelationDetector):
             f"possible containers: {[b.name.name for b in self.container_bodies]}"
         )
         try:
-            _, _, distances = body.compute_closest_points_multi(self.container_bodies)
+            closest_points = body.compute_closest_points_multi(self.container_bodies)
         except NoShapeError as e:
             logger.debug(
                 f"Body {e.shape_collection.reference_frame.name.name} has no shape, cannot compute containment."
             )
             return
         close_container_bodies = [
-            b for i, b in enumerate(self.container_bodies) if distances[i] < 0.5
+            b
+            for i, b in enumerate(self.container_bodies)
+            if closest_points[i].min_distance < 0.5
         ]
         logger.debug(
             f"Close containers to {body.name.name}: {[b.name.name for b in close_container_bodies]}"
@@ -305,7 +313,17 @@ class SupportDetector(SpatialRelationDetector):
 
     @staticmethod
     def event_condition(event: StopTranslationEvent) -> bool:
-        return len(event.tracked_object.contact_points) > 0
+        logger.debug(f"checking on event {event}")
+        tcd = TrimeshCollisionDetector(event.tracked_object._world)
+        collisions = tcd.check_collisions(
+            {
+                CollisionCheck(
+                    event.tracked_object, body, 0.01, event.tracked_object._world
+                )
+                for body in event.tracked_object._world.bodies_with_enabled_collision
+            }
+        )
+        return len(collisions) > 0
 
     check_on_events = {StopTranslationEvent: None, LossOfInterferenceEvent: None}
 
@@ -313,12 +331,20 @@ class SupportDetector(SpatialRelationDetector):
         """
         Update the state of a body.
         """
-        support = get_support(body)
+        support = get_support(body, contact_bodies=with_bodies)
+        logger.debug(
+            "Found support: {support} for body: {body}".format(
+                support=support, body=body
+            )
+        )
         if body in self.bodies_states:
             if support is None:
                 if self.bodies_states[body] is None:
                     return
                 else:
+                    logger.debug(
+                        f"tracked object {body.name} has lost support from {self.bodies_states[body].name}"
+                    )
                     self.logger.log_event(
                         LossOfSupportEvent(
                             tracked_object=body, with_object=self.bodies_states[body]
@@ -326,10 +352,16 @@ class SupportDetector(SpatialRelationDetector):
                     )
             else:
                 if self.bodies_states[body] is None:
+                    logger.debug(
+                        f"tracked object {body.name} is now supported by {support.name}"
+                    )
                     self.logger.log_event(
                         SupportEvent(tracked_object=body, with_object=support)
                     )
                 elif support != self.bodies_states[body]:
+                    logger.debug(
+                        f"tracked object {body.name} has changed support from {self.bodies_states[body].name} to {support.name}"
+                    )
                     self.logger.log_event(
                         LossOfSupportEvent(
                             tracked_object=body, with_object=self.bodies_states[body]
@@ -342,6 +374,7 @@ class SupportDetector(SpatialRelationDetector):
                     return
         self.bodies_states[body] = support
         ObjectTrackerFactory.get_tracker(body).support = support
+        self.logger.log_event(SupportEvent(tracked_object=body, with_object=support))
 
     def detect_events(self) -> None:
         """
@@ -349,7 +382,9 @@ class SupportDetector(SpatialRelationDetector):
         """
         try:
             while True:
+                logger.debug(f"waiting on event {self}")
                 event = self.event_queue.get_nowait()
+                logger.debug(f"got event {event}")
                 self.event_queue.task_done()
                 self.update_body_state(event.tracked_object)
                 time.sleep(self.wait_time.total_seconds())

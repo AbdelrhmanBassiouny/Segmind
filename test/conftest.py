@@ -22,9 +22,6 @@ def apartment_world() -> World:
 
 @pytest.fixture
 def kitchen_world() -> World:
-    """
-    Return the apartment world parsed from the URDF file.
-    """
     urdf_dir = os.path.join(dirname(__file__), "worlds", "urdf")
     kitchen = os.path.join(urdf_dir, "kitchen.urdf")
     parser = URDFParser.from_file(file_path=kitchen)
