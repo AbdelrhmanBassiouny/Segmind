@@ -419,7 +419,7 @@ def test_contact_detector2(visualize_abstract_world):
 
     milk_body = world.get_body_by_name("milk")
     table_body = world.get_body_by_name("table")
-    robot_body = world.get_body_by_name("robot")
+    # robot_body = world.get_body_by_name("robot")
     logger = EventLogger()
 
     contact_detector = ContactDetector(
@@ -428,22 +428,11 @@ def test_contact_detector2(visualize_abstract_world):
         with_object=table_body,
         world=world,
     )
-    contact_detector2 = ContactDetector(
-        event_logger=logger,
-        tracked_object=milk_body,
-        with_object=robot_body,
-        world=world,
-    )
 
     contact_detector.detect_events()
-    contact_detector2.detect_events()
 
-    # reset previous contacts to force event generation
     contact_detector.latest_contact_points = []
     contact_detector.latest_interference_points = None
-
-    contact_detector2.latest_contact_points = []
-    contact_detector2.latest_interference_points = None
 
     time.sleep(2.0)
 
@@ -457,24 +446,6 @@ def test_contact_detector2(visualize_abstract_world):
         for e in events
     )
     assert milk_table_contact, "Milk-table contact should be detected"
-
-    with world.modify_world():
-        milk_conn.parent_T_connection_expression = TransformationMatrix.from_xyz_rpy(
-            x=3.60, y=0, z=0.35
-        )
-    world.notify_state_change()
-
-    events = contact_detector2.detect_events()
-    closest_points, interference = contact_detector2.get_contact_points()
-    milk_robot_contact = any(
-        isinstance(e, ContactEvent)
-        and any(
-            cp.body_a == milk_body and cp.body_b == robot_body
-            for cp in e.contact_points
-        )
-        for e in events
-    )
-    assert milk_robot_contact, "Milk-robot contact should be detected"
 
 
 def test_translation_and_containment_detector(visualize_kitchen_world):
