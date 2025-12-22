@@ -395,13 +395,6 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
         :param event_type: Event type class (ContactEvent or LossOfContactEvent)
         :return: List of AbstractContactEvent
         """
-        print("=== get_events called ===")
-        print("New objects in contact:", new_objects_contact)
-        print("New bodies in interference:", new_bodies_interference)
-        print("Closest points:", closest_points)
-        print("Interference points:", interference_points)
-
-        # Determine event types
         if event_type is ContactEvent:
             contact_event_type = ContactEvent
             agent_contact_event_type = AgentContactEvent
@@ -425,9 +418,6 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
                     if issubclass(self.obj_type, Agent)
                     else contact_event_type
                 )
-                print(
-                    f"Creating contact event for {cp.body_a.name} <-> {cp.body_b.name}"
-                )
                 events.append(
                     evt_type(
                         contact_points=[cp],  # wrap in list
@@ -445,9 +435,6 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
                     if issubclass(self.obj_type, Agent)
                     else interference_event_type
                 )
-                print(
-                    f"Creating interference event for {collision.body_a.name} <-> {collision.body_b.name}"
-                )
                 events.append(
                     evt_type(
                         contact_points=[collision],  # wrap in list
@@ -456,8 +443,6 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
                         with_object=collision.body_b,
                     )
                 )
-
-        print(f"Total events generated: {len(events)}")
         return events
 
     @property
@@ -469,9 +454,6 @@ class AbstractContactDetector(DetectorWithTwoTrackedObjects, ABC):
 
     def detect_events(self) -> List[Event]:
         closest_points, interference_points = self.get_contact_points()
-        print("=== detect_events ===")
-        print(f"Closest points: {[cp.min_distance for cp in closest_points]}")
-        print(f"Interference: {interference_points}")
 
         events = self.trigger_events(closest_points, interference_points)
 
@@ -542,11 +524,6 @@ class ContactDetector(AbstractContactDetector):
         """
         Check for new contacts based on closest points and interference points.
         """
-        print("=== ContactDetector: trigger_events ===")
-        print("Current closest points:", closest_points)
-        print("Current interference points:", interference_points)
-
-        # ---- New contacts (distance-based) ----
         prev_contacts = {
             (cp.body_a, cp.body_b) for cp in self.latest_contact_points or []
         }
@@ -559,22 +536,11 @@ class ContactDetector(AbstractContactDetector):
             if (cp.body_a, cp.body_b) in new_contact_pairs
         ]
 
-        print("Prev contacts:", prev_contacts)
-        print("Curr contacts:", curr_contacts)
-        print("New contact pairs:", new_contact_pairs)
-        print("New objects in contact:", new_objects_in_contact)
-
-        # ---- New interferences (collision-based) ----
         prev_interference = {c.body_b for c in self.latest_interference_points or []}
         curr_interference = {c.body_b for c in interference_points or []}
 
         new_bodies_in_interference = list(curr_interference - prev_interference)
 
-        print("Prev interference bodies:", prev_interference)
-        print("Curr interference bodies:", curr_interference)
-        print("New bodies in interference:", new_bodies_in_interference)
-
-        # ---- Optional filtering by with_object ----
         if self.with_object is not None:
             new_objects_in_contact = [
                 obj for obj in new_objects_in_contact if obj == self.with_object
@@ -583,12 +549,6 @@ class ContactDetector(AbstractContactDetector):
                 body for body in new_bodies_in_interference if body == self.with_object
             ]
 
-        # ---- No events ----
-        if not new_objects_in_contact and not new_bodies_in_interference:
-            print("No new contacts or interferences detected.")
-            return []
-
-        # ---- Delegate event creation ----
         events = self.get_events(
             new_objects_contact=new_objects_in_contact,
             new_bodies_interference=new_bodies_in_interference,
@@ -597,7 +557,6 @@ class ContactDetector(AbstractContactDetector):
             event_type=ContactEvent,
         )
 
-        print(f"Generated {len(events)} ContactEvent(s)")
         return events
 
 
@@ -632,7 +591,6 @@ class LossOfContactDetector(AbstractContactDetector):
         """
         Get the objects that lost contact or interference with the tracked object.
         """
-        # ---- Lost pre-contact (closest points) ----
         prev_contacts = {
             (cp.body_a, cp.body_b) for cp in self.latest_contact_points or []
         }
@@ -643,13 +601,11 @@ class LossOfContactDetector(AbstractContactDetector):
             b for (a, b) in lost_contact_pairs if a == self.tracked_object
         ]
 
-        # ---- Lost collision (interference) ----
         prev_interference = {c.body_b for c in self.latest_interference_points or []}
         curr_interference = {c.body_b for c in interference_points or []}
 
         bodies_that_lost_interference = list(prev_interference - curr_interference)
 
-        # ---- Optional filtering by with_object ----
         if self.with_object is not None:
             objects_that_lost_contact = [
                 obj for obj in objects_that_lost_contact if obj == self.with_object
